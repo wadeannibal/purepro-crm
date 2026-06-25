@@ -4,6 +4,8 @@ import {
   Wrench, Clock, Shield, ShieldCheck, Star, ChevronRight,
   Calculator, FileSignature, Receipt, BarChart2, TrendingUp,
   DollarSign, Percent, Briefcase, UserCheck, Wallet, PiggyBank, ChevronDown,
+  CalendarDays, Droplets, Wind, Globe, PenLine, BellRing,
+  SmilePlus, UserPlus, Award, RefreshCw,
 } from 'lucide-react'
 
 const GROUPS = [
@@ -37,12 +39,38 @@ const GROUPS = [
     ],
   },
   {
+    label: 'SCHEDULING',
+    items: [
+      { id: 'scheduler', label: 'Scheduler', icon: CalendarDays },
+      { id: 'apptconfirm', label: 'Appt Confirmations', icon: BellRing },
+    ],
+  },
+  {
+    label: 'FIELD LOGS',
+    items: [
+      { id: 'moisture', label: 'Moisture Log', icon: Droplets },
+      { id: 'drying', label: 'Drying Log', icon: Wind },
+    ],
+  },
+  {
     label: 'JOB DETAILS',
     items: [
       { id: 'followup', label: 'Follow-Up Tracker', icon: Briefcase },
+      { id: 'portal', label: 'Client Portal', icon: Globe },
+      { id: 'esign', label: 'E-Signature', icon: PenLine },
       { id: 'insurance', label: 'Insurance & Claims', icon: UserCheck },
       { id: 'subs', label: 'Subcontractors', icon: Users },
       { id: 'expenses', label: 'Expenses', icon: Wallet },
+    ],
+  },
+  {
+    label: 'CLIENT SUCCESS',
+    items: [
+      { id: 'survey', label: 'Satisfaction Survey', icon: SmilePlus },
+      { id: 'referral', label: 'Referral Ask', icon: UserPlus },
+      { id: 'review', label: 'Google Review', icon: Star },
+      { id: 'warranty', label: 'Warranty Tracking', icon: Award },
+      { id: 'checkin', label: 'Annual Check-In', icon: RefreshCw },
     ],
   },
 ]
@@ -106,7 +134,7 @@ export default function Sidebar({ currentView, navigateTo }) {
 
       {/* Footer */}
       <div className="px-4 py-3 border-t border-gray-800 flex-shrink-0">
-        <div className="text-gray-600 text-[11px] font-medium">PurePro CRM — Phase 1 & 2</div>
+        <div className="text-gray-600 text-[11px] font-medium">PurePro CRM — Phase 1, 2 & 3</div>
         <div className="text-gray-700 text-[10px]">Denver, CO</div>
       </div>
     </aside>

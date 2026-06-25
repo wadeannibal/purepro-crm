@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useApp } from '../../context/AppContext'
 import { ACTIONS } from '../../context/AppReducer'
 import { formatCurrency, computeEstimateTotals } from '../../utils/helpers'
-import { Clock, CheckCircle, XCircle, MessageSquare } from 'lucide-react'
+import { Clock, CheckCircle, XCircle, Copy, Check, Send } from 'lucide-react'
 
 const FOLLOW_UP_SCRIPTS = {
   first: `Hi [Name], just following up on the estimate we sent over. I wanted to make sure you received it and answer any questions. We're ready to get started as soon as you're ready — just say the word!`,
@@ -10,20 +10,42 @@ const FOLLOW_UP_SCRIPTS = {
   final: `Hi [Name], last follow-up from us on the estimate. If now isn't the right time, no worries — just let us know so we can close this out. If you do want to move forward, we're still here and ready to help.`,
 }
 
-function getScript(days) {
-  if (days >= 7) return { label: 'Final Follow-Up', text: FOLLOW_UP_SCRIPTS.final, color: 'text-red-700 bg-red-50 border-red-200' }
-  if (days >= 3) return { label: 'Second Follow-Up', text: FOLLOW_UP_SCRIPTS.second, color: 'text-yellow-800 bg-yellow-50 border-yellow-200' }
-  return { label: 'First Follow-Up', text: FOLLOW_UP_SCRIPTS.first, color: 'text-blue-700 bg-blue-50 border-blue-200' }
+function getScript(followUpCount) {
+  if (followUpCount >= 2) return { label: 'Final Follow-Up', key: 'final', text: FOLLOW_UP_SCRIPTS.final, color: 'text-red-700 bg-red-50 border-red-200' }
+  if (followUpCount >= 1) return { label: 'Second Follow-Up', key: 'second', text: FOLLOW_UP_SCRIPTS.second, color: 'text-yellow-800 bg-yellow-50 border-yellow-200' }
+  return { label: 'First Follow-Up', key: 'first', text: FOLLOW_UP_SCRIPTS.first, color: 'text-blue-700 bg-blue-50 border-blue-200' }
 }
 
-function EstimateCard({ job, client, daysElapsed, totals, onApprove, onDecline }) {
-  const [showScript, setShowScript] = useState(false)
-  const script = getScript(daysElapsed)
+function EstimateCard({ job, client, daysElapsed, totals, onApprove, onDecline, onMarkSent }) {
+  const [copied, setCopied] = useState(false)
+
+  const followUpCount = job.estimate.followUpCount ?? 0
+  const script = getScript(followUpCount)
   const firstName = client?.name?.split(' ')[0] ?? 'there'
   const personalized = script.text.replace('[Name]', firstName).replace('[type]', job.type.toLowerCase())
 
+  const daysSinceLastFollowUp = job.estimate.lastFollowUpAt
+    ? Math.floor((Date.now() - new Date(job.estimate.lastFollowUpAt)) / 86400000)
+    : null
+
+  const approveAndCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(personalized)
+    } catch {
+      const el = document.createElement('textarea')
+      el.value = personalized
+      document.body.appendChild(el)
+      el.select()
+      document.execCommand('copy')
+      document.body.removeChild(el)
+    }
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2500)
+  }
+
   return (
     <div className="bg-white border border-gray-200 rounded-2xl p-5">
+      {/* Header */}
       <div className="flex items-start justify-between mb-3">
         <div>
           <div className="flex items-center gap-2 mb-1">
@@ -31,7 +53,12 @@ function EstimateCard({ job, client, daysElapsed, totals, onApprove, onDecline }
             <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{job.type}</span>
           </div>
           <div className="text-sm text-gray-500">
-            Sent {daysElapsed >= 1 ? `${Math.floor(daysElapsed)} day${Math.floor(daysElapsed) !== 1 ? 's' : ''}` : `${Math.round(daysElapsed * 24)} hours`} ago
+            Estimate sent {daysElapsed >= 1
+              ? `${Math.floor(daysElapsed)} day${Math.floor(daysElapsed) !== 1 ? 's' : ''}`
+              : `${Math.round(daysElapsed * 24)} hours`} ago
+            {daysSinceLastFollowUp !== null && (
+              <span className="text-gray-400 ml-1">· last follow-up {daysSinceLastFollowUp}d ago</span>
+            )}
           </div>
         </div>
         <div className="text-right">
@@ -40,27 +67,49 @@ function EstimateCard({ job, client, daysElapsed, totals, onApprove, onDecline }
         </div>
       </div>
 
-      <div className={`flex items-center gap-2 text-xs font-semibold px-3 py-2 rounded-lg border mb-4 ${script.color}`}>
+      {/* Script label */}
+      <div className={`flex items-center gap-2 text-xs font-semibold px-3 py-2 rounded-lg border mb-3 ${script.color}`}>
         <Clock size={13} />
-        {script.label} Recommended
+        {script.label} — Follow-up #{followUpCount + 1}
       </div>
 
-      {showScript && (
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm text-gray-700 mb-4 leading-relaxed italic">
-          "{personalized}"
-        </div>
-      )}
+      {/* Script preview — always visible */}
+      <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-4">
+        <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Suggested Message</div>
+        <p className="text-sm text-gray-700 leading-relaxed">{personalized}</p>
+      </div>
 
-      <div className="flex gap-2 flex-wrap">
-        <button onClick={onApprove} className="flex items-center gap-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors">
-          <CheckCircle size={13} /> Mark Approved
+      {/* Actions */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <button
+          onClick={approveAndCopy}
+          className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${
+            copied ? 'bg-green-600 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'
+          }`}
+        >
+          {copied ? <Check size={13} /> : <Copy size={13} />}
+          {copied ? 'Copied!' : 'Approve & Copy'}
         </button>
-        <button onClick={onDecline} className="flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors">
-          <XCircle size={13} /> Mark Declined
+        <button
+          onClick={onMarkSent}
+          className="flex items-center gap-1.5 bg-gray-900 hover:bg-gray-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
+        >
+          <Send size={13} /> Mark as Sent
         </button>
-        <button onClick={() => setShowScript(s => !s)} className="ml-auto flex items-center gap-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors">
-          <MessageSquare size={13} /> {showScript ? 'Hide' : 'View'} Script
-        </button>
+        <div className="ml-auto flex gap-2">
+          <button
+            onClick={onApprove}
+            className="flex items-center gap-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
+          >
+            <CheckCircle size={13} /> Mark Approved
+          </button>
+          <button
+            onClick={onDecline}
+            className="flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
+          >
+            <XCircle size={13} /> Mark Declined
+          </button>
+        </div>
       </div>
     </div>
   )
@@ -89,9 +138,23 @@ export default function EstimateFollowUp({ navigateTo }) {
   const markDeclined = (job) =>
     dispatch({ type: ACTIONS.UPDATE_ESTIMATE_STATUS, payload: { jobId: job.id, status: 'Declined' } })
 
+  const markSent = (job) =>
+    dispatch({
+      type: ACTIONS.SAVE_ESTIMATE,
+      payload: {
+        jobId: job.id,
+        estimate: {
+          ...job.estimate,
+          followUpCount: (job.estimate.followUpCount ?? 0) + 1,
+          lastFollowUpAt: new Date().toISOString(),
+        },
+      },
+    })
+
   return (
     <div className="h-full overflow-y-auto">
       <div className="max-w-3xl mx-auto p-6 space-y-6">
+        {/* Stats */}
         <div className="grid grid-cols-3 gap-4">
           <div className="bg-white border border-gray-200 rounded-2xl p-5">
             <div className="text-xs text-gray-500 mb-1">Awaiting Response</div>
@@ -123,7 +186,16 @@ export default function EstimateFollowUp({ navigateTo }) {
                 <h2 className="text-xs font-bold text-red-700 uppercase tracking-wider mb-3">Needs Follow-Up (48+ hrs)</h2>
                 <div className="space-y-3">
                   {urgent.map(({ job, client, daysElapsed, totals }) => (
-                    <EstimateCard key={job.id} job={job} client={client} daysElapsed={daysElapsed} totals={totals} onApprove={() => markApproved(job)} onDecline={() => markDeclined(job)} />
+                    <EstimateCard
+                      key={job.id}
+                      job={job}
+                      client={client}
+                      daysElapsed={daysElapsed}
+                      totals={totals}
+                      onApprove={() => markApproved(job)}
+                      onDecline={() => markDeclined(job)}
+                      onMarkSent={() => markSent(job)}
+                    />
                   ))}
                 </div>
               </div>
@@ -133,7 +205,16 @@ export default function EstimateFollowUp({ navigateTo }) {
                 <h2 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Sent Recently (under 48 hrs)</h2>
                 <div className="space-y-3">
                   {recent.map(({ job, client, daysElapsed, totals }) => (
-                    <EstimateCard key={job.id} job={job} client={client} daysElapsed={daysElapsed} totals={totals} onApprove={() => markApproved(job)} onDecline={() => markDeclined(job)} />
+                    <EstimateCard
+                      key={job.id}
+                      job={job}
+                      client={client}
+                      daysElapsed={daysElapsed}
+                      totals={totals}
+                      onApprove={() => markApproved(job)}
+                      onDecline={() => markDeclined(job)}
+                      onMarkSent={() => markSent(job)}
+                    />
                   ))}
                 </div>
               </div>

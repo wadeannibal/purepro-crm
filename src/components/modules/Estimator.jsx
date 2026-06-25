@@ -460,7 +460,7 @@ export default function Estimator({ selectedJobId, setSelectedJobId, navigateTo 
             {/* Status action bar */}
             {local.status === 'Draft' && (
               <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 flex items-center justify-between">
-                <span className="text-sm text-blue-800">Ready to send to client?</span>
+                <span className="text-sm text-blue-800">After delivering the quote manually, log it here.</span>
                 <button onClick={sendEstimate} className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg">
                   <Send size={13} /> Mark as Sent
                 </button>

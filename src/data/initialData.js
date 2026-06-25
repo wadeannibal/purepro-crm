@@ -444,6 +444,7 @@ export const initialData = {
     { id: 'eq5', name: 'Moisture Meter #1', type: 'Measurement', serialNumber: 'MM-001', jobId: null, placedDate: null, pickupDate: null, status: 'available' },
     { id: 'eq6', name: 'Dehumidifier 90L #2', type: 'Dehumidifier', serialNumber: 'DH90-002', jobId: null, placedDate: null, pickupDate: null, status: 'maintenance' },
   ],
+  events: [],
   overheadItems: [
     { id: 'oh1', name: 'Truck Payment', amount: 800, createdAt: '2024-01-01T00:00:00Z' },
     { id: 'oh2', name: 'Insurance (General Liability)', amount: 400, createdAt: '2024-01-01T00:00:00Z' },

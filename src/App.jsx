@@ -31,6 +31,19 @@ import SubcontractorManagement from './components/modules/SubcontractorManagemen
 import ExpenseTracker from './components/modules/ExpenseTracker'
 import TaxEstimator from './components/modules/TaxEstimator'
 
+// Phase 3
+import Scheduler from './components/modules/Scheduler'
+import MoistureLog from './components/modules/MoistureLog'
+import DryingLog from './components/modules/DryingLog'
+import ClientPortal from './components/modules/ClientPortal'
+import ESignature from './components/modules/ESignature'
+import AppointmentConfirmations from './components/modules/AppointmentConfirmations'
+import SatisfactionSurvey from './components/modules/SatisfactionSurvey'
+import ReferralAsk from './components/modules/ReferralAsk'
+import GoogleReviewRequest from './components/modules/GoogleReviewRequest'
+import WarrantyTracking from './components/modules/WarrantyTracking'
+import AnnualCheckIn from './components/modules/AnnualCheckIn'
+
 export default function App() {
   const [currentView, setCurrentView] = useState('pipeline')
   const [selectedJobId, setSelectedJobId] = useState(null)
@@ -94,6 +107,29 @@ export default function App() {
         return <ExpenseTracker selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} />
       case 'tax':
         return <TaxEstimator />
+      // Phase 3
+      case 'scheduler':
+        return <Scheduler navigateTo={navigateTo} />
+      case 'moisture':
+        return <MoistureLog selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} />
+      case 'drying':
+        return <DryingLog selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} />
+      case 'portal':
+        return <ClientPortal selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} />
+      case 'esign':
+        return <ESignature selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} />
+      case 'apptconfirm':
+        return <AppointmentConfirmations navigateTo={navigateTo} />
+      case 'survey':
+        return <SatisfactionSurvey selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} />
+      case 'referral':
+        return <ReferralAsk selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} />
+      case 'review':
+        return <GoogleReviewRequest selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} />
+      case 'warranty':
+        return <WarrantyTracking selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} />
+      case 'checkin':
+        return <AnnualCheckIn />
       default:
         return <JobPipeline navigateTo={navigateTo} />
     }

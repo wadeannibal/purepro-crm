@@ -59,6 +59,42 @@ export const ACTIONS = {
   ADD_TEMPLATE: 'ADD_TEMPLATE',
   SAVE_TEMPLATE: 'SAVE_TEMPLATE',
   DELETE_TEMPLATE: 'DELETE_TEMPLATE',
+
+  // Phase 3 — Scheduler / Events
+  ADD_EVENT: 'ADD_EVENT',
+  UPDATE_EVENT: 'UPDATE_EVENT',
+  DELETE_EVENT: 'DELETE_EVENT',
+  MARK_CONFIRMATION_SENT: 'MARK_CONFIRMATION_SENT',
+  MARK_REMINDER_SENT: 'MARK_REMINDER_SENT',
+
+  // Phase 3 — Field Logs (per job)
+  ADD_MOISTURE_READING: 'ADD_MOISTURE_READING',
+  DELETE_MOISTURE_READING: 'DELETE_MOISTURE_READING',
+  ADD_DRYING_ENTRY: 'ADD_DRYING_ENTRY',
+  DELETE_DRYING_ENTRY: 'DELETE_DRYING_ENTRY',
+
+  // Phase 3 — Client Portal (per job)
+  SAVE_PORTAL: 'SAVE_PORTAL',
+  CLIENT_APPROVE_ESTIMATE: 'CLIENT_APPROVE_ESTIMATE',
+
+  // Phase 3 — E-Signature (per job)
+  ADD_SIGNATURE_REQUEST: 'ADD_SIGNATURE_REQUEST',
+  SIGN_DOCUMENT: 'SIGN_DOCUMENT',
+  DELETE_SIGNATURE_REQUEST: 'DELETE_SIGNATURE_REQUEST',
+
+  // Phase 3 — Outreach
+  MARK_SURVEY_SENT: 'MARK_SURVEY_SENT',
+  SUBMIT_SURVEY_RESPONSE: 'SUBMIT_SURVEY_RESPONSE',
+  MARK_REFERRAL_SENT: 'MARK_REFERRAL_SENT',
+  MARK_REVIEW_REQUEST_SENT: 'MARK_REVIEW_REQUEST_SENT',
+
+  // Phase 3 — Warranty
+  SAVE_WARRANTY: 'SAVE_WARRANTY',
+  ADD_WARRANTY_CLAIM: 'ADD_WARRANTY_CLAIM',
+  RESOLVE_WARRANTY_CLAIM: 'RESOLVE_WARRANTY_CLAIM',
+
+  // Phase 3 — Annual Check-In
+  MARK_ANNUAL_CHECKIN_SENT: 'MARK_ANNUAL_CHECKIN_SENT',
 }
 
 const uid = () => crypto.randomUUID()
@@ -118,6 +154,12 @@ export function reducer(state, action) {
           photos: [], documents: [], waivers: [], timeLogs: [],
           estimate: null, invoice: null, insurance: null,
           subcontractors: [], expenses: [],
+          // Phase 3 defaults
+          moistureReadings: [], dryingLog: [],
+          portal: null, signatures: [],
+          survey: null, referralAsk: null,
+          reviewRequest: null, warranty: null,
+          annualCheckIn: null,
           ...payload,
         }],
       }
@@ -421,6 +463,203 @@ export function reducer(state, action) {
       return {
         ...state,
         proposalTemplates: (state.proposalTemplates ?? []).filter(t => t.id !== payload.id),
+      }
+
+    // ── Phase 3: Scheduler / Events ──────────────────────────
+    case ACTIONS.ADD_EVENT:
+      return { ...state, events: [...(state.events ?? []), { id: uid(), createdAt: now(), ...payload }] }
+
+    case ACTIONS.UPDATE_EVENT:
+      return { ...state, events: (state.events ?? []).map(e => e.id === payload.id ? { ...e, ...payload } : e) }
+
+    case ACTIONS.DELETE_EVENT:
+      return { ...state, events: (state.events ?? []).filter(e => e.id !== payload.id) }
+
+    case ACTIONS.MARK_CONFIRMATION_SENT:
+      return {
+        ...state,
+        events: (state.events ?? []).map(e =>
+          e.id === payload.eventId ? { ...e, confirmationSent: true, confirmationSentAt: now() } : e
+        ),
+      }
+
+    case ACTIONS.MARK_REMINDER_SENT:
+      return {
+        ...state,
+        events: (state.events ?? []).map(e =>
+          e.id === payload.eventId ? { ...e, reminderSent: true, reminderSentAt: now() } : e
+        ),
+      }
+
+    // ── Phase 3: Field Logs ──────────────────────────────────
+    case ACTIONS.ADD_MOISTURE_READING:
+      return {
+        ...state,
+        jobs: updateJob(state.jobs, payload.jobId, j => ({
+          ...j,
+          moistureReadings: [...(j.moistureReadings ?? []), { id: uid(), createdAt: now(), ...payload.reading }],
+        })),
+      }
+
+    case ACTIONS.DELETE_MOISTURE_READING:
+      return {
+        ...state,
+        jobs: updateJob(state.jobs, payload.jobId, j => ({
+          ...j,
+          moistureReadings: (j.moistureReadings ?? []).filter(r => r.id !== payload.readingId),
+        })),
+      }
+
+    case ACTIONS.ADD_DRYING_ENTRY:
+      return {
+        ...state,
+        jobs: updateJob(state.jobs, payload.jobId, j => ({
+          ...j,
+          dryingLog: [...(j.dryingLog ?? []), { id: uid(), createdAt: now(), ...payload.entry }],
+        })),
+      }
+
+    case ACTIONS.DELETE_DRYING_ENTRY:
+      return {
+        ...state,
+        jobs: updateJob(state.jobs, payload.jobId, j => ({
+          ...j,
+          dryingLog: (j.dryingLog ?? []).filter(e => e.id !== payload.entryId),
+        })),
+      }
+
+    // ── Phase 3: Client Portal ───────────────────────────────
+    case ACTIONS.SAVE_PORTAL:
+      return {
+        ...state,
+        jobs: updateJob(state.jobs, payload.jobId, j => ({
+          ...j,
+          portal: { ...(j.portal ?? {}), ...payload.portal },
+        })),
+      }
+
+    case ACTIONS.CLIENT_APPROVE_ESTIMATE:
+      return {
+        ...state,
+        jobs: updateJob(state.jobs, payload.jobId, j => ({
+          ...j,
+          portal: { ...(j.portal ?? {}), estimateApproved: true, approvedAt: now() },
+        })),
+      }
+
+    // ── Phase 3: E-Signature ─────────────────────────────────
+    case ACTIONS.ADD_SIGNATURE_REQUEST:
+      return {
+        ...state,
+        jobs: updateJob(state.jobs, payload.jobId, j => ({
+          ...j,
+          signatures: [...(j.signatures ?? []), { id: uid(), createdAt: now(), status: 'pending', ...payload.request }],
+        })),
+      }
+
+    case ACTIONS.SIGN_DOCUMENT:
+      return {
+        ...state,
+        jobs: updateJob(state.jobs, payload.jobId, j => ({
+          ...j,
+          signatures: (j.signatures ?? []).map(s =>
+            s.id === payload.signatureId
+              ? { ...s, status: 'signed', signedAt: now(), signatureData: payload.signatureData, signerName: payload.signerName }
+              : s
+          ),
+        })),
+      }
+
+    case ACTIONS.DELETE_SIGNATURE_REQUEST:
+      return {
+        ...state,
+        jobs: updateJob(state.jobs, payload.jobId, j => ({
+          ...j,
+          signatures: (j.signatures ?? []).filter(s => s.id !== payload.signatureId),
+        })),
+      }
+
+    // ── Phase 3: Survey / Referral / Review ──────────────────
+    case ACTIONS.MARK_SURVEY_SENT:
+      return {
+        ...state,
+        jobs: updateJob(state.jobs, payload.jobId, j => ({
+          ...j,
+          survey: { ...(j.survey ?? {}), markedSentAt: now() },
+        })),
+      }
+
+    case ACTIONS.SUBMIT_SURVEY_RESPONSE:
+      return {
+        ...state,
+        jobs: updateJob(state.jobs, payload.jobId, j => ({
+          ...j,
+          survey: { ...(j.survey ?? {}), completedAt: now(), stars: payload.stars, wouldRefer: payload.wouldRefer, comments: payload.comments },
+        })),
+      }
+
+    case ACTIONS.MARK_REFERRAL_SENT:
+      return {
+        ...state,
+        jobs: updateJob(state.jobs, payload.jobId, j => ({
+          ...j,
+          referralAsk: { ...(j.referralAsk ?? {}), markedSentAt: now() },
+        })),
+      }
+
+    case ACTIONS.MARK_REVIEW_REQUEST_SENT:
+      return {
+        ...state,
+        jobs: updateJob(state.jobs, payload.jobId, j => ({
+          ...j,
+          reviewRequest: { ...(j.reviewRequest ?? {}), markedSentAt: now() },
+        })),
+      }
+
+    // ── Phase 3: Warranty ────────────────────────────────────
+    case ACTIONS.SAVE_WARRANTY:
+      return {
+        ...state,
+        jobs: updateJob(state.jobs, payload.jobId, j => ({
+          ...j,
+          warranty: { claims: j.warranty?.claims ?? [], ...payload.warranty },
+        })),
+      }
+
+    case ACTIONS.ADD_WARRANTY_CLAIM:
+      return {
+        ...state,
+        jobs: updateJob(state.jobs, payload.jobId, j => ({
+          ...j,
+          warranty: j.warranty ? {
+            ...j.warranty,
+            claims: [...(j.warranty.claims ?? []), { id: uid(), reportedAt: now(), status: 'open', ...payload.claim }],
+          } : j.warranty,
+        })),
+      }
+
+    case ACTIONS.RESOLVE_WARRANTY_CLAIM:
+      return {
+        ...state,
+        jobs: updateJob(state.jobs, payload.jobId, j => ({
+          ...j,
+          warranty: j.warranty ? {
+            ...j.warranty,
+            claims: (j.warranty.claims ?? []).map(c =>
+              c.id === payload.claimId ? { ...c, status: 'resolved', resolvedAt: now() } : c
+            ),
+          } : j.warranty,
+        })),
+      }
+
+    // ── Phase 3: Annual Check-In ─────────────────────────────
+    case ACTIONS.MARK_ANNUAL_CHECKIN_SENT:
+      return {
+        ...state,
+        jobs: updateJob(state.jobs, payload.jobId, j => ({
+          ...j,
+          annualCheckIn: { ...(j.annualCheckIn ?? {}), markedSentAt: now() },
+        })),
       }
 
     default:
