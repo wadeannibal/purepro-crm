@@ -1,0 +1,115 @@
+import { useState } from 'react'
+import { AppProvider } from './context/AppContext'
+import Sidebar from './components/layout/Sidebar'
+import Header from './components/layout/Header'
+
+// Phase 1
+import CRM from './components/modules/CRM'
+import JobPipeline from './components/modules/JobPipeline'
+import JobRecords from './components/modules/JobRecords'
+import PhotoAttachments from './components/modules/PhotoAttachments'
+import DocumentStorage from './components/modules/DocumentStorage'
+import CommunicationLog from './components/modules/CommunicationLog'
+import EquipmentTracker from './components/modules/EquipmentTracker'
+import JobTimer from './components/modules/JobTimer'
+import LiabilityWaivers from './components/modules/LiabilityWaivers'
+import OSHACompliance from './components/modules/OSHACompliance'
+import VIPClients from './components/modules/VIPClients'
+
+// Phase 2
+import Estimator from './components/modules/Estimator'
+import ProposalTemplates from './components/modules/ProposalTemplates'
+import QuoteGenerator from './components/modules/QuoteGenerator'
+import EstimateFollowUp from './components/modules/EstimateFollowUp'
+import Invoicing from './components/modules/Invoicing'
+import JobCosting from './components/modules/JobCosting'
+import PLSnapshot from './components/modules/PLSnapshot'
+import OverheadCalculator from './components/modules/OverheadCalculator'
+import CashFlowForecast from './components/modules/CashFlowForecast'
+import InsuranceClaims from './components/modules/InsuranceClaims'
+import SubcontractorManagement from './components/modules/SubcontractorManagement'
+import ExpenseTracker from './components/modules/ExpenseTracker'
+import TaxEstimator from './components/modules/TaxEstimator'
+
+export default function App() {
+  const [currentView, setCurrentView] = useState('pipeline')
+  const [selectedJobId, setSelectedJobId] = useState(null)
+  const [selectedClientId, setSelectedClientId] = useState(null)
+
+  const navigateTo = (view, params = {}) => {
+    if (params.jobId !== undefined) setSelectedJobId(params.jobId)
+    if (params.clientId !== undefined) setSelectedClientId(params.clientId)
+    setCurrentView(view)
+  }
+
+  const renderView = () => {
+    switch (currentView) {
+      // Phase 1
+      case 'crm':
+        return <CRM navigateTo={navigateTo} />
+      case 'pipeline':
+        return <JobPipeline navigateTo={navigateTo} />
+      case 'jobs':
+        return <JobRecords selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} navigateTo={navigateTo} />
+      case 'photos':
+        return <PhotoAttachments selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} />
+      case 'documents':
+        return <DocumentStorage selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} />
+      case 'communications':
+        return <CommunicationLog selectedClientId={selectedClientId} setSelectedClientId={setSelectedClientId} />
+      case 'equipment':
+        return <EquipmentTracker />
+      case 'timer':
+        return <JobTimer selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} />
+      case 'waivers':
+        return <LiabilityWaivers selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} />
+      case 'osha':
+        return <OSHACompliance selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} />
+      case 'vip':
+        return <VIPClients navigateTo={navigateTo} />
+      // Phase 2
+      case 'estimator':
+        return <Estimator selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} navigateTo={navigateTo} />
+      case 'proposals':
+        return <ProposalTemplates selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} navigateTo={navigateTo} />
+      case 'quote':
+        return <QuoteGenerator selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} navigateTo={navigateTo} />
+      case 'followup':
+        return <EstimateFollowUp navigateTo={navigateTo} />
+      case 'invoicing':
+        return <Invoicing selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} navigateTo={navigateTo} />
+      case 'jobcosting':
+        return <JobCosting selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} />
+      case 'pl':
+        return <PLSnapshot />
+      case 'overhead':
+        return <OverheadCalculator />
+      case 'cashflow':
+        return <CashFlowForecast navigateTo={navigateTo} />
+      case 'insurance':
+        return <InsuranceClaims selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} />
+      case 'subs':
+        return <SubcontractorManagement selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} />
+      case 'expenses':
+        return <ExpenseTracker selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} />
+      case 'tax':
+        return <TaxEstimator />
+      default:
+        return <JobPipeline navigateTo={navigateTo} />
+    }
+  }
+
+  return (
+    <AppProvider>
+      <div className="flex h-screen overflow-hidden bg-gray-50">
+        <Sidebar currentView={currentView} navigateTo={navigateTo} />
+        <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+          <Header currentView={currentView} selectedJobId={selectedJobId} />
+          <main className="flex-1 overflow-hidden">
+            {renderView()}
+          </main>
+        </div>
+      </div>
+    </AppProvider>
+  )
+}

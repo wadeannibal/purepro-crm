@@ -1,0 +1,287 @@
+import { useApp } from '../../context/AppContext'
+import { computeEstimateTotals, formatCurrencyExact, formatDate } from '../../utils/helpers'
+import { Printer, FileText } from 'lucide-react'
+
+function LineSection({ title, rows, columns }) {
+  if (!rows || rows.length === 0) return null
+  const total = rows.reduce((s, r) => s + (r._total ?? 0), 0)
+  return (
+    <div className="mb-6">
+      <div className="flex items-center justify-between border-b-2 border-gray-800 pb-1 mb-2">
+        <h3 className="font-bold text-gray-900 text-sm uppercase tracking-wide">{title}</h3>
+        <span className="text-sm font-bold text-gray-900">{formatCurrencyExact(total)}</span>
+      </div>
+      <table className="w-full text-sm">
+        <thead>
+          <tr>
+            {columns.map(c => (
+              <th key={c.key} className={`text-xs font-semibold text-gray-500 pb-1 ${c.align === 'right' ? 'text-right' : 'text-left'}`} style={{ width: c.width }}>
+                {c.label}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-100">
+          {rows.map((row, i) => (
+            <tr key={i}>
+              {columns.map(c => (
+                <td key={c.key} className={`py-1.5 text-gray-800 ${c.align === 'right' ? 'text-right' : ''}`}>
+                  {c.format ? c.format(row[c.key], row) : row[c.key]}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+export default function QuoteGenerator({ selectedJobId, setSelectedJobId, navigateTo }) {
+  const { state } = useApp()
+  const job = selectedJobId ? state.jobs.find(j => j.id === selectedJobId) : null
+  const client = job ? state.clients.find(c => c.id === job.clientId) : null
+  const estimate = job?.estimate
+
+  const handlePrint = () => {
+    const style = document.createElement('style')
+    style.id = 'print-style'
+    style.innerHTML = `
+      @media print {
+        body > *:not(#quote-print-root) { display: none !important; }
+        #quote-print-root { display: block !important; position: fixed; top: 0; left: 0; width: 100%; }
+        @page { margin: 0.75in; size: letter; }
+      }
+    `
+    document.head.appendChild(style)
+    const el = document.getElementById('quote-print-root')
+    if (el) el.style.display = 'block'
+    window.print()
+    document.head.removeChild(style)
+  }
+
+  if (!selectedJobId || !estimate) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center text-gray-400 gap-4">
+        <FileText size={40} className="opacity-20" />
+        <p className="font-medium text-sm">Select a job with an estimate to generate a quote</p>
+        <select onChange={e => setSelectedJobId(e.target.value)} className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500">
+          <option value="">Choose a job…</option>
+          {state.jobs.filter(j => j.estimate).map(j => {
+            const c = state.clients.find(x => x.id === j.clientId)
+            return <option key={j.id} value={j.id}>{j.type} — {c?.name} ({j.estimate.status})</option>
+          })}
+        </select>
+      </div>
+    )
+  }
+
+  const totals = computeEstimateTotals(estimate)
+
+  const sqftRows = (estimate.sqftItems ?? []).map(i => ({ ...i, _total: (i.sqft ?? 0) * (i.ratePerSqft ?? 0) }))
+  const equipRows = (estimate.equipmentItems ?? []).map(i => ({ ...i, _total: (i.qty ?? 0) * (i.unitPrice ?? 0) }))
+  const labRows = (estimate.labItems ?? []).map(i => ({ ...i, _total: (i.qty ?? 0) * (i.unitPrice ?? 0) }))
+  const matRows = (estimate.materialItems ?? []).map(i => ({ ...i, _total: (i.qty ?? 0) * (i.unitPrice ?? 0) }))
+  const laborRows = (estimate.laborItems ?? []).map(i => ({ ...i, _total: (i.hours ?? 0) * (i.ratePerHour ?? 0) }))
+  const xactRows = (estimate.xactimateItems ?? []).map(i => ({ ...i, _total: (i.qty ?? 0) * (i.unitPrice ?? 0) }))
+  const flatRows = (estimate.flatFeeItems ?? []).map(i => ({ ...i, _total: i.amount ?? 0 }))
+
+  const today = new Date().toISOString()
+  const validUntil = new Date(Date.now() + 30 * 86400000).toISOString()
+
+  return (
+    <div className="h-full overflow-y-auto bg-gray-100">
+      {/* Action bar (hidden on print) */}
+      <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-6 py-3 flex items-center gap-3 print:hidden">
+        <button onClick={() => navigateTo?.('estimator')} className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 font-semibold px-2 py-1.5 rounded-lg hover:bg-gray-100">
+          ← Back to Estimator
+        </button>
+        <select value={selectedJobId} onChange={e => setSelectedJobId(e.target.value)} className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500">
+          {state.jobs.filter(j => j.estimate).map(j => {
+            const c = state.clients.find(x => x.id === j.clientId)
+            return <option key={j.id} value={j.id}>{j.type} — {c?.name}</option>
+          })}
+        </select>
+        <span className="text-xs text-gray-500 flex-1">Professional quote ready to print or save as PDF</span>
+        <button onClick={handlePrint} className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white font-semibold text-sm px-4 py-2 rounded-lg transition-colors">
+          <Printer size={15} /> Print / Save PDF
+        </button>
+      </div>
+
+      {/* Quote document */}
+      <div id="quote-print-root" className="max-w-3xl mx-auto my-8 bg-white shadow-lg print:shadow-none print:my-0" style={{ minHeight: '11in' }}>
+        <div className="p-10">
+          {/* Header */}
+          <div className="flex items-start justify-between mb-10">
+            <div>
+              <div className="text-2xl font-black text-red-600 tracking-tight">PUREPRO</div>
+              <div className="text-sm font-semibold text-gray-700">Restoration Services</div>
+              <div className="text-xs text-gray-500 mt-2">
+                <div>info@purepro.com</div>
+                <div>(720) 555-0100</div>
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-3xl font-black text-gray-900 tracking-tight">ESTIMATE</div>
+              <div className="text-xs text-gray-500 mt-2 space-y-0.5">
+                <div>Date: <span className="font-medium text-gray-700">{formatDate(today)}</span></div>
+                <div>Valid Until: <span className="font-medium text-gray-700">{formatDate(validUntil)}</span></div>
+                <div className="mt-1">
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                    estimate.status === 'Approved' ? 'bg-green-100 text-green-800' :
+                    estimate.status === 'Sent' ? 'bg-blue-100 text-blue-800' :
+                    'bg-gray-100 text-gray-700'
+                  }`}>{estimate.status}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div className="border-t-4 border-red-600 mb-8" />
+
+          {/* Client + job info */}
+          <div className="grid grid-cols-2 gap-8 mb-8">
+            <div>
+              <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Prepared For</div>
+              <div className="text-lg font-bold text-gray-900">{client?.name}</div>
+              {client?.address && <div className="text-sm text-gray-600 mt-1">{client.address}</div>}
+              {client?.email && <div className="text-sm text-gray-600">{client.email}</div>}
+              {client?.phone && <div className="text-sm text-gray-600">{client.phone}</div>}
+            </div>
+            <div>
+              <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Project Details</div>
+              <div className="text-sm text-gray-700 space-y-1">
+                <div><span className="font-semibold">Type:</span> {job.type} Remediation</div>
+                {job.address && <div><span className="font-semibold">Address:</span> {job.address}</div>}
+                {job.source && <div><span className="font-semibold">Source:</span> {job.source}</div>}
+              </div>
+            </div>
+          </div>
+
+          {/* Scope of work */}
+          {estimate.scopeNotes && (
+            <div className="mb-8">
+              <h2 className="text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 pb-1 mb-3">Scope of Work</h2>
+              <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{estimate.scopeNotes}</div>
+            </div>
+          )}
+
+          {/* Line items */}
+          <div className="mb-8">
+            <h2 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Itemized Estimate</h2>
+
+            <LineSection title="Area / Square Footage" rows={sqftRows} columns={[
+              { key: 'description', label: 'Description', width: '45%' },
+              { key: 'sqft', label: 'Sq Ft', align: 'right', width: '18%', format: v => v?.toLocaleString() ?? '—' },
+              { key: 'ratePerSqft', label: 'Rate/SF', align: 'right', width: '18%', format: v => formatCurrencyExact(v) },
+              { key: '_total', label: 'Total', align: 'right', width: '19%', format: v => formatCurrencyExact(v) },
+            ]} />
+
+            <LineSection title="Equipment" rows={equipRows} columns={[
+              { key: 'name', label: 'Equipment', width: '40%' },
+              { key: 'qty', label: 'Qty', align: 'right', width: '12%' },
+              { key: 'unit', label: 'Unit', align: 'right', width: '12%' },
+              { key: 'unitPrice', label: 'Unit Price', align: 'right', width: '18%', format: v => formatCurrencyExact(v) },
+              { key: '_total', label: 'Total', align: 'right', width: '18%', format: v => formatCurrencyExact(v) },
+            ]} />
+
+            <LineSection title="Lab Testing" rows={labRows} columns={[
+              { key: 'description', label: 'Test', width: '52%' },
+              { key: 'qty', label: 'Qty', align: 'right', width: '12%' },
+              { key: 'unitPrice', label: 'Unit Price', align: 'right', width: '18%', format: v => formatCurrencyExact(v) },
+              { key: '_total', label: 'Total', align: 'right', width: '18%', format: v => formatCurrencyExact(v) },
+            ]} />
+
+            <LineSection title="Materials" rows={matRows} columns={[
+              { key: 'description', label: 'Material', width: '52%' },
+              { key: 'qty', label: 'Qty', align: 'right', width: '12%' },
+              { key: 'unitPrice', label: 'Unit Price', align: 'right', width: '18%', format: v => formatCurrencyExact(v) },
+              { key: '_total', label: 'Total', align: 'right', width: '18%', format: v => formatCurrencyExact(v) },
+            ]} />
+
+            <LineSection title="Labor" rows={laborRows} columns={[
+              { key: 'trade', label: 'Trade', width: '45%' },
+              { key: 'hours', label: 'Hours', align: 'right', width: '15%' },
+              { key: 'ratePerHour', label: 'Rate/Hr', align: 'right', width: '22%', format: v => formatCurrencyExact(v) },
+              { key: '_total', label: 'Total', align: 'right', width: '18%', format: v => formatCurrencyExact(v) },
+            ]} />
+
+            <LineSection title="Xactimate Items" rows={xactRows} columns={[
+              { key: 'code', label: 'Code', width: '15%' },
+              { key: 'description', label: 'Description', width: '37%' },
+              { key: 'qty', label: 'Qty', align: 'right', width: '10%' },
+              { key: 'unit', label: 'Unit', align: 'right', width: '10%' },
+              { key: 'unitPrice', label: 'Unit Price', align: 'right', width: '14%', format: v => formatCurrencyExact(v) },
+              { key: '_total', label: 'Total', align: 'right', width: '14%', format: v => formatCurrencyExact(v) },
+            ]} />
+
+            <LineSection title="Flat Fees & Other Charges" rows={flatRows} columns={[
+              { key: 'description', label: 'Description', width: '70%' },
+              { key: '_total', label: 'Amount', align: 'right', width: '30%', format: v => formatCurrencyExact(v) },
+            ]} />
+          </div>
+
+          {/* Totals */}
+          <div className="flex justify-end mb-8">
+            <div className="w-64">
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm text-gray-600">
+                  <span>Subtotal</span>
+                  <span>{formatCurrencyExact(totals.subtotal)}</span>
+                </div>
+                {totals.margin > 0 && (
+                  <div className="flex justify-between text-sm text-gray-600">
+                    <span>Overhead & Margin ({estimate.overheadMarginPct}%)</span>
+                    <span>{formatCurrencyExact(totals.margin)}</span>
+                  </div>
+                )}
+                {totals.tax > 0 && (
+                  <div className="flex justify-between text-sm text-gray-600">
+                    <span>Tax ({estimate.taxPct}%)</span>
+                    <span>{formatCurrencyExact(totals.tax)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-lg font-black text-gray-900 border-t-2 border-gray-900 pt-2">
+                  <span>TOTAL</span>
+                  <span>{formatCurrencyExact(totals.grandTotal)}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Terms */}
+          {estimate.termsNotes && (
+            <div className="mb-8 border-t border-gray-200 pt-6">
+              <h2 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Terms & Conditions</h2>
+              <div className="text-xs text-gray-500 leading-relaxed whitespace-pre-line">{estimate.termsNotes}</div>
+            </div>
+          )}
+
+          {/* Signature block */}
+          <div className="border-t border-gray-200 pt-6">
+            <h2 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-6">Authorization</h2>
+            <div className="grid grid-cols-2 gap-12">
+              <div>
+                <div className="border-b border-gray-400 mb-1 h-8" />
+                <div className="text-xs text-gray-500">Client Signature</div>
+                <div className="border-b border-gray-300 mt-3 mb-1 h-6" />
+                <div className="text-xs text-gray-500">Date</div>
+              </div>
+              <div>
+                <div className="text-xs text-gray-500 mb-2">By signing, you authorize PurePro Restoration Services to perform the work described in this estimate at the stated price. A 50% deposit is required before work begins.</div>
+                <div className="mt-4 border-b border-gray-400 mb-1 h-8" />
+                <div className="text-xs text-gray-500">PurePro Representative</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="mt-10 pt-4 border-t border-gray-100 text-center text-xs text-gray-400">
+            PurePro Restoration Services · Licensed & Insured · Thank you for your trust
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
