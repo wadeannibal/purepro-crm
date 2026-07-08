@@ -2,14 +2,14 @@ import { useState, useEffect } from 'react'
 import { useApp } from '../../context/AppContext'
 import { ACTIONS } from '../../context/AppReducer'
 import { formatCurrency } from '../../utils/helpers'
-import { UserCheck, Save } from 'lucide-react'
+import { UserCheck, Save, ChevronLeft } from 'lucide-react'
 
 const BLANK = {
   company: '', claimNumber: '', adjusterName: '', adjusterContact: '',
   deductible: '', approvedScope: 'pending', approvedAmount: '', notes: '',
 }
 
-export default function InsuranceClaims({ selectedJobId, setSelectedJobId }) {
+export default function InsuranceClaims({ selectedJobId, setSelectedJobId, navigateTo }) {
   const { state, dispatch } = useApp()
   const [form, setForm] = useState(BLANK)
   const [saved, setSaved] = useState(false)
@@ -73,6 +73,11 @@ export default function InsuranceClaims({ selectedJobId, setSelectedJobId }) {
   return (
     <div className="h-full overflow-y-auto">
       <div className="max-w-2xl mx-auto p-6 space-y-6">
+        {selectedJobId && navigateTo && (
+          <button onClick={() => navigateTo('jobs', { jobId: selectedJobId })} className="flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-red-600 transition-colors">
+            <ChevronLeft size={14} /> Back to Job
+          </button>
+        )}
         {/* Job selector */}
         <div className="flex items-center gap-3">
           <select

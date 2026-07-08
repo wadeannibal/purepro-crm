@@ -2,12 +2,12 @@ import { useState } from 'react'
 import { useApp } from '../../context/AppContext'
 import { ACTIONS } from '../../context/AppReducer'
 import { formatDate } from '../../utils/helpers'
-import { Shield, Plus, Trash2, CheckCircle } from 'lucide-react'
+import { Shield, Plus, Trash2, CheckCircle, ChevronLeft } from 'lucide-react'
 import Modal from '../shared/Modal'
 
 const BLANK = { signedBy: '', signedDate: '', notes: '' }
 
-export default function LiabilityWaivers({ selectedJobId, setSelectedJobId }) {
+export default function LiabilityWaivers({ selectedJobId, setSelectedJobId, navigateTo }) {
   const { state, dispatch } = useApp()
   const [showModal, setShowModal] = useState(false)
   const [form, setForm] = useState(BLANK)
@@ -28,6 +28,11 @@ export default function LiabilityWaivers({ selectedJobId, setSelectedJobId }) {
   return (
     <div className="h-full flex flex-col overflow-hidden">
       <div className="flex items-center gap-3 px-6 py-3 bg-white border-b border-gray-200 flex-shrink-0">
+        {selectedJobId && navigateTo && (
+          <button onClick={() => navigateTo('jobs', { jobId: selectedJobId })} className="flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-red-600 transition-colors mr-1 flex-shrink-0">
+            <ChevronLeft size={14} /> Back to Job
+          </button>
+        )}
         <select
           value={selectedJobId ?? ''}
           onChange={e => setSelectedJobId(e.target.value || null)}

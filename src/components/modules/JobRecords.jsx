@@ -5,7 +5,7 @@ import {
   JOB_STAGES, JOB_TYPES, formatCurrency, formatDate, formatDateTime,
   jobTypeColor, stageColor, getChecklistForJobType, OSHA_CHECKLIST
 } from '../../utils/helpers'
-import { Search, Plus, ChevronRight, Send, Camera, Folder, Clock, Shield, ShieldCheck } from 'lucide-react'
+import { Search, ChevronRight, Send, Camera, Folder, Clock, Shield, ShieldCheck, Trash2 } from 'lucide-react'
 import Modal from '../shared/Modal'
 
 const TABS = ['Details', 'Notes', 'Checklist', 'OSHA']
@@ -38,6 +38,12 @@ export default function JobRecords({ selectedJobId, setSelectedJobId, navigateTo
     if (!noteText.trim() || !job) return
     dispatch({ type: ACTIONS.ADD_JOB_NOTE, payload: { jobId: job.id, text: noteText.trim() } })
     setNoteText('')
+  }
+
+  const deleteJob = () => {
+    if (!window.confirm(`Delete this job for ${client?.name ?? 'Unknown'}? This cannot be undone.`)) return
+    dispatch({ type: ACTIONS.DELETE_JOB, payload: { id: job.id } })
+    setSelectedJobId(null)
   }
 
   const openEdit = () => {
@@ -116,9 +122,14 @@ export default function JobRecords({ selectedJobId, setSelectedJobId, navigateTo
                 <h2 className="text-base font-bold text-gray-900">{client?.name ?? 'Unknown Client'}</h2>
                 <p className="text-sm text-gray-500">{job.address}</p>
               </div>
-              <div className="text-right flex-shrink-0">
+              <div className="text-right flex-shrink-0 flex flex-col items-end gap-1">
                 <div className="text-xl font-black text-green-700">{formatCurrency(job.revenue)}</div>
-                <button onClick={openEdit} className="text-xs text-gray-400 hover:text-red-600 mt-1 underline">Edit Job</button>
+                <div className="flex items-center gap-3">
+                  <button onClick={openEdit} className="text-xs text-gray-400 hover:text-red-600 underline">Edit Job</button>
+                  <button onClick={deleteJob} className="flex items-center gap-1 text-xs text-red-400 hover:text-red-600 hover:bg-red-50 px-2 py-0.5 rounded-lg transition-colors">
+                    <Trash2 size={11} /> Delete
+                  </button>
+                </div>
               </div>
             </div>
 

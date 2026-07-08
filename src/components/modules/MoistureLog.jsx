@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useApp } from '../../context/AppContext'
 import { ACTIONS } from '../../context/AppReducer'
-import { Plus, Trash2, Droplets, TrendingDown } from 'lucide-react'
+import { Plus, Trash2, Droplets, TrendingDown, ChevronLeft } from 'lucide-react'
 
 const MATERIAL_TYPES = ['Drywall', 'Subfloor', 'Wood Framing', 'Concrete', 'Insulation', 'OSB', 'Carpet', 'Other']
 const DRY_STANDARD = 15
@@ -64,7 +64,7 @@ function TrendChart({ readings }) {
 
 const BLANK = { date: new Date().toISOString().slice(0, 10), location: '', materialType: 'Drywall', reading: '', notes: '' }
 
-export default function MoistureLog({ selectedJobId, setSelectedJobId }) {
+export default function MoistureLog({ selectedJobId, setSelectedJobId, navigateTo }) {
   const { state, dispatch } = useApp()
   const [form, setForm] = useState(BLANK)
   const [showForm, setShowForm] = useState(false)
@@ -102,6 +102,11 @@ export default function MoistureLog({ selectedJobId, setSelectedJobId }) {
   return (
     <div className="h-full overflow-y-auto">
       <div className="max-w-4xl mx-auto p-6 space-y-6">
+        {selectedJobId && navigateTo && (
+          <button onClick={() => navigateTo('jobs', { jobId: selectedJobId })} className="flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-red-600 transition-colors">
+            <ChevronLeft size={14} /> Back to Job
+          </button>
+        )}
         {/* Job selector */}
         <div className="bg-white border border-gray-200 rounded-2xl p-5">
           <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2 block">Job</label>

@@ -3,7 +3,7 @@ import { useApp } from '../../context/AppContext'
 import { ACTIONS } from '../../context/AppReducer'
 import { DOC_TYPES, formatDate } from '../../utils/helpers'
 import { uploadDocument } from '../../lib/supabase'
-import { Upload, Trash2, FileText, Download, Folder, Loader } from 'lucide-react'
+import { Upload, Trash2, FileText, Download, Folder, Loader, ChevronLeft } from 'lucide-react'
 
 const TYPE_COLORS = {
   'Lab Report': 'bg-purple-100 text-purple-700',
@@ -15,7 +15,7 @@ const TYPE_COLORS = {
   'Other': 'bg-gray-100 text-gray-700',
 }
 
-export default function DocumentStorage({ selectedJobId, setSelectedJobId }) {
+export default function DocumentStorage({ selectedJobId, setSelectedJobId, navigateTo }) {
   const { state, dispatch } = useApp()
   const fileRef = useRef()
   const [uploading, setUploading] = useState(false)
@@ -71,6 +71,11 @@ export default function DocumentStorage({ selectedJobId, setSelectedJobId }) {
     <div className="h-full flex flex-col overflow-hidden">
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2.5 px-6 py-3 bg-white border-b border-gray-200 flex-shrink-0">
+        {selectedJobId && navigateTo && (
+          <button onClick={() => navigateTo('jobs', { jobId: selectedJobId })} className="flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-red-600 transition-colors mr-1 flex-shrink-0">
+            <ChevronLeft size={14} /> Back to Job
+          </button>
+        )}
         <select
           value={selectedJobId}
           onChange={e => setSelectedJobId(e.target.value)}

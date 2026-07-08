@@ -3,7 +3,7 @@ import { useApp } from '../../context/AppContext'
 import { ACTIONS } from '../../context/AppReducer'
 import { PHOTO_TYPES, formatDate } from '../../utils/helpers'
 import { uploadPhoto } from '../../lib/supabase'
-import { Upload, Trash2, SlidersHorizontal, X, Camera, Loader } from 'lucide-react'
+import { Upload, Trash2, SlidersHorizontal, X, Camera, Loader, ChevronLeft } from 'lucide-react'
 
 const ROOMS = ['Basement', 'Living Room', 'Bedroom', 'Bathroom', 'Kitchen', 'Hallway', 'Garage', 'Crawlspace', 'Attic', 'Exterior', 'Other']
 
@@ -32,7 +32,7 @@ function BeforeAfterSlider({ before, after }) {
   )
 }
 
-export default function PhotoAttachments({ selectedJobId, setSelectedJobId }) {
+export default function PhotoAttachments({ selectedJobId, setSelectedJobId, navigateTo }) {
   const { state, dispatch } = useApp()
   const [filterRoom, setFilterRoom] = useState('All')
   const [filterType, setFilterType] = useState('All')
@@ -101,6 +101,11 @@ export default function PhotoAttachments({ selectedJobId, setSelectedJobId }) {
     <div className="h-full flex flex-col overflow-hidden">
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2.5 px-6 py-3 bg-white border-b border-gray-200 flex-shrink-0">
+        {selectedJobId && navigateTo && (
+          <button onClick={() => navigateTo('jobs', { jobId: selectedJobId })} className="flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-red-600 transition-colors mr-1 flex-shrink-0">
+            <ChevronLeft size={14} /> Back to Job
+          </button>
+        )}
         <select value={selectedJobId} onChange={e => setSelectedJobId(e.target.value)} className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500">
           {state.jobs.map(j => {
             const c = state.clients.find(x => x.id === j.clientId)

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useApp } from '../../context/AppContext'
 import { ACTIONS } from '../../context/AppReducer'
-import { PenLine, CheckCircle, Clock, Trash2, X, RotateCcw } from 'lucide-react'
+import { PenLine, CheckCircle, Clock, Trash2, X, RotateCcw, ChevronLeft } from 'lucide-react'
 
 const uid = () => crypto.randomUUID()
 
@@ -176,7 +176,7 @@ function SignaturePad({ onSave, onCancel }) {
   )
 }
 
-export default function ESignature({ selectedJobId, setSelectedJobId }) {
+export default function ESignature({ selectedJobId, setSelectedJobId, navigateTo }) {
   const { state, dispatch } = useApp()
   const [modal, setModal] = useState(null)
   const [signingId, setSigningId] = useState(null)
@@ -223,6 +223,11 @@ export default function ESignature({ selectedJobId, setSelectedJobId }) {
   return (
     <div className="h-full overflow-y-auto">
       <div className="max-w-3xl mx-auto p-6 space-y-6">
+        {selectedJobId && navigateTo && (
+          <button onClick={() => navigateTo('jobs', { jobId: selectedJobId })} className="flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-red-600 transition-colors">
+            <ChevronLeft size={14} /> Back to Job
+          </button>
+        )}
         {/* Job selector */}
         <div className="bg-white border border-gray-200 rounded-2xl p-5">
           <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2 block">Select Job</label>

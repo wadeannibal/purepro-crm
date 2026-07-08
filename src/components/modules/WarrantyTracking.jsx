@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useApp } from '../../context/AppContext'
 import { ACTIONS } from '../../context/AppReducer'
-import { Award, Plus, CheckCircle, AlertTriangle, Clock, Trash2 } from 'lucide-react'
+import { Award, Plus, CheckCircle, AlertTriangle, Clock, Trash2, ChevronLeft } from 'lucide-react'
 
 const PERIODS = [
   { label: '1 Year', months: 12 },
@@ -61,7 +61,7 @@ function WarrantyCard({ job, client, onSelect, active }) {
   )
 }
 
-export default function WarrantyTracking({ selectedJobId, setSelectedJobId }) {
+export default function WarrantyTracking({ selectedJobId, setSelectedJobId, navigateTo }) {
   const { state, dispatch } = useApp()
   const [view, setView] = useState('dashboard')
   const [claimForm, setClaimForm] = useState('')
@@ -105,6 +105,11 @@ export default function WarrantyTracking({ selectedJobId, setSelectedJobId }) {
   return (
     <div className="h-full overflow-y-auto">
       <div className="max-w-4xl mx-auto p-6 space-y-6">
+        {selectedJobId && navigateTo && (
+          <button onClick={() => navigateTo('jobs', { jobId: selectedJobId })} className="flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-red-600 transition-colors">
+            <ChevronLeft size={14} /> Back to Job
+          </button>
+        )}
         {/* Tabs */}
         <div className="flex gap-2">
           <button onClick={() => setView('dashboard')}

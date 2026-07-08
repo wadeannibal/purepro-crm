@@ -31,6 +31,8 @@ import SubcontractorManagement from './components/modules/SubcontractorManagemen
 import ExpenseTracker from './components/modules/ExpenseTracker'
 import TaxEstimator from './components/modules/TaxEstimator'
 
+import Settings from './components/modules/Settings'
+
 // Phase 5
 import OperationsDashboard from './components/modules/OperationsDashboard'
 import MarketingDashboard from './components/modules/MarketingDashboard'
@@ -88,19 +90,19 @@ export default function App() {
       case 'jobs':
         return <JobRecords selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} navigateTo={navigateTo} />
       case 'photos':
-        return <PhotoAttachments selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} />
+        return <PhotoAttachments selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} navigateTo={navigateTo} />
       case 'documents':
-        return <DocumentStorage selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} />
+        return <DocumentStorage selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} navigateTo={navigateTo} />
       case 'communications':
         return <CommunicationLog selectedClientId={selectedClientId} setSelectedClientId={setSelectedClientId} />
       case 'equipment':
         return <EquipmentTracker />
       case 'timer':
-        return <JobTimer selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} />
+        return <JobTimer selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} navigateTo={navigateTo} />
       case 'waivers':
-        return <LiabilityWaivers selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} />
+        return <LiabilityWaivers selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} navigateTo={navigateTo} />
       case 'osha':
-        return <OSHACompliance selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} />
+        return <OSHACompliance selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} navigateTo={navigateTo} />
       case 'vip':
         return <VIPClients navigateTo={navigateTo} />
       // Phase 2
@@ -115,7 +117,7 @@ export default function App() {
       case 'invoicing':
         return <Invoicing selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} navigateTo={navigateTo} />
       case 'jobcosting':
-        return <JobCosting selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} />
+        return <JobCosting selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} navigateTo={navigateTo} />
       case 'pl':
         return <PLSnapshot />
       case 'overhead':
@@ -123,34 +125,34 @@ export default function App() {
       case 'cashflow':
         return <CashFlowForecast navigateTo={navigateTo} />
       case 'insurance':
-        return <InsuranceClaims selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} />
+        return <InsuranceClaims selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} navigateTo={navigateTo} />
       case 'subs':
-        return <SubcontractorManagement selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} />
+        return <SubcontractorManagement selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} navigateTo={navigateTo} />
       case 'expenses':
-        return <ExpenseTracker selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} />
+        return <ExpenseTracker selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} navigateTo={navigateTo} />
       case 'tax':
         return <TaxEstimator />
       // Phase 3
       case 'scheduler':
         return <Scheduler navigateTo={navigateTo} />
       case 'moisture':
-        return <MoistureLog selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} />
+        return <MoistureLog selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} navigateTo={navigateTo} />
       case 'drying':
-        return <DryingLog selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} />
+        return <DryingLog selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} navigateTo={navigateTo} />
       case 'portal':
-        return <ClientPortal selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} />
+        return <ClientPortal selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} navigateTo={navigateTo} />
       case 'esign':
-        return <ESignature selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} />
+        return <ESignature selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} navigateTo={navigateTo} />
       case 'apptconfirm':
         return <AppointmentConfirmations navigateTo={navigateTo} />
       case 'survey':
-        return <SatisfactionSurvey selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} />
+        return <SatisfactionSurvey selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} navigateTo={navigateTo} />
       case 'referral':
-        return <ReferralAsk selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} />
+        return <ReferralAsk selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} navigateTo={navigateTo} />
       case 'review':
-        return <GoogleReviewRequest selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} />
+        return <GoogleReviewRequest selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} navigateTo={navigateTo} />
       case 'warranty':
-        return <WarrantyTracking selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} />
+        return <WarrantyTracking selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} navigateTo={navigateTo} />
       case 'checkin':
         return <AnnualCheckIn />
       // Phase 5
@@ -193,6 +195,8 @@ export default function App() {
         return <CompetitorIntel />
       case 'gbp':
         return <GBPOptimizer />
+      case 'settings':
+        return <Settings />
       default:
         return <OperationsDashboard navigateTo={navigateTo} />
     }

@@ -1,6 +1,6 @@
 import { useApp } from '../../context/AppContext'
 import { computeEstimateTotals, computeActualCosts, formatCurrency } from '../../utils/helpers'
-import { TrendingDown, TrendingUp, BarChart2 } from 'lucide-react'
+import { TrendingDown, TrendingUp, BarChart2, ChevronLeft } from 'lucide-react'
 
 function Variance({ estimated, actual, label }) {
   const diff = actual - estimated
@@ -23,7 +23,7 @@ function Variance({ estimated, actual, label }) {
   )
 }
 
-export default function JobCosting({ selectedJobId, setSelectedJobId }) {
+export default function JobCosting({ selectedJobId, setSelectedJobId, navigateTo }) {
   const { state } = useApp()
   const job = selectedJobId ? state.jobs.find(j => j.id === selectedJobId) : null
   const client = job ? state.clients.find(c => c.id === job.clientId) : null
@@ -61,6 +61,11 @@ export default function JobCosting({ selectedJobId, setSelectedJobId }) {
   return (
     <div className="h-full overflow-y-auto">
       <div className="max-w-3xl mx-auto p-6 space-y-6">
+        {selectedJobId && navigateTo && (
+          <button onClick={() => navigateTo('jobs', { jobId: selectedJobId })} className="flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-red-600 transition-colors">
+            <ChevronLeft size={14} /> Back to Job
+          </button>
+        )}
         {/* Job selector */}
         <div className="flex items-center gap-3">
           <select value={selectedJobId} onChange={e => setSelectedJobId(e.target.value)} className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500">

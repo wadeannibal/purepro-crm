@@ -1,9 +1,9 @@
 import { useApp } from '../../context/AppContext'
 import { ACTIONS } from '../../context/AppReducer'
 import { OSHA_CHECKLIST, jobTypeColor } from '../../utils/helpers'
-import { ShieldCheck, AlertTriangle } from 'lucide-react'
+import { ShieldCheck, AlertTriangle, ChevronLeft } from 'lucide-react'
 
-export default function OSHACompliance({ selectedJobId, setSelectedJobId }) {
+export default function OSHACompliance({ selectedJobId, setSelectedJobId, navigateTo }) {
   const { state, dispatch } = useApp()
 
   const job = selectedJobId ? state.jobs.find(j => j.id === selectedJobId) : null
@@ -14,6 +14,11 @@ export default function OSHACompliance({ selectedJobId, setSelectedJobId }) {
   return (
     <div className="h-full flex flex-col overflow-hidden">
       <div className="flex items-center gap-3 px-6 py-3 bg-white border-b border-gray-200 flex-shrink-0">
+        {selectedJobId && navigateTo && (
+          <button onClick={() => navigateTo('jobs', { jobId: selectedJobId })} className="flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-red-600 transition-colors mr-1 flex-shrink-0">
+            <ChevronLeft size={14} /> Back to Job
+          </button>
+        )}
         <select
           value={selectedJobId ?? ''}
           onChange={e => setSelectedJobId(e.target.value || null)}

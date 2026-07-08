@@ -8,7 +8,7 @@ import {
   SmilePlus, UserPlus, Award, RefreshCw,
   Network, ScrollText, HelpCircle, PieChart, Target,
   Zap, Sparkles, CalendarRange, Swords, MapPin,
-  Home, TrendingDown, BadgeCheck, Package, BookOpen, GraduationCap,
+  Home, TrendingDown, BadgeCheck, Package, BookOpen, GraduationCap, Settings2,
 } from 'lucide-react'
 
 const GROUPS = [
@@ -113,6 +113,7 @@ const GROUPS = [
       { id: 'inventory', label: 'Inventory Tracker', icon: Package },
       { id: 'docs', label: 'Document Library', icon: BookOpen },
       { id: 'onboarding', label: 'Employee Onboarding', icon: GraduationCap },
+      { id: 'settings', label: 'Settings', icon: Settings2 },
     ],
   },
 ]

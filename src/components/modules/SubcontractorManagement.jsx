@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useApp } from '../../context/AppContext'
 import { ACTIONS } from '../../context/AppReducer'
 import { formatCurrency, formatDate } from '../../utils/helpers'
-import { Users, Plus, Trash2, Pencil, Check, X } from 'lucide-react'
+import { Users, Plus, Trash2, Pencil, Check, X, ChevronLeft } from 'lucide-react'
 
 const TRADES = ['Drywall', 'Painting', 'HVAC', 'Carpet / Flooring', 'Plumbing', 'Electrical', 'Roofing', 'General Contractor', 'Other']
 
@@ -14,7 +14,7 @@ const STATUS_COLORS = {
 
 const BLANK = { name: '', trade: '', quotedAmount: '', actualAmount: '', paymentStatus: 'unpaid', notes: '' }
 
-export default function SubcontractorManagement({ selectedJobId, setSelectedJobId }) {
+export default function SubcontractorManagement({ selectedJobId, setSelectedJobId, navigateTo }) {
   const { state, dispatch } = useApp()
   const [form, setForm] = useState(BLANK)
   const [editId, setEditId] = useState(null)
@@ -91,6 +91,11 @@ export default function SubcontractorManagement({ selectedJobId, setSelectedJobI
       <div className="max-w-3xl mx-auto p-6 space-y-5">
         {/* Toolbar */}
         <div className="flex items-center gap-3">
+          {selectedJobId && navigateTo && (
+            <button onClick={() => navigateTo('jobs', { jobId: selectedJobId })} className="flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-red-600 transition-colors mr-1 flex-shrink-0">
+              <ChevronLeft size={14} /> Back to Job
+            </button>
+          )}
           <select value={selectedJobId} onChange={e => setSelectedJobId(e.target.value)} className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500">
             {state.jobs.map(j => {
               const c = state.clients.find(x => x.id === j.clientId)

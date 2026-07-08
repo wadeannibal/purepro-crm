@@ -3,11 +3,11 @@ import { useApp } from '../../context/AppContext'
 import { ACTIONS } from '../../context/AppReducer'
 import { formatCurrency, formatDate } from '../../utils/helpers'
 import { EXPENSE_CATEGORIES } from '../../data/proposalTemplates'
-import { Wallet, Plus, Trash2, BarChart2 } from 'lucide-react'
+import { Wallet, Plus, Trash2, BarChart2, ChevronLeft } from 'lucide-react'
 
 const BLANK = { date: new Date().toISOString().slice(0, 10), category: 'Fuel', amount: '', notes: '' }
 
-export default function ExpenseTracker({ selectedJobId, setSelectedJobId }) {
+export default function ExpenseTracker({ selectedJobId, setSelectedJobId, navigateTo }) {
   const { state, dispatch } = useApp()
   const [form, setForm] = useState(BLANK)
   const [adding, setAdding] = useState(false)
@@ -48,6 +48,11 @@ export default function ExpenseTracker({ selectedJobId, setSelectedJobId }) {
   return (
     <div className="h-full overflow-y-auto">
       <div className="max-w-3xl mx-auto p-6 space-y-5">
+        {selectedJobId && navigateTo && (
+          <button onClick={() => navigateTo('jobs', { jobId: selectedJobId })} className="flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-red-600 transition-colors">
+            <ChevronLeft size={14} /> Back to Job
+          </button>
+        )}
         {/* View toggle */}
         <div className="flex items-center gap-2">
           <div className="flex bg-gray-100 rounded-lg p-1">

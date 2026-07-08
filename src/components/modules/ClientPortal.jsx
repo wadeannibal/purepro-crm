@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useApp } from '../../context/AppContext'
 import { ACTIONS } from '../../context/AppReducer'
 import { computeEstimateTotals, formatCurrency } from '../../utils/helpers'
-import { Globe, Copy, Check, Eye, X, CheckCircle, Clock, ChevronRight } from 'lucide-react'
+import { Globe, Copy, Check, Eye, X, CheckCircle, Clock, ChevronRight, ChevronLeft } from 'lucide-react'
 
 const STAGE_ORDER = ['Lead', 'Inspection', 'Estimate Sent', 'Approved', 'Remediation', 'Post-Test', 'Invoiced', 'Closed']
 
@@ -188,7 +188,7 @@ function PortalPreview({ job, client, events, onClose, onApprove }) {
   )
 }
 
-export default function ClientPortal({ selectedJobId, setSelectedJobId }) {
+export default function ClientPortal({ selectedJobId, setSelectedJobId, navigateTo }) {
   const { state, dispatch } = useApp()
   const [copied, setCopied] = useState(false)
   const [preview, setPreview] = useState(false)
@@ -227,6 +227,11 @@ export default function ClientPortal({ selectedJobId, setSelectedJobId }) {
   return (
     <div className="h-full overflow-y-auto">
       <div className="max-w-3xl mx-auto p-6 space-y-6">
+        {selectedJobId && navigateTo && (
+          <button onClick={() => navigateTo('jobs', { jobId: selectedJobId })} className="flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-red-600 transition-colors">
+            <ChevronLeft size={14} /> Back to Job
+          </button>
+        )}
         {/* Job selector */}
         <div className="bg-white border border-gray-200 rounded-2xl p-5">
           <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2 block">Select Job</label>
