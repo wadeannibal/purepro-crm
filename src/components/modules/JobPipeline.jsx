@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useApp } from '../../context/AppContext'
 import { ACTIONS } from '../../context/AppReducer'
-import { JOB_STAGES, JOB_TYPES, CLIENT_TYPES, formatCurrency, jobTypeColor, stageColor } from '../../utils/helpers'
+import { JOB_STAGES, JOB_TYPES, CLIENT_TYPES, LEAD_SOURCES, LOSS_REASONS, formatCurrency, jobTypeColor, stageColor } from '../../utils/helpers'
 import Modal from '../shared/Modal'
 import { Plus, GripVertical, DollarSign } from 'lucide-react'
 
@@ -67,7 +67,8 @@ function KanbanColumn({ stage, jobs, clients, onDrop, onDragOver, onDragLeave, i
   )
 }
 
-const BLANK_JOB = { clientId: '', type: 'Mold', stage: 'Lead', revenue: '', address: '', description: '' }
+const BLANK_JOB = { clientId: '', type: 'Mold', stage: 'Lead', revenue: '', address: '', description: '', leadSource: '', leadSourcePartnerId: '' }
+const BLANK_LOSS = { lostReason: 'Price too high', lostCompetitor: '' }
 
 export default function JobPipeline({ navigateTo }) {
   const { state, dispatch } = useApp()
@@ -75,14 +76,29 @@ export default function JobPipeline({ navigateTo }) {
   const [showModal, setShowModal] = useState(false)
   const [form, setForm] = useState(BLANK_JOB)
   const [filterType, setFilterType] = useState('All')
+  const [lossModal, setLossModal] = useState(null) // { jobId, stage }
+  const [lossForm, setLossForm] = useState(BLANK_LOSS)
 
   const visibleJobs = filterType === 'All' ? state.jobs : state.jobs.filter(j => j.type === filterType)
 
   const handleDrop = (e, stage) => {
     e.preventDefault()
     const jobId = e.dataTransfer.getData('jobId')
-    if (jobId) dispatch({ type: ACTIONS.UPDATE_JOB, payload: { id: jobId, stage } })
+    if (jobId) {
+      if (stage === 'Lost') {
+        setLossForm(BLANK_LOSS)
+        setLossModal({ jobId, stage })
+      } else {
+        dispatch({ type: ACTIONS.UPDATE_JOB, payload: { id: jobId, stage } })
+      }
+    }
     setDragOverStage(null)
+  }
+
+  const confirmLoss = () => {
+    if (!lossModal) return
+    dispatch({ type: ACTIONS.UPDATE_JOB, payload: { id: lossModal.jobId, stage: 'Lost', ...lossForm } })
+    setLossModal(null)
   }
 
   const handleDragOver = (e, stage) => {
@@ -93,7 +109,7 @@ export default function JobPipeline({ navigateTo }) {
 
   const save = () => {
     if (!form.clientId || !form.address) return
-    dispatch({ type: ACTIONS.ADD_JOB, payload: { ...form, revenue: Number(form.revenue) || 0 } })
+    dispatch({ type: ACTIONS.ADD_JOB, payload: { ...form, revenue: Number(form.revenue) || 0, leadSourcePartnerId: form.leadSourcePartnerId || null } })
     setForm(BLANK_JOB)
     setShowModal(false)
   }
@@ -164,6 +180,40 @@ export default function JobPipeline({ navigateTo }) {
         </div>
       </div>
 
+      {lossModal && (
+        <Modal title="Mark Job as Lost" onClose={() => setLossModal(null)}>
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">Log why this job was lost to help track patterns over time.</p>
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1">Loss Reason</label>
+              <select
+                value={lossForm.lostReason}
+                onChange={e => setLossForm(f => ({ ...f, lostReason: e.target.value }))}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+              >
+                {LOSS_REASONS.map(r => <option key={r}>{r}</option>)}
+              </select>
+            </div>
+            {lossForm.lostReason === 'Went with competitor' && (
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1">Competitor Name</label>
+                <input
+                  type="text"
+                  placeholder="e.g. ServPro, Paul Davis…"
+                  value={lossForm.lostCompetitor}
+                  onChange={e => setLossForm(f => ({ ...f, lostCompetitor: e.target.value }))}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                />
+              </div>
+            )}
+            <div className="flex justify-end gap-2 pt-2">
+              <button onClick={() => setLossModal(null)} className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800">Cancel</button>
+              <button onClick={confirmLoss} className="px-4 py-2 text-sm font-semibold bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors">Mark as Lost</button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
       {showModal && (
         <Modal title="New Job" onClose={() => setShowModal(false)}>
           <div className="space-y-4">
@@ -184,6 +234,20 @@ export default function JobPipeline({ navigateTo }) {
             </div>
             {field('Revenue ($)', 'revenue', 'number')}
             {field('Job Address', 'address')}
+            <div className="grid grid-cols-2 gap-3">
+              {field('Lead Source', 'leadSource', 'text', ['', ...LEAD_SOURCES])}
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1">Referral Partner (if Referral)</label>
+                <select
+                  value={form.leadSourcePartnerId}
+                  onChange={e => setForm(f => ({ ...f, leadSourcePartnerId: e.target.value }))}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                >
+                  <option value="">— None —</option>
+                  {(state.partners ?? []).map(p => <option key={p.id} value={p.id}>{p.name} ({p.partnerType})</option>)}
+                </select>
+              </div>
+            </div>
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1">Description</label>
               <textarea

@@ -144,7 +144,7 @@ export default function CRM({ navigateTo }) {
     if (!form.name) return
     if (editing) {
       dispatch({ type: ACTIONS.UPDATE_CLIENT, payload: { ...form, id: editing } })
-      setSelected(state.clients.find(c => c.id === editing))
+      setSelected(editing)
     } else {
       dispatch({ type: ACTIONS.ADD_CLIENT, payload: form })
     }

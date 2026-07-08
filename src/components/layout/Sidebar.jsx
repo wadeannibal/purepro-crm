@@ -6,9 +6,20 @@ import {
   DollarSign, Percent, Briefcase, UserCheck, Wallet, PiggyBank, ChevronDown,
   CalendarDays, Droplets, Wind, Globe, PenLine, BellRing,
   SmilePlus, UserPlus, Award, RefreshCw,
+  Network, ScrollText, HelpCircle, PieChart, Target,
+  Zap, Sparkles, CalendarRange, Swords, MapPin,
+  Home, TrendingDown, BadgeCheck, Package, BookOpen, GraduationCap,
 } from 'lucide-react'
 
 const GROUPS = [
+  {
+    label: 'COMMAND',
+    items: [
+      { id: 'operations', label: 'Operations Dashboard', icon: Home },
+      { id: 'marketing', label: 'Marketing Dashboard', icon: BarChart2 },
+      { id: 'kpi', label: 'KPI Goal Tracker', icon: Target },
+    ],
+  },
   {
     label: 'OPERATIONS',
     items: [
@@ -36,6 +47,7 @@ const GROUPS = [
       { id: 'cashflow', label: 'Cash Flow', icon: DollarSign },
       { id: 'overhead', label: 'Overhead Calc', icon: Percent },
       { id: 'tax', label: 'Tax Estimator', icon: PiggyBank },
+      { id: 'expensesummary', label: 'Annual Summary', icon: TrendingDown },
     ],
   },
   {
@@ -71,6 +83,36 @@ const GROUPS = [
       { id: 'review', label: 'Google Review', icon: Star },
       { id: 'warranty', label: 'Warranty Tracking', icon: Award },
       { id: 'checkin', label: 'Annual Check-In', icon: RefreshCw },
+    ],
+  },
+  {
+    label: 'GROWTH',
+    items: [
+      { id: 'partners', label: 'Referral Partners', icon: Network },
+      { id: 'scripts', label: 'Outreach Scripts', icon: ScrollText },
+      { id: 'objections', label: 'Objection Handler', icon: HelpCircle },
+      { id: 'leadsource', label: 'Lead Sources', icon: PieChart },
+      { id: 'winloss', label: 'Win / Loss', icon: Target },
+      { id: 'followupengine', label: 'Follow-Up Engine', icon: Zap },
+      { id: 'aicontent', label: 'AI Content', icon: Sparkles },
+    ],
+  },
+  {
+    label: 'INTELLIGENCE',
+    items: [
+      { id: 'seasonal', label: 'Seasonal Campaigns', icon: CalendarRange },
+      { id: 'competitors', label: 'Competitor Intel', icon: Swords },
+      { id: 'gbp', label: 'GBP Optimizer', icon: MapPin },
+    ],
+  },
+  {
+    label: 'BUSINESS OPS',
+    items: [
+      { id: 'showcase', label: 'Before/After Showcase', icon: Camera },
+      { id: 'certs', label: 'Certification Tracker', icon: BadgeCheck },
+      { id: 'inventory', label: 'Inventory Tracker', icon: Package },
+      { id: 'docs', label: 'Document Library', icon: BookOpen },
+      { id: 'onboarding', label: 'Employee Onboarding', icon: GraduationCap },
     ],
   },
 ]
@@ -134,7 +176,7 @@ export default function Sidebar({ currentView, navigateTo }) {
 
       {/* Footer */}
       <div className="px-4 py-3 border-t border-gray-800 flex-shrink-0">
-        <div className="text-gray-600 text-[11px] font-medium">PurePro CRM — Phase 1, 2 & 3</div>
+        <div className="text-gray-600 text-[11px] font-medium">PurePro CRM — v5.0</div>
         <div className="text-gray-700 text-[10px]">Denver, CO</div>
       </div>
     </aside>

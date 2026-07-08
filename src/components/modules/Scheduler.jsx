@@ -69,6 +69,7 @@ export default function Scheduler({ navigateTo }) {
   const goToday = () => { setYear(today.getFullYear()); setMonth(today.getMonth()) }
 
   const openAdd = (day) => {
+    if (modal) return
     setForm({ ...BLANK_FORM, date: toDateStr(year, month, day) })
     setModal('add')
   }

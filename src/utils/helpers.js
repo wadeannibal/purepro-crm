@@ -1,6 +1,6 @@
 export const JOB_STAGES = [
   'Lead', 'Inspection', 'Estimate Sent', 'Approved',
-  'Remediation', 'Post-Test', 'Invoiced', 'Closed',
+  'Remediation', 'Post-Test', 'Invoiced', 'Closed', 'Lost',
 ]
 
 export const JOB_TYPES = ['Mold', 'Water', 'Fire']
@@ -111,6 +111,7 @@ export const stageColor = (stage) => {
     'Post-Test': 'bg-indigo-100 text-indigo-800',
     Invoiced: 'bg-orange-100 text-orange-800',
     Closed: 'bg-green-100 text-green-800',
+    Lost: 'bg-red-200 text-red-900',
   }
   return map[stage] ?? 'bg-gray-100 text-gray-700'
 }
@@ -200,6 +201,22 @@ export const estimateStatusColor = (status) => {
   }
   return map[status] ?? 'bg-gray-100 text-gray-600'
 }
+
+export const LEAD_SOURCES = [
+  'Google Search', 'Google Maps', 'Referral', 'Instagram', 'Facebook',
+  'Door Knock', 'Cold Call', 'Repeat Client', 'Insurance Referral',
+  'Real Estate Referral', 'Other',
+]
+
+export const LOSS_REASONS = [
+  'Price too high', 'Went with competitor', 'Unresponsive / ghosted',
+  'No longer needed service', 'Insurance denied', 'Timing', 'Other',
+]
+
+export const PARTNER_TYPES = [
+  'Plumber', 'Water Mitigation Crew', 'Real Estate Agent', 'Insurance Adjuster',
+  'Public Adjuster', 'Property Manager', 'Functional Medicine / CIRS Doctor',
+]
 
 export const STAGE_CLOSE_DAYS = {
   Lead: 30, Inspection: 21, 'Estimate Sent': 14, Approved: 7,

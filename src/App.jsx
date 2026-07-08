@@ -31,6 +31,29 @@ import SubcontractorManagement from './components/modules/SubcontractorManagemen
 import ExpenseTracker from './components/modules/ExpenseTracker'
 import TaxEstimator from './components/modules/TaxEstimator'
 
+// Phase 5
+import OperationsDashboard from './components/modules/OperationsDashboard'
+import MarketingDashboard from './components/modules/MarketingDashboard'
+import KPIGoalTracker from './components/modules/KPIGoalTracker'
+import BeforeAfterShowcase from './components/modules/BeforeAfterShowcase'
+import CertificationTracker from './components/modules/CertificationTracker'
+import InventoryTracker from './components/modules/InventoryTracker'
+import DocumentLibrary from './components/modules/DocumentLibrary'
+import EmployeeOnboarding from './components/modules/EmployeeOnboarding'
+import ExpenseAnnualSummary from './components/modules/ExpenseAnnualSummary'
+
+// Phase 4
+import ReferralPartners from './components/modules/ReferralPartners'
+import OutreachScripts from './components/modules/OutreachScripts'
+import ObjectionHandler from './components/modules/ObjectionHandler'
+import LeadSourceTracking from './components/modules/LeadSourceTracking'
+import WinLossTracker from './components/modules/WinLossTracker'
+import FollowUpEngine from './components/modules/FollowUpEngine'
+import AIContentGenerator from './components/modules/AIContentGenerator'
+import SeasonalCampaigns from './components/modules/SeasonalCampaigns'
+import CompetitorIntel from './components/modules/CompetitorIntel'
+import GBPOptimizer from './components/modules/GBPOptimizer'
+
 // Phase 3
 import Scheduler from './components/modules/Scheduler'
 import MoistureLog from './components/modules/MoistureLog'
@@ -45,7 +68,7 @@ import WarrantyTracking from './components/modules/WarrantyTracking'
 import AnnualCheckIn from './components/modules/AnnualCheckIn'
 
 export default function App() {
-  const [currentView, setCurrentView] = useState('pipeline')
+  const [currentView, setCurrentView] = useState('operations')
   const [selectedJobId, setSelectedJobId] = useState(null)
   const [selectedClientId, setSelectedClientId] = useState(null)
 
@@ -130,8 +153,48 @@ export default function App() {
         return <WarrantyTracking selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} />
       case 'checkin':
         return <AnnualCheckIn />
+      // Phase 5
+      case 'operations':
+        return <OperationsDashboard navigateTo={navigateTo} />
+      case 'marketing':
+        return <MarketingDashboard navigateTo={navigateTo} />
+      case 'kpi':
+        return <KPIGoalTracker />
+      case 'showcase':
+        return <BeforeAfterShowcase navigateTo={navigateTo} />
+      case 'certs':
+        return <CertificationTracker />
+      case 'inventory':
+        return <InventoryTracker />
+      case 'docs':
+        return <DocumentLibrary />
+      case 'onboarding':
+        return <EmployeeOnboarding navigateTo={navigateTo} />
+      case 'expensesummary':
+        return <ExpenseAnnualSummary navigateTo={navigateTo} />
+      // Phase 4
+      case 'partners':
+        return <ReferralPartners navigateTo={navigateTo} />
+      case 'scripts':
+        return <OutreachScripts />
+      case 'objections':
+        return <ObjectionHandler />
+      case 'leadsource':
+        return <LeadSourceTracking navigateTo={navigateTo} />
+      case 'winloss':
+        return <WinLossTracker navigateTo={navigateTo} />
+      case 'followupengine':
+        return <FollowUpEngine navigateTo={navigateTo} />
+      case 'aicontent':
+        return <AIContentGenerator />
+      case 'seasonal':
+        return <SeasonalCampaigns />
+      case 'competitors':
+        return <CompetitorIntel />
+      case 'gbp':
+        return <GBPOptimizer />
       default:
-        return <JobPipeline navigateTo={navigateTo} />
+        return <OperationsDashboard navigateTo={navigateTo} />
     }
   }
 

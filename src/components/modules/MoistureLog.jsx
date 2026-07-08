@@ -69,7 +69,7 @@ export default function MoistureLog({ selectedJobId, setSelectedJobId }) {
   const [form, setForm] = useState(BLANK)
   const [showForm, setShowForm] = useState(false)
 
-  const waterJobs = state.jobs.filter(j => j.type === 'Water')
+  const waterJobs = state.jobs
   const job = waterJobs.find(j => j.id === selectedJobId) ?? waterJobs[0] ?? null
   const client = job ? state.clients.find(c => c.id === job.clientId) : null
   const readings = job?.moistureReadings ?? []
@@ -104,9 +104,9 @@ export default function MoistureLog({ selectedJobId, setSelectedJobId }) {
       <div className="max-w-4xl mx-auto p-6 space-y-6">
         {/* Job selector */}
         <div className="bg-white border border-gray-200 rounded-2xl p-5">
-          <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2 block">Water Job</label>
+          <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2 block">Job</label>
           {waterJobs.length === 0 ? (
-            <p className="text-sm text-gray-400">No water damage jobs found. Water jobs appear here automatically.</p>
+            <p className="text-sm text-gray-400">No jobs found.</p>
           ) : (
             <select
               value={job?.id ?? ''}

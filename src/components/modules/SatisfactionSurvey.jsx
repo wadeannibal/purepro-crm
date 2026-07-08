@@ -128,7 +128,6 @@ function OutboundCard({ job, client }) {
   const [copied, setCopied] = useState(false)
   const [showSurvey, setShowSurvey] = useState(false)
 
-  const surveyUrl = `purepro-survey/${job.id.slice(0, 8)}`
   const firstName = client?.name?.split(' ')[0] ?? 'there'
   const script = `Hi ${firstName}, thank you so much for trusting PurePro Restoration with your ${job.type.toLowerCase()} project. We'd love to hear your feedback — it only takes a minute and helps us keep improving.
 

@@ -95,6 +95,67 @@ export const ACTIONS = {
 
   // Phase 3 — Annual Check-In
   MARK_ANNUAL_CHECKIN_SENT: 'MARK_ANNUAL_CHECKIN_SENT',
+
+  // Phase 4 — Referral Partners
+  ADD_PARTNER: 'ADD_PARTNER',
+  UPDATE_PARTNER: 'UPDATE_PARTNER',
+  DELETE_PARTNER: 'DELETE_PARTNER',
+  ADD_PARTNER_CONTACT: 'ADD_PARTNER_CONTACT',
+  ADD_PARTNER_DEAL: 'ADD_PARTNER_DEAL',
+  UPDATE_PARTNER_DEAL: 'UPDATE_PARTNER_DEAL',
+  DELETE_PARTNER_DEAL: 'DELETE_PARTNER_DEAL',
+
+  // Phase 4 — Outreach Scripts
+  INIT_SCRIPTS: 'INIT_SCRIPTS',
+  ADD_SCRIPT: 'ADD_SCRIPT',
+  UPDATE_SCRIPT: 'UPDATE_SCRIPT',
+  DELETE_SCRIPT: 'DELETE_SCRIPT',
+  MARK_SCRIPT_SENT: 'MARK_SCRIPT_SENT',
+
+  // Phase 4 — Objection Handler
+  INIT_OBJECTIONS: 'INIT_OBJECTIONS',
+  ADD_OBJECTION: 'ADD_OBJECTION',
+  UPDATE_OBJECTION: 'UPDATE_OBJECTION',
+  DELETE_OBJECTION: 'DELETE_OBJECTION',
+
+  // Phase 4 — Competitors
+  ADD_COMPETITOR: 'ADD_COMPETITOR',
+  UPDATE_COMPETITOR: 'UPDATE_COMPETITOR',
+  DELETE_COMPETITOR: 'DELETE_COMPETITOR',
+
+  // Phase 4 — GBP Optimizer
+  UPDATE_GBP_ITEM: 'UPDATE_GBP_ITEM',
+
+  // Phase 5 — Certifications
+  ADD_CERTIFICATION: 'ADD_CERTIFICATION',
+  UPDATE_CERTIFICATION: 'UPDATE_CERTIFICATION',
+  DELETE_CERTIFICATION: 'DELETE_CERTIFICATION',
+
+  // Phase 5 — Inventory
+  ADD_INVENTORY: 'ADD_INVENTORY',
+  UPDATE_INVENTORY: 'UPDATE_INVENTORY',
+  DELETE_INVENTORY: 'DELETE_INVENTORY',
+
+  // Phase 5 — Internal Docs
+  INIT_INTERNAL_DOCS: 'INIT_INTERNAL_DOCS',
+  ADD_INTERNAL_DOC: 'ADD_INTERNAL_DOC',
+  UPDATE_INTERNAL_DOC: 'UPDATE_INTERNAL_DOC',
+  DELETE_INTERNAL_DOC: 'DELETE_INTERNAL_DOC',
+
+  // Phase 5 — Employee Onboarding
+  ADD_EMPLOYEE: 'ADD_EMPLOYEE',
+  UPDATE_EMPLOYEE: 'UPDATE_EMPLOYEE',
+  DELETE_EMPLOYEE: 'DELETE_EMPLOYEE',
+  UPDATE_ONBOARDING_ITEM: 'UPDATE_ONBOARDING_ITEM',
+
+  // Phase 5 — KPI Goals
+  SET_KPI_GOAL: 'SET_KPI_GOAL',
+
+  // Phase 5 — Review / Social Tracker
+  UPDATE_REVIEW_TRACKER: 'UPDATE_REVIEW_TRACKER',
+
+  // Phase 5 — Before/After Showcase
+  TOGGLE_SHOWCASE: 'TOGGLE_SHOWCASE',
 }
 
 const uid = () => crypto.randomUUID()
@@ -157,6 +218,10 @@ export function reducer(state, action) {
           // Phase 3 defaults
           moistureReadings: [], dryingLog: [],
           portal: null, signatures: [],
+          // Phase 4 defaults
+          leadSource: null, leadSourcePartnerId: null,
+          lostReason: null, lostCompetitor: null,
+          firstContactDate: now(), lastContactDate: now(),
           survey: null, referralAsk: null,
           reviewRequest: null, warranty: null,
           annualCheckIn: null,
@@ -660,6 +725,195 @@ export function reducer(state, action) {
           ...j,
           annualCheckIn: { ...(j.annualCheckIn ?? {}), markedSentAt: now() },
         })),
+      }
+
+    // ── Phase 4: Referral Partners ───────────────────────────
+    case ACTIONS.ADD_PARTNER:
+      return {
+        ...state,
+        partners: [...(state.partners ?? []), { id: uid(), createdAt: now(), contactHistory: [], deals: [], ...payload }],
+      }
+
+    case ACTIONS.UPDATE_PARTNER:
+      return {
+        ...state,
+        partners: (state.partners ?? []).map(p => p.id === payload.id ? { ...p, ...payload } : p),
+      }
+
+    case ACTIONS.DELETE_PARTNER:
+      return { ...state, partners: (state.partners ?? []).filter(p => p.id !== payload.id) }
+
+    case ACTIONS.ADD_PARTNER_CONTACT:
+      return {
+        ...state,
+        partners: (state.partners ?? []).map(p =>
+          p.id === payload.partnerId
+            ? { ...p, lastContactDate: now(), contactHistory: [...(p.contactHistory ?? []), { id: uid(), date: now(), ...payload.contact }] }
+            : p
+        ),
+      }
+
+    case ACTIONS.ADD_PARTNER_DEAL:
+      return {
+        ...state,
+        partners: (state.partners ?? []).map(p =>
+          p.id === payload.partnerId
+            ? { ...p, deals: [...(p.deals ?? []), { id: uid(), createdAt: now(), status: 'active', jobsSent: 0, jobsReceived: 0, ...payload.deal }] }
+            : p
+        ),
+      }
+
+    case ACTIONS.UPDATE_PARTNER_DEAL:
+      return {
+        ...state,
+        partners: (state.partners ?? []).map(p =>
+          p.id === payload.partnerId
+            ? { ...p, deals: (p.deals ?? []).map(d => d.id === payload.deal.id ? { ...d, ...payload.deal } : d) }
+            : p
+        ),
+      }
+
+    case ACTIONS.DELETE_PARTNER_DEAL:
+      return {
+        ...state,
+        partners: (state.partners ?? []).map(p =>
+          p.id === payload.partnerId
+            ? { ...p, deals: (p.deals ?? []).filter(d => d.id !== payload.dealId) }
+            : p
+        ),
+      }
+
+    // ── Phase 4: Outreach Scripts ────────────────────────────
+    case ACTIONS.INIT_SCRIPTS:
+      if (state.scripts) return state
+      return { ...state, scripts: payload }
+
+    case ACTIONS.ADD_SCRIPT:
+      return {
+        ...state,
+        scripts: [...(state.scripts ?? []), { id: uid(), createdAt: now(), isCustom: true, sentHistory: [], ...payload }],
+      }
+
+    case ACTIONS.UPDATE_SCRIPT:
+      return {
+        ...state,
+        scripts: (state.scripts ?? []).map(s => s.id === payload.id ? { ...s, ...payload } : s),
+      }
+
+    case ACTIONS.DELETE_SCRIPT:
+      return { ...state, scripts: (state.scripts ?? []).filter(s => s.id !== payload.id) }
+
+    case ACTIONS.MARK_SCRIPT_SENT:
+      return {
+        ...state,
+        scripts: (state.scripts ?? []).map(s =>
+          s.id === payload.id ? { ...s, sentHistory: [...(s.sentHistory ?? []), { sentAt: now() }] } : s
+        ),
+      }
+
+    // ── Phase 4: Objection Handler ───────────────────────────
+    case ACTIONS.INIT_OBJECTIONS:
+      if (state.objections) return state
+      return { ...state, objections: payload }
+
+    case ACTIONS.ADD_OBJECTION:
+      return {
+        ...state,
+        objections: [...(state.objections ?? []), { id: uid(), createdAt: now(), isCustom: true, responses: [], ...payload }],
+      }
+
+    case ACTIONS.UPDATE_OBJECTION:
+      return {
+        ...state,
+        objections: (state.objections ?? []).map(o => o.id === payload.id ? { ...o, ...payload } : o),
+      }
+
+    case ACTIONS.DELETE_OBJECTION:
+      return { ...state, objections: (state.objections ?? []).filter(o => o.id !== payload.id) }
+
+    // ── Phase 4: Competitors ─────────────────────────────────
+    case ACTIONS.ADD_COMPETITOR:
+      return {
+        ...state,
+        competitors: [...(state.competitors ?? []), { id: uid(), createdAt: now(), talkingPoints: [], ...payload }],
+      }
+
+    case ACTIONS.UPDATE_COMPETITOR:
+      return {
+        ...state,
+        competitors: (state.competitors ?? []).map(c => c.id === payload.id ? { ...c, ...payload } : c),
+      }
+
+    case ACTIONS.DELETE_COMPETITOR:
+      return { ...state, competitors: (state.competitors ?? []).filter(c => c.id !== payload.id) }
+
+    // ── Phase 4: GBP Optimizer ───────────────────────────────
+    case ACTIONS.UPDATE_GBP_ITEM:
+      return {
+        ...state,
+        gbpChecklist: { ...(state.gbpChecklist ?? {}), [payload.item]: { checked: payload.checked, checkedAt: payload.checked ? now() : null } },
+      }
+
+    // ── Phase 5: Certifications ──────────────────────────────
+    case ACTIONS.ADD_CERTIFICATION:
+      return { ...state, certifications: [...(state.certifications ?? []), { id: uid(), createdAt: now(), ...payload }] }
+    case ACTIONS.UPDATE_CERTIFICATION:
+      return { ...state, certifications: (state.certifications ?? []).map(c => c.id === payload.id ? { ...c, ...payload } : c) }
+    case ACTIONS.DELETE_CERTIFICATION:
+      return { ...state, certifications: (state.certifications ?? []).filter(c => c.id !== payload.id) }
+
+    // ── Phase 5: Inventory ───────────────────────────────────
+    case ACTIONS.ADD_INVENTORY:
+      return { ...state, inventory: [...(state.inventory ?? []), { id: uid(), createdAt: now(), ...payload }] }
+    case ACTIONS.UPDATE_INVENTORY:
+      return { ...state, inventory: (state.inventory ?? []).map(i => i.id === payload.id ? { ...i, ...payload } : i) }
+    case ACTIONS.DELETE_INVENTORY:
+      return { ...state, inventory: (state.inventory ?? []).filter(i => i.id !== payload.id) }
+
+    // ── Phase 5: Internal Docs ───────────────────────────────
+    case ACTIONS.INIT_INTERNAL_DOCS:
+      if (state.internalDocs) return state
+      return { ...state, internalDocs: payload }
+    case ACTIONS.ADD_INTERNAL_DOC:
+      return { ...state, internalDocs: [...(state.internalDocs ?? []), { id: uid(), createdAt: now(), updatedAt: now(), ...payload }] }
+    case ACTIONS.UPDATE_INTERNAL_DOC:
+      return { ...state, internalDocs: (state.internalDocs ?? []).map(d => d.id === payload.id ? { ...d, ...payload, updatedAt: now() } : d) }
+    case ACTIONS.DELETE_INTERNAL_DOC:
+      return { ...state, internalDocs: (state.internalDocs ?? []).filter(d => d.id !== payload.id) }
+
+    // ── Phase 5: Employee Onboarding ─────────────────────────
+    case ACTIONS.ADD_EMPLOYEE:
+      return { ...state, employees: [...(state.employees ?? []), { id: uid(), createdAt: now(), onboardingItems: {}, ...payload }] }
+    case ACTIONS.UPDATE_EMPLOYEE:
+      return { ...state, employees: (state.employees ?? []).map(e => e.id === payload.id ? { ...e, ...payload } : e) }
+    case ACTIONS.DELETE_EMPLOYEE:
+      return { ...state, employees: (state.employees ?? []).filter(e => e.id !== payload.id) }
+    case ACTIONS.UPDATE_ONBOARDING_ITEM:
+      return {
+        ...state,
+        employees: (state.employees ?? []).map(e =>
+          e.id === payload.employeeId
+            ? { ...e, onboardingItems: { ...e.onboardingItems, [payload.itemId]: { completed: payload.completed, completedAt: payload.completed ? now() : null } } }
+            : e
+        ),
+      }
+
+    // ── Phase 5: KPI Goals ───────────────────────────────────
+    case ACTIONS.SET_KPI_GOAL:
+      return {
+        ...state,
+        kpiGoals: { ...(state.kpiGoals ?? {}), [payload.month]: { ...(state.kpiGoals?.[payload.month] ?? {}), ...payload.goals } },
+      }
+
+    // ── Phase 5: Review / Social Tracker ────────────────────
+    case ACTIONS.UPDATE_REVIEW_TRACKER:
+      return { ...state, reviewTracker: { ...(state.reviewTracker ?? {}), ...payload } }
+
+    // ── Phase 5: Before/After Showcase ──────────────────────
+    case ACTIONS.TOGGLE_SHOWCASE:
+      return {
+        ...state,
+        showcasePhotos: { ...(state.showcasePhotos ?? {}), [payload.photoId]: !state.showcasePhotos?.[payload.photoId] },
       }
 
     default:
