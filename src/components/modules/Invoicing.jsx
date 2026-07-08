@@ -5,7 +5,7 @@ import {
   formatCurrency, formatCurrencyExact, formatDate,
   invoiceBalance, isInvoiceOverdue, invoiceStatusColor, computeEstimateTotals,
 } from '../../utils/helpers'
-import { FileText, Plus, DollarSign, CheckCircle, AlertCircle, ChevronDown } from 'lucide-react'
+import { FileText, Plus, DollarSign, CheckCircle, AlertCircle, ChevronDown, Printer } from 'lucide-react'
 
 const STATUS_OPTIONS = ['Draft', 'Sent', 'Partial', 'Paid', 'Overdue']
 
@@ -94,6 +94,15 @@ export default function Invoicing({ selectedJobId, setSelectedJobId, navigateTo 
     dispatch({ type: ACTIONS.DELETE_PAYMENT, payload: { jobId: job.id, paymentId } })
   }
 
+  const handlePrint = () => {
+    const style = document.createElement('style')
+    style.id = 'invoice-print-style'
+    style.innerHTML = `@media print { body > *:not(#invoice-print-root) { display: none !important; } #invoice-print-root { display: block !important; position: fixed; top: 0; left: 0; width: 100%; padding: 0.75in; } @page { margin: 0; size: letter; } }`
+    document.head.appendChild(style)
+    window.print()
+    document.head.removeChild(style)
+  }
+
   // Summary view — all jobs with invoices
   if (!selectedJobId) {
     const jobsWithInvoices = state.jobs.filter(j => j.invoice)
@@ -175,9 +184,9 @@ export default function Invoicing({ selectedJobId, setSelectedJobId, navigateTo 
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="max-w-2xl mx-auto p-6 space-y-5">
+      <div id="invoice-print-root" className="max-w-2xl mx-auto p-6 space-y-5">
         {/* Job selector */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 print:hidden">
           <select value={selectedJobId} onChange={e => setSelectedJobId(e.target.value)} className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500">
             {state.jobs.map(j => {
               const c = state.clients.find(x => x.id === j.clientId)
@@ -215,7 +224,12 @@ export default function Invoicing({ selectedJobId, setSelectedJobId, navigateTo 
                   <div className="text-sm text-gray-500">{job.type} Job — {job.stage}</div>
                   {client?.address && <div className="text-xs text-gray-400 mt-1">{client.address}</div>}
                 </div>
-                <span className={`text-xs font-bold px-3 py-1 rounded-full ${invoiceStatusColor(currentStatus)}`}>{currentStatus}</span>
+                <div className="flex items-center gap-2">
+                  <button onClick={handlePrint} className="flex items-center gap-1.5 text-xs font-semibold bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg transition-colors print:hidden">
+                    <Printer size={13} /> Print / PDF
+                  </button>
+                  <span className={`text-xs font-bold px-3 py-1 rounded-full ${invoiceStatusColor(currentStatus)}`}>{currentStatus}</span>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">

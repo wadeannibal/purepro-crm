@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useApp } from '../../context/AppContext'
 import { ACTIONS } from '../../context/AppReducer'
-import { BellRing, Copy, Check, CheckCircle, Clock, AlertCircle } from 'lucide-react'
+import { BellRing, Copy, Check, CheckCircle, Clock, AlertCircle, CalendarPlus } from 'lucide-react'
 
 const fmtDate = (dateStr) =>
   new Date(dateStr + 'T12:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
@@ -58,6 +58,25 @@ function EventCard({ event, job, client, type }) {
 
   const daysUntil = Math.ceil((new Date(event.date) - new Date().setHours(0,0,0,0)) / 86400000)
 
+  const calendarUrl = (() => {
+    const d = event.date.replace(/-/g, '')
+    let dates
+    if (event.startTime) {
+      const [h, m] = event.startTime.split(':')
+      const start = `${d}T${h}${m}00`
+      const endH = String((parseInt(h) + 1) % 24).padStart(2, '0')
+      const end = `${d}T${endH}${m}00`
+      dates = `${start}/${end}`
+    } else {
+      const next = new Date(event.date + 'T12:00')
+      next.setDate(next.getDate() + 1)
+      dates = `${d}/${next.toISOString().slice(0,10).replace(/-/g,'')}`
+    }
+    const title = encodeURIComponent(`${event.eventType}${client ? ` — ${client.name}` : ''}`)
+    const loc = encodeURIComponent(job?.address ?? '')
+    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dates}&location=${loc}`
+  })()
+
   return (
     <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
       {/* Header */}
@@ -73,11 +92,21 @@ function EventCard({ event, job, client, type }) {
             {job?.address && <span className="ml-2">· {job.address}</span>}
           </div>
         </div>
-        <div className={`text-xs font-semibold px-2.5 py-1 rounded-full
-          ${daysUntil === 0 ? 'bg-red-100 text-red-700' :
-            daysUntil === 1 ? 'bg-yellow-100 text-yellow-700' :
-            'bg-gray-100 text-gray-600'}`}>
-          {daysUntil === 0 ? 'Today' : daysUntil === 1 ? 'Tomorrow' : `In ${daysUntil} days`}
+        <div className="flex items-center gap-2">
+          <a
+            href={calendarUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-2.5 py-1 rounded-lg transition-colors"
+          >
+            <CalendarPlus size={12} /> Add to Calendar
+          </a>
+          <div className={`text-xs font-semibold px-2.5 py-1 rounded-full
+            ${daysUntil === 0 ? 'bg-red-100 text-red-700' :
+              daysUntil === 1 ? 'bg-yellow-100 text-yellow-700' :
+              'bg-gray-100 text-gray-600'}`}>
+            {daysUntil === 0 ? 'Today' : daysUntil === 1 ? 'Tomorrow' : `In ${daysUntil} days`}
+          </div>
         </div>
       </div>
 

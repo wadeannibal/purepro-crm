@@ -198,7 +198,7 @@ export default function ClientPortal({ selectedJobId, setSelectedJobId, navigate
   const events = state.events ?? []
 
   const portal = job?.portal ?? null
-  const portalUrl = portal?.code ? `https://purepro.app/portal/${portal.code}` : null
+  const portalUrl = portal?.code ? `${window.location.origin}/portal/${portal.code}` : null
 
   const generate = () => {
     if (!job) return
