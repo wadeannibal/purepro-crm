@@ -157,11 +157,13 @@ export const computeEstimateTotals = (estimate) => {
     const flatTotal = (estimate.flatFeeItems ?? []).reduce((s, i) => s + (i.amount ?? 0), 0)
     subtotal = sqftTotal + equipTotal + labTotal + matTotal + laborTotal + xactTotal + flatTotal
   }
-  const margin = subtotal * ((estimate.overheadMarginPct ?? 0) / 100)
-  const afterMargin = subtotal + margin
+  const discountAmt = subtotal * ((estimate.discountPct ?? 0) / 100)
+  const afterDiscount = subtotal - discountAmt
+  const margin = afterDiscount * ((estimate.overheadMarginPct ?? 0) / 100)
+  const afterMargin = afterDiscount + margin
   const tax = afterMargin * ((estimate.taxPct ?? 0) / 100)
   const grandTotal = afterMargin + tax
-  return { subtotal, margin, tax, grandTotal, sqftTotal: 0, equipTotal: 0, labTotal: 0, matTotal: 0, laborTotal: 0, xactTotal: 0, flatTotal: 0 }
+  return { subtotal, discountAmt, afterDiscount, margin, tax, grandTotal, sqftTotal: 0, equipTotal: 0, labTotal: 0, matTotal: 0, laborTotal: 0, xactTotal: 0, flatTotal: 0 }
 }
 
 export const computeActualCosts = (job) => {

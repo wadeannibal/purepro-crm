@@ -7,7 +7,7 @@ import {
 import { STANDARD_TERMS } from '../../data/proposalTemplates'
 import {
   Plus, Trash2, Send, CheckCircle, XCircle, FileText, ChevronRight, User,
-  ChevronUp, ChevronDown, Search, X, Star, BookOpen,
+  ChevronUp, ChevronDown, Search, X, Star, BookOpen, Sparkles, Loader2,
 } from 'lucide-react'
 
 // ── Category definitions ─────────────────────────────────────────────────────
@@ -125,13 +125,14 @@ const BLANK_ESTIMATE = {
   lineItems: [],
   overheadMarginPct: 25,
   taxPct: 0,
+  discountPct: 0,
 }
 
 const BLANK_NEW = { name: '', phone: '', email: '', address: '', type: 'Mold' }
 const BLANK_EXISTING = { clientId: '', address: '', type: 'Mold' }
 
 // ── Totals sidebar ───────────────────────────────────────────────────────────
-function TotalsPanel({ estimate, onMarginChange, onTaxChange }) {
+function TotalsPanel({ estimate, onMarginChange, onTaxChange, onDiscountChange }) {
   const t = computeEstimateTotals(estimate)
   const categoryTotals = {}
   for (const item of (estimate.lineItems ?? [])) {
@@ -155,6 +156,19 @@ function TotalsPanel({ estimate, onMarginChange, onTaxChange }) {
           <span className="text-gray-900">{formatCurrency(t.subtotal)}</span>
         </div>
       )}
+      <div className="flex items-center justify-between text-sm">
+        <span className="text-gray-500">Discount</span>
+        <div className="flex items-center gap-1">
+          <input
+            type="number" min="0" max="100"
+            value={estimate.discountPct ?? 0}
+            onChange={e => onDiscountChange(Number(e.target.value))}
+            className="w-14 border border-gray-200 rounded px-2 py-0.5 text-xs text-right focus:outline-none focus:ring-1 focus:ring-red-400"
+          />
+          <span className="text-xs text-gray-400">%</span>
+          <span className="text-green-700 w-20 text-right">{t.discountAmt > 0 ? `− ${formatCurrency(t.discountAmt)}` : '—'}</span>
+        </div>
+      </div>
       <div className="flex items-center justify-between text-sm">
         <span className="text-gray-500">Margin</span>
         <div className="flex items-center gap-1">
@@ -453,6 +467,7 @@ export default function Estimator({ selectedJobId, setSelectedJobId, navigateTo 
   const [showNewForm, setShowNewForm] = useState(false)
   const [landingMode, setLandingMode] = useState('new')
   const [existingForm, setExistingForm] = useState(BLANK_EXISTING)
+  const [scopeAI, setScopeAI] = useState({ open: false, context: '', loading: false })
 
   const job = selectedJobId ? state.jobs.find(j => j.id === selectedJobId) : null
   const client = job ? state.clients.find(c => c.id === job.clientId) : null
@@ -506,6 +521,42 @@ export default function Estimator({ selectedJobId, setSelectedJobId, navigateTo 
     setToastMsg(`"${item.name}" saved to My Items`)
     setTimeout(() => setToastMsg(null), 2500)
   }, [])
+
+  const generateScope = useCallback(async () => {
+    const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY
+    if (!apiKey || !scopeAI.context.trim()) return
+    setScopeAI(s => ({ ...s, loading: true }))
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 700,
+          messages: [{
+            role: 'user',
+            content: `You are writing a professional scope of work for PurePro Restoration, an IICRC-certified mold and water damage remediation company in Denver, CO.
+
+Job type: ${job?.type ?? 'Remediation'}
+Description: ${scopeAI.context}
+
+Write a clean, professional scope of work. Use 3-4 numbered sections with bullet points. Sections should cover setup/containment, remediation/treatment, documentation/completion, and exclusions. Keep it specific and professional (250-400 words). Do NOT write a title heading — start directly with "1." Do not include pricing.`,
+          }],
+        }),
+      })
+      if (!res.ok) throw new Error(`API error ${res.status}`)
+      const data = await res.json()
+      update({ scopeNotes: data.content?.[0]?.text ?? '' })
+      setScopeAI({ open: false, context: '', loading: false })
+    } catch {
+      setScopeAI(s => ({ ...s, loading: false }))
+    }
+  }, [scopeAI, job?.type, update])
 
   const sendEstimate = () => {
     save()
@@ -763,7 +814,45 @@ export default function Estimator({ selectedJobId, setSelectedJobId, navigateTo 
 
             {/* Scope of Work */}
             <div className="bg-white border border-gray-200 rounded-2xl p-5">
-              <h3 className="text-sm font-bold text-gray-900 mb-3">Scope of Work</h3>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-bold text-gray-900">Scope of Work</h3>
+                <button
+                  onClick={() => setScopeAI(s => ({ ...s, open: !s.open }))}
+                  className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-purple-200 text-purple-700 bg-purple-50 hover:bg-purple-100 transition-colors"
+                >
+                  <Sparkles size={12} /> Generate with AI
+                </button>
+              </div>
+              {scopeAI.open && (
+                <div className="mb-3 bg-purple-50 border border-purple-200 rounded-xl p-3">
+                  <div className="text-xs font-semibold text-purple-800 mb-1.5">Briefly describe the job</div>
+                  <textarea
+                    autoFocus
+                    value={scopeAI.context}
+                    onChange={e => setScopeAI(s => ({ ...s, context: e.target.value }))}
+                    rows={2}
+                    placeholder="e.g. Crawlspace mold remediation, ~400 SF of affected OSB sheathing, one wall cavity, heavy containment needed"
+                    className="w-full border border-purple-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none bg-white"
+                  />
+                  <div className="flex gap-2 mt-2">
+                    <button
+                      onClick={generateScope}
+                      disabled={scopeAI.loading || !scopeAI.context.trim()}
+                      className="flex items-center gap-1.5 bg-purple-700 hover:bg-purple-800 disabled:opacity-40 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
+                    >
+                      {scopeAI.loading
+                        ? <><Loader2 size={12} className="animate-spin" /> Generating…</>
+                        : <><Sparkles size={12} /> Generate</>}
+                    </button>
+                    <button
+                      onClick={() => setScopeAI({ open: false, context: '', loading: false })}
+                      className="text-xs text-gray-500 hover:text-gray-700 px-2 py-1.5 rounded-lg hover:bg-gray-100"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
               <textarea
                 value={local.scopeNotes}
                 onChange={e => update({ scopeNotes: e.target.value })}
@@ -801,6 +890,7 @@ export default function Estimator({ selectedJobId, setSelectedJobId, navigateTo 
               estimate={local}
               onMarginChange={v => update({ overheadMarginPct: v })}
               onTaxChange={v => update({ taxPct: v })}
+              onDiscountChange={v => update({ discountPct: v })}
             />
           </div>
         </div>

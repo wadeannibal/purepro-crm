@@ -265,6 +265,12 @@ export default function QuoteGenerator({ selectedJobId, setSelectedJobId, naviga
                   <span>Subtotal</span>
                   <span>{formatCurrencyExact(totals.subtotal)}</span>
                 </div>
+                {totals.discountAmt > 0 && (
+                  <div className="flex justify-between text-sm text-green-700">
+                    <span>Discount ({estimate.discountPct}%)</span>
+                    <span>− {formatCurrencyExact(totals.discountAmt)}</span>
+                  </div>
+                )}
                 {totals.margin > 0 && (
                   <div className="flex justify-between text-sm text-gray-600">
                     <span>Overhead & Margin ({estimate.overheadMarginPct}%)</span>

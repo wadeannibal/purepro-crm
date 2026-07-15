@@ -1,0 +1,85 @@
+export const CATEGORIES = [
+  { id: 'containment', label: 'Containment', color: 'bg-blue-100 text-blue-800' },
+  { id: 'demolition', label: 'Demo & Removal', color: 'bg-orange-100 text-orange-800' },
+  { id: 'cleaning', label: 'Cleaning & Treatment', color: 'bg-green-100 text-green-800' },
+  { id: 'equipment', label: 'Equipment', color: 'bg-purple-100 text-purple-800' },
+  { id: 'materials', label: 'Materials', color: 'bg-yellow-100 text-yellow-800' },
+  { id: 'labor', label: 'Labor', color: 'bg-red-100 text-red-800' },
+  { id: 'lab', label: 'Lab Testing', color: 'bg-teal-100 text-teal-800' },
+  { id: 'fees', label: 'Fees & Other', color: 'bg-gray-100 text-gray-700' },
+]
+
+export const catLabel = (id) => CATEGORIES.find(c => c.id === id)?.label ?? id
+export const catColor = (id) => CATEGORIES.find(c => c.id === id)?.color ?? 'bg-gray-100 text-gray-700'
+
+export const BUILT_IN_PRESETS = [
+  // CONTAINMENT
+  { category: 'containment', name: 'Containment - Small', unit: 'EA', unitPrice: 450.00 },
+  { category: 'containment', name: 'Containment - Medium', unit: 'EA', unitPrice: 917.93 },
+  { category: 'containment', name: 'Containment - Large', unit: 'EA', unitPrice: 1400.00 },
+  { category: 'containment', name: 'Containment Pole', unit: 'EA', unitPrice: 37.34 },
+  { category: 'containment', name: 'Containment Barrier / Decon Chamber', unit: 'SF', unitPrice: 1.31 },
+  { category: 'containment', name: 'Decontamination Chamber', unit: 'EA', unitPrice: 100.00 },
+  { category: 'containment', name: 'Zipper / Peel & Seal', unit: 'EA', unitPrice: 25.32 },
+  { category: 'containment', name: 'Decontamination Process', unit: 'EA', unitPrice: 150.00 },
+  { category: 'containment', name: 'Poly Sheeting (6 Mil)', unit: 'SF', unitPrice: 0.15 },
+  // DEMO & REMOVAL
+  { category: 'demolition', name: 'Remove Drywall', unit: 'SF', unitPrice: 0.88 },
+  { category: 'demolition', name: 'Tear Out Wet Drywall — Bag for Disposal', unit: 'SF', unitPrice: 1.45 },
+  { category: 'demolition', name: 'Tear Out Wet Carpet — Cut & Bag', unit: 'SF', unitPrice: 0.92 },
+  { category: 'demolition', name: 'Remove Carpet Pad', unit: 'SF', unitPrice: 0.35 },
+  { category: 'demolition', name: 'Remove Baseboard', unit: 'LF', unitPrice: 1.50 },
+  { category: 'demolition', name: 'Remove Vanity', unit: 'LF', unitPrice: 10.62 },
+  { category: 'demolition', name: 'Remove Flooring', unit: 'SF', unitPrice: 1.20 },
+  { category: 'demolition', name: 'Remove Insulation', unit: 'SF', unitPrice: 0.75 },
+  { category: 'demolition', name: 'Haul Debris — Pickup Truck Load (w/ Dump)', unit: 'EA', unitPrice: 214.38 },
+  // CLEANING & TREATMENT
+  { category: 'cleaning', name: 'Environmental Cleaning (2 Damp + 1 Dry Wipe)', unit: 'SF', unitPrice: 1.13 },
+  { category: 'cleaning', name: 'HEPA Vacuuming — Detailed', unit: 'SF', unitPrice: 1.08 },
+  { category: 'cleaning', name: 'Clean Walls & Ceiling — Heavy', unit: 'SF', unitPrice: 1.74 },
+  { category: 'cleaning', name: 'Sanding / Wire Brush Exposed Framing', unit: 'SF', unitPrice: 1.70 },
+  { category: 'cleaning', name: 'Apply Mold/Mildew Stain Remover', unit: 'SF', unitPrice: 0.82 },
+  { category: 'cleaning', name: 'Sealant / Encapsulant', unit: 'GAL', unitPrice: 65.66 },
+  { category: 'cleaning', name: 'Antimicrobial Spray Treatment', unit: 'GAL', unitPrice: 75.00 },
+  { category: 'cleaning', name: 'Dry Ice Blasting', unit: 'SF', unitPrice: 3.50 },
+  { category: 'cleaning', name: 'Fogging Treatment', unit: 'EA', unitPrice: 200.00 },
+  { category: 'cleaning', name: 'Ozone Treatment', unit: 'EA', unitPrice: 250.00 },
+  { category: 'cleaning', name: 'Mold Resistant Primer', unit: 'GAL', unitPrice: 55.00 },
+  // EQUIPMENT
+  { category: 'equipment', name: 'Emergency Service Call — Business Hours', unit: 'EA', unitPrice: 237.50 },
+  { category: 'equipment', name: 'Emergency Service Call — After Hours', unit: 'EA', unitPrice: 350.00 },
+  { category: 'equipment', name: 'Neg. Air Fan / Air Scrubber — Large', unit: 'DA', unitPrice: 120.00 },
+  { category: 'equipment', name: 'Neg. Air Fan / Air Scrubber — Small', unit: 'DA', unitPrice: 85.00 },
+  { category: 'equipment', name: 'HEPA Filter (for Neg Air Fan)', unit: 'EA', unitPrice: 221.87 },
+  { category: 'equipment', name: 'Dehumidifier', unit: 'DA', unitPrice: 75.00 },
+  { category: 'equipment', name: 'Air Mover / Fan', unit: 'DA', unitPrice: 35.00 },
+  { category: 'equipment', name: 'Equipment Setup, Takedown & Monitoring', unit: 'HR', unitPrice: 85.65 },
+  { category: 'equipment', name: 'Equipment Decontamination Charge', unit: 'EA', unitPrice: 48.76 },
+  // MATERIALS
+  { category: 'materials', name: 'PPE — Full Hazmat Suit', unit: 'EA', unitPrice: 53.85 },
+  { category: 'materials', name: 'PPE — Hazardous Cleanup Suit', unit: 'EA', unitPrice: 24.17 },
+  { category: 'materials', name: 'Respirator Cartridge — HEPA (per pair)', unit: 'PR', unitPrice: 19.69 },
+  { category: 'materials', name: 'Duct Tape', unit: 'EA', unitPrice: 8.00 },
+  { category: 'materials', name: 'Double-Sided Tape', unit: 'EA', unitPrice: 12.00 },
+  { category: 'materials', name: 'Antimicrobial Product', unit: 'EA', unitPrice: 85.00 },
+  { category: 'materials', name: 'Visqueen / Poly Sheeting (roll)', unit: 'EA', unitPrice: 45.00 },
+  // LABOR
+  { category: 'labor', name: 'Lead Technician', unit: 'HR', unitPrice: 75.00 },
+  { category: 'labor', name: 'Remediation Technician', unit: 'HR', unitPrice: 55.00 },
+  { category: 'labor', name: 'Project Manager', unit: 'HR', unitPrice: 95.00 },
+  { category: 'labor', name: 'Hazardous Waste / Mold Labor Minimum', unit: 'EA', unitPrice: 238.32 },
+  { category: 'labor', name: 'Cabinetry Labor Minimum', unit: 'EA', unitPrice: 195.55 },
+  // LAB TESTING
+  { category: 'lab', name: 'ERMI Test', unit: 'EA', unitPrice: 395.00 },
+  { category: 'lab', name: 'HERTSMI-2 Test', unit: 'EA', unitPrice: 295.00 },
+  { category: 'lab', name: 'Air Sample', unit: 'EA', unitPrice: 125.00 },
+  { category: 'lab', name: 'Tape Lift / Swab Sample', unit: 'EA', unitPrice: 95.00 },
+  { category: 'lab', name: 'Post-Remediation Clearance Test', unit: 'EA', unitPrice: 350.00 },
+  // FEES & OTHER
+  { category: 'fees', name: 'Dump Fee', unit: 'EA', unitPrice: 125.00 },
+  { category: 'fees', name: 'Travel / Mobilization', unit: 'EA', unitPrice: 75.00 },
+  { category: 'fees', name: 'Permit', unit: 'EA', unitPrice: 200.00 },
+  { category: 'fees', name: 'Rush / After-Hours Service Fee', unit: 'EA', unitPrice: 250.00 },
+  { category: 'fees', name: 'Equipment Storage Fee', unit: 'EA', unitPrice: 100.00 },
+  { category: 'fees', name: 'First Time Customer Discount', unit: 'EA', unitPrice: -500.00 },
+]

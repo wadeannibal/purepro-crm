@@ -48,21 +48,17 @@ PurePro Restoration will perform mold remediation services in accordance with II
    • Pre-existing structural conditions unrelated to mold
    • Any items not specifically listed in this scope of work`,
     termsNotes: STANDARD_TERMS,
-    sqftItems: [],
-    equipmentItems: [
-      { id: 'tpl-eq1', name: 'HEPA Air Scrubber', qty: 1, unit: 'day', unitPrice: 95 },
+    lineItems: [
+      { id: 'tpl-m-1', category: 'containment', name: 'Containment - Medium', qty: 1, unit: 'EA', unitPrice: 917.93 },
+      { id: 'tpl-m-2', category: 'equipment', name: 'HEPA Air Scrubber', qty: 1, unit: 'DA', unitPrice: 95 },
+      { id: 'tpl-m-3', category: 'cleaning', name: 'HEPA Vacuuming — Detailed', qty: 1, unit: 'SF', unitPrice: 1.08 },
+      { id: 'tpl-m-4', category: 'cleaning', name: 'Environmental Cleaning (2 Damp + 1 Dry Wipe)', qty: 1, unit: 'SF', unitPrice: 1.13 },
+      { id: 'tpl-m-5', category: 'cleaning', name: 'Antimicrobial Spray Treatment', qty: 2, unit: 'GAL', unitPrice: 75 },
+      { id: 'tpl-m-6', category: 'cleaning', name: 'Sealant / Encapsulant', qty: 1, unit: 'GAL', unitPrice: 65.66 },
+      { id: 'tpl-m-7', category: 'materials', name: 'Poly Sheeting (6 Mil)', qty: 2, unit: 'EA', unitPrice: 35 },
+      { id: 'tpl-m-8', category: 'materials', name: 'PPE — Full Hazmat Suit', qty: 2, unit: 'EA', unitPrice: 53.85 },
+      { id: 'tpl-m-9', category: 'lab', name: 'Post-Remediation Clearance Test', qty: 1, unit: 'EA', unitPrice: 350 },
     ],
-    labItems: [
-      { id: 'tpl-lab1', description: 'Post-Remediation ERMI Test', qty: 1, unitPrice: 350 },
-    ],
-    materialItems: [
-      { id: 'tpl-mat1', description: 'Antimicrobial Spray', qty: 2, unitPrice: 45 },
-      { id: 'tpl-mat2', description: 'Encapsulant', qty: 1, unitPrice: 85 },
-      { id: 'tpl-mat3', description: 'Poly Sheeting (6 mil)', qty: 2, unitPrice: 35 },
-      { id: 'tpl-mat4', description: 'PPE Kit (Full Tyvek)', qty: 2, unitPrice: 28 },
-    ],
-    laborItems: [],
-    xactimateItems: [],
   },
   {
     id: 'water-mitigation',
@@ -96,18 +92,15 @@ PurePro Restoration will perform water mitigation and structural drying services
    • Mold remediation (separate scope provided if mold is discovered)
    • Plumbing repairs or source correction`,
     termsNotes: STANDARD_TERMS,
-    sqftItems: [],
-    equipmentItems: [
-      { id: 'tpl-eq1', name: 'Dehumidifier (90L)', qty: 1, unit: 'day', unitPrice: 85 },
-      { id: 'tpl-eq2', name: 'Air Mover', qty: 3, unit: 'day', unitPrice: 35 },
+    lineItems: [
+      { id: 'tpl-w-1', category: 'equipment', name: 'Dehumidifier', qty: 1, unit: 'DA', unitPrice: 85 },
+      { id: 'tpl-w-2', category: 'equipment', name: 'Air Mover / Fan', qty: 3, unit: 'DA', unitPrice: 35 },
+      { id: 'tpl-w-3', category: 'equipment', name: 'Equipment Setup, Takedown & Monitoring', qty: 1, unit: 'HR', unitPrice: 85.65 },
+      { id: 'tpl-w-4', category: 'demolition', name: 'Tear Out Wet Carpet — Cut & Bag', qty: 1, unit: 'SF', unitPrice: 0.92 },
+      { id: 'tpl-w-5', category: 'demolition', name: 'Remove Carpet Pad', qty: 1, unit: 'SF', unitPrice: 0.35 },
+      { id: 'tpl-w-6', category: 'materials', name: 'Poly Sheeting (6 Mil)', qty: 1, unit: 'EA', unitPrice: 35 },
+      { id: 'tpl-w-7', category: 'materials', name: 'PPE — Hazardous Cleanup Suit', qty: 1, unit: 'EA', unitPrice: 24.17 },
     ],
-    labItems: [],
-    materialItems: [
-      { id: 'tpl-mat1', description: 'Poly Sheeting (6 mil)', qty: 1, unitPrice: 35 },
-      { id: 'tpl-mat2', description: 'PPE Kit', qty: 1, unitPrice: 28 },
-    ],
-    laborItems: [],
-    xactimateItems: [],
   },
   {
     id: 'fire-smoke-restoration',
@@ -146,19 +139,16 @@ PurePro Restoration will perform fire and smoke damage restoration services in a
    • Contents pack-out and storage (available as separate service)
    • Roof tarping beyond emergency response`,
     termsNotes: STANDARD_TERMS,
-    sqftItems: [],
-    equipmentItems: [
-      { id: 'tpl-eq1', name: 'HEPA Air Scrubber', qty: 2, unit: 'day', unitPrice: 95 },
-      { id: 'tpl-eq2', name: 'Hydroxyl Generator', qty: 1, unit: 'day', unitPrice: 125 },
+    lineItems: [
+      { id: 'tpl-f-1', category: 'equipment', name: 'HEPA Air Scrubber', qty: 2, unit: 'DA', unitPrice: 95 },
+      { id: 'tpl-f-2', category: 'equipment', name: 'Hydroxyl Generator', qty: 1, unit: 'DA', unitPrice: 125 },
+      { id: 'tpl-f-3', category: 'cleaning', name: 'HEPA Vacuuming — Detailed', qty: 1, unit: 'SF', unitPrice: 1.08 },
+      { id: 'tpl-f-4', category: 'cleaning', name: 'Clean Walls & Ceiling — Heavy', qty: 1, unit: 'SF', unitPrice: 1.74 },
+      { id: 'tpl-f-5', category: 'cleaning', name: 'Fogging Treatment', qty: 1, unit: 'EA', unitPrice: 200 },
+      { id: 'tpl-f-6', category: 'materials', name: 'Sealant / Encapsulant', qty: 2, unit: 'GAL', unitPrice: 65.66 },
+      { id: 'tpl-f-7', category: 'materials', name: 'Antimicrobial Product', qty: 1, unit: 'EA', unitPrice: 75 },
+      { id: 'tpl-f-8', category: 'materials', name: 'PPE — Full Hazmat Suit', qty: 3, unit: 'EA', unitPrice: 53.85 },
     ],
-    labItems: [],
-    materialItems: [
-      { id: 'tpl-mat1', description: 'Smoke Sealer / Encapsulant', qty: 2, unitPrice: 65 },
-      { id: 'tpl-mat2', description: 'Deodorizing Agent', qty: 1, unitPrice: 75 },
-      { id: 'tpl-mat3', description: 'PPE Kit (Full Tyvek)', qty: 3, unitPrice: 28 },
-    ],
-    laborItems: [],
-    xactimateItems: [],
   },
 ]
 
