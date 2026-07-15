@@ -118,13 +118,18 @@ const GROUPS = [
   },
 ]
 
-export default function Sidebar({ currentView, navigateTo }) {
+export default function Sidebar({ currentView, navigateTo, mobileOpen, onClose }) {
   const [collapsed, setCollapsed] = useState({})
 
   const toggle = (label) => setCollapsed(c => ({ ...c, [label]: !c[label] }))
 
+  const handleNav = (id) => {
+    navigateTo(id)
+    onClose?.()
+  }
+
   return (
-    <aside className="w-56 flex-shrink-0 bg-gray-950 flex flex-col h-full">
+    <aside className={`w-56 flex-shrink-0 bg-gray-950 flex flex-col h-full fixed md:relative inset-y-0 left-0 z-40 transition-transform duration-200 ${mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
       {/* Logo */}
       <div className="px-4 py-5 border-b border-gray-800 flex-shrink-0">
         <div className="flex items-center gap-2">
@@ -157,7 +162,7 @@ export default function Sidebar({ currentView, navigateTo }) {
               return (
                 <button
                   key={id}
-                  onClick={() => navigateTo(id)}
+                  onClick={() => handleNav(id)}
                   className={`w-full flex items-center gap-3 px-4 py-2 text-sm font-medium transition-all relative group
                     ${active
                       ? 'text-white bg-gray-800'

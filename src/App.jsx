@@ -1,7 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { AppProvider } from './context/AppContext'
 import Sidebar from './components/layout/Sidebar'
 import Header from './components/layout/Header'
+import Login from './components/auth/Login'
+import { supabase } from './lib/supabase'
 
 // Phase 1
 import CRM from './components/modules/CRM'
@@ -70,6 +72,14 @@ import WarrantyTracking from './components/modules/WarrantyTracking'
 import AnnualCheckIn from './components/modules/AnnualCheckIn'
 
 export default function App() {
+  const [session, setSession] = useState(undefined)
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setSession(data.session ?? null))
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => setSession(s))
+    return () => subscription.unsubscribe()
+  }, [])
+
   const [currentView, setCurrentView] = useState('operations')
   const [selectedJobId, setSelectedJobId] = useState(null)
   const [selectedClientId, setSelectedClientId] = useState(null)
@@ -202,12 +212,20 @@ export default function App() {
     }
   }
 
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  if (session === undefined) return null
+  if (!session) return <Login />
+
   return (
     <AppProvider>
       <div className="flex h-screen overflow-hidden bg-gray-50">
-        <Sidebar currentView={currentView} navigateTo={navigateTo} />
+        {sidebarOpen && (
+          <div className="fixed inset-0 z-30 bg-black/50 md:hidden" onClick={() => setSidebarOpen(false)} />
+        )}
+        <Sidebar currentView={currentView} navigateTo={navigateTo} mobileOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
         <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-          <Header currentView={currentView} selectedJobId={selectedJobId} />
+          <Header currentView={currentView} selectedJobId={selectedJobId} navigateTo={navigateTo} onMenuClick={() => setSidebarOpen(o => !o)} />
           <main className="flex-1 overflow-hidden">
             {renderView()}
           </main>

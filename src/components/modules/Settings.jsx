@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { Settings2, Save, Check, Building2 } from 'lucide-react'
+import { Settings2, Save, Check, Building2, LogOut } from 'lucide-react'
+import { supabase } from '../../lib/supabase'
 
 const STORAGE_KEY = 'purepro_company_settings'
 
@@ -147,6 +148,20 @@ export default function Settings() {
           <p className="text-xs text-blue-700 leading-relaxed">
             This info auto-populates your proposals, invoices, liability waivers, and outbound message scripts. Stored locally on this device — update it once and it applies everywhere.
           </p>
+        </div>
+
+        {/* Sign out */}
+        <div className="bg-white border border-gray-200 rounded-2xl p-6 flex items-center justify-between">
+          <div>
+            <div className="text-sm font-semibold text-gray-900">Sign Out</div>
+            <div className="text-xs text-gray-400 mt-0.5">You'll be returned to the login screen</div>
+          </div>
+          <button
+            onClick={() => supabase.auth.signOut()}
+            className="flex items-center gap-2 bg-gray-100 hover:bg-red-50 hover:text-red-600 text-gray-600 text-sm font-semibold px-4 py-2 rounded-xl transition-colors"
+          >
+            <LogOut size={14} /> Sign Out
+          </button>
         </div>
       </div>
     </div>
