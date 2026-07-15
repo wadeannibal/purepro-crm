@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { supabase } from '../../lib/supabase'
 import { useApp } from '../../context/AppContext'
 import { ACTIONS } from '../../context/AppReducer'
 import {
@@ -267,6 +268,15 @@ function LibraryPanel({ onAdd, onClose }) {
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ category: 'containment', name: '', unit: 'EA', unitPrice: '' })
 
+  useEffect(() => {
+    supabase.from('line_item_library').select('*').order('created_at', { ascending: false }).then(({ data }) => {
+      if (!data?.length) return
+      const items = data.map(r => ({ id: r.id, category: r.category, name: r.name, unit: r.unit, unitPrice: r.unit_price }))
+      localStorage.setItem(LIB_KEY, JSON.stringify(items))
+      setCustomLib(items)
+    })
+  }, [])
+
   const allItems = showMine ? customLib : BUILT_IN_PRESETS
   const filtered = allItems.filter(p => {
     const matchCat = filterCat === 'all' || p.category === filterCat
@@ -284,6 +294,8 @@ function LibraryPanel({ onAdd, onClose }) {
     if (!form.name.trim()) return
     const updated = addToCustomLibrary({ ...form, unitPrice: parseFloat(form.unitPrice) || 0 })
     setCustomLib(updated)
+    const entry = updated[0]
+    supabase.from('line_item_library').upsert({ id: entry.id, category: entry.category, name: entry.name, unit: entry.unit, unit_price: entry.unitPrice }).then()
     setForm({ category: 'containment', name: '', unit: 'EA', unitPrice: '' })
     setShowForm(false)
     setShowMine(true)
@@ -380,7 +392,7 @@ function LibraryPanel({ onAdd, onClose }) {
                     <div className="flex items-center gap-1.5 ml-3 shrink-0">
                       {showMine && (
                         <button
-                          onClick={e => { e.stopPropagation(); setCustomLib(removeFromCustomLibrary(preset.id)) }}
+                          onClick={e => { e.stopPropagation(); setCustomLib(removeFromCustomLibrary(preset.id)); supabase.from('line_item_library').delete().eq('id', preset.id).then() }}
                           className="p-1 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100"
                           title="Remove from saved"
                         >
@@ -517,7 +529,9 @@ export default function Estimator({ selectedJobId, setSelectedJobId, navigateTo 
   }, [])
 
   const handleSaveToLibrary = useCallback((item) => {
-    addToCustomLibrary(item)
+    const updated = addToCustomLibrary(item)
+    const entry = updated[0]
+    supabase.from('line_item_library').upsert({ id: entry.id, category: entry.category, name: entry.name, unit: entry.unit, unit_price: entry.unitPrice }).then()
     setToastMsg(`"${item.name}" saved to My Items`)
     setTimeout(() => setToastMsg(null), 2500)
   }, [])

@@ -18,7 +18,25 @@ export default function Settings() {
   const [saved, setSaved] = useState(false)
   const logoRef = useRef()
 
-  useEffect(() => { setForm(load()) }, [])
+  useEffect(() => {
+    setForm(load())
+    supabase.from('company_settings').select('*').eq('id', 'singleton').single().then(({ data }) => {
+      if (!data) return
+      const settings = {
+        companyName: data.company_name ?? COMPANY_DEFAULTS.companyName,
+        ownerName: data.owner_name ?? COMPANY_DEFAULTS.ownerName,
+        phone: data.phone ?? '',
+        email: data.email ?? '',
+        city: data.city ?? COMPANY_DEFAULTS.city,
+        licenseNumber: data.license_number ?? '',
+        website: data.website ?? '',
+        logo: data.logo ?? null,
+      }
+      setForm(settings)
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(settings))
+      window.dispatchEvent(new Event('company-settings-updated'))
+    })
+  }, [])
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
@@ -33,6 +51,18 @@ export default function Settings() {
   const save = () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(form))
     window.dispatchEvent(new Event('company-settings-updated'))
+    supabase.from('company_settings').upsert({
+      id: 'singleton',
+      company_name: form.companyName,
+      owner_name: form.ownerName,
+      phone: form.phone,
+      email: form.email,
+      city: form.city,
+      license_number: form.licenseNumber,
+      website: form.website,
+      logo: form.logo ?? null,
+      updated_at: new Date().toISOString(),
+    }).then()
     setSaved(true)
     setTimeout(() => setSaved(false), 2500)
   }
