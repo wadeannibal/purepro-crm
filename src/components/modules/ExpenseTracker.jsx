@@ -42,6 +42,7 @@ export default function ExpenseTracker({ selectedJobId, setSelectedJobId, naviga
   }
 
   const deleteExpense = (expenseId) => {
+    if (!window.confirm('Delete this expense?')) return
     dispatch({ type: ACTIONS.DELETE_EXPENSE, payload: { jobId: selectedJobId, expenseId } })
   }
 

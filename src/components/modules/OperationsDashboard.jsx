@@ -111,8 +111,8 @@ export default function OperationsDashboard({ navigateTo }) {
     // Appointments today
     const todayDate = today()
     const todayAppts = events.filter(e => {
-      if (!e.start) return false
-      const d = new Date(e.start)
+      if (!e.date) return false
+      const d = new Date(e.date + 'T' + (e.startTime ?? '00:00'))
       return d.getDate() === todayDate.getDate() && d.getMonth() === todayDate.getMonth() && d.getFullYear() === todayDate.getFullYear()
     })
     if (todayAppts.length > 0) {
@@ -120,7 +120,7 @@ export default function OperationsDashboard({ navigateTo }) {
         type: 'appointment',
         priority: 0,
         label: `${todayAppts.length} appointment${todayAppts.length !== 1 ? 's' : ''} today`,
-        detail: todayAppts.slice(0, 2).map(e => e.title ?? 'Appointment').join(', '),
+        detail: todayAppts.slice(0, 2).map(e => e.eventType ?? 'Appointment').join(', '),
         action: 'scheduler',
         urgency: 'high',
       })
@@ -191,11 +191,15 @@ export default function OperationsDashboard({ navigateTo }) {
     const limit = new Date(now.getTime() + 7 * 86400000)
     return events
       .filter(e => {
-        if (!e.start) return false
-        const d = new Date(e.start)
+        if (!e.date) return false
+        const d = new Date(e.date + 'T' + (e.startTime ?? '00:00'))
         return d >= now && d <= limit
       })
-      .sort((a, b) => new Date(a.start) - new Date(b.start))
+      .sort((a, b) => {
+        const da = new Date(a.date + 'T' + (a.startTime ?? '00:00'))
+        const db = new Date(b.date + 'T' + (b.startTime ?? '00:00'))
+        return da - db
+      })
       .slice(0, 5)
   }, [events])
 
@@ -477,15 +481,18 @@ export default function OperationsDashboard({ navigateTo }) {
                 <p className="text-xs text-gray-400">No appointments in the next 7 days.</p>
               ) : (
                 <div className="space-y-2">
-                  {upcoming.map(e => (
-                    <div key={e.id} className="border-l-2 border-red-400 pl-3">
-                      <div className="text-xs font-semibold text-gray-800 truncate">{e.title ?? 'Appointment'}</div>
-                      <div className="text-[10px] text-gray-400">
-                        {new Date(e.start).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-                        {e.start && ' · ' + new Date(e.start).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                  {upcoming.map(e => {
+                    const d = new Date(e.date + 'T' + (e.startTime ?? '00:00'))
+                    return (
+                      <div key={e.id} className="border-l-2 border-red-400 pl-3">
+                        <div className="text-xs font-semibold text-gray-800 truncate">{e.eventType ?? 'Appointment'}</div>
+                        <div className="text-[10px] text-gray-400">
+                          {d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                          {e.startTime && ' · ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               )}
             </div>

@@ -202,7 +202,7 @@ export default function PhotoAttachments({ selectedJobId, setSelectedJobId, navi
                       </div>
                       {!compareMode && (
                         <button
-                          onClick={e => { e.stopPropagation(); dispatch({ type: ACTIONS.DELETE_PHOTO, payload: { jobId: selectedJobId, photoId: photo.id } }) }}
+                          onClick={e => { e.stopPropagation(); if (!window.confirm('Delete this photo?')) return; dispatch({ type: ACTIONS.DELETE_PHOTO, payload: { jobId: selectedJobId, photoId: photo.id } }) }}
                           className="p-1 rounded-lg bg-red-600/80 hover:bg-red-700 text-white"
                         >
                           <Trash2 size={12} />

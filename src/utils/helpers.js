@@ -145,16 +145,17 @@ export const totalJobHours = (timeLogs) =>
 export const computeEstimateTotals = (estimate) => {
   if (!estimate) return { subtotal: 0, margin: 0, tax: 0, grandTotal: 0, sqftTotal: 0, equipTotal: 0, labTotal: 0, matTotal: 0, laborTotal: 0, xactTotal: 0, flatTotal: 0 }
   let subtotal = 0
+  let sqftTotal = 0, equipTotal = 0, labTotal = 0, matTotal = 0, laborTotal = 0, xactTotal = 0, flatTotal = 0
   if (estimate.lineItems) {
     subtotal = (estimate.lineItems ?? []).reduce((s, i) => s + ((i.qty ?? 0) * (i.unitPrice ?? 0)), 0)
   } else {
-    const sqftTotal = (estimate.sqftItems ?? []).reduce((s, i) => s + ((i.sqft ?? 0) * (i.ratePerSqft ?? 0)), 0)
-    const equipTotal = (estimate.equipmentItems ?? []).reduce((s, i) => s + ((i.qty ?? 0) * (i.unitPrice ?? 0)), 0)
-    const labTotal = (estimate.labItems ?? []).reduce((s, i) => s + ((i.qty ?? 0) * (i.unitPrice ?? 0)), 0)
-    const matTotal = (estimate.materialItems ?? []).reduce((s, i) => s + ((i.qty ?? 0) * (i.unitPrice ?? 0)), 0)
-    const laborTotal = (estimate.laborItems ?? []).reduce((s, i) => s + ((i.hours ?? 0) * (i.ratePerHour ?? 0)), 0)
-    const xactTotal = (estimate.xactimateItems ?? []).reduce((s, i) => s + ((i.qty ?? 0) * (i.unitPrice ?? 0)), 0)
-    const flatTotal = (estimate.flatFeeItems ?? []).reduce((s, i) => s + (i.amount ?? 0), 0)
+    sqftTotal = (estimate.sqftItems ?? []).reduce((s, i) => s + ((i.sqft ?? 0) * (i.ratePerSqft ?? 0)), 0)
+    equipTotal = (estimate.equipmentItems ?? []).reduce((s, i) => s + ((i.qty ?? 0) * (i.unitPrice ?? 0)), 0)
+    labTotal = (estimate.labItems ?? []).reduce((s, i) => s + ((i.qty ?? 0) * (i.unitPrice ?? 0)), 0)
+    matTotal = (estimate.materialItems ?? []).reduce((s, i) => s + ((i.qty ?? 0) * (i.unitPrice ?? 0)), 0)
+    laborTotal = (estimate.laborItems ?? []).reduce((s, i) => s + ((i.hours ?? 0) * (i.ratePerHour ?? 0)), 0)
+    xactTotal = (estimate.xactimateItems ?? []).reduce((s, i) => s + ((i.qty ?? 0) * (i.unitPrice ?? 0)), 0)
+    flatTotal = (estimate.flatFeeItems ?? []).reduce((s, i) => s + (i.amount ?? 0), 0)
     subtotal = sqftTotal + equipTotal + labTotal + matTotal + laborTotal + xactTotal + flatTotal
   }
   const discountAmt = subtotal * ((estimate.discountPct ?? 0) / 100)
@@ -163,7 +164,7 @@ export const computeEstimateTotals = (estimate) => {
   const afterMargin = afterDiscount + margin
   const tax = afterMargin * ((estimate.taxPct ?? 0) / 100)
   const grandTotal = afterMargin + tax
-  return { subtotal, discountAmt, afterDiscount, margin, tax, grandTotal, sqftTotal: 0, equipTotal: 0, labTotal: 0, matTotal: 0, laborTotal: 0, xactTotal: 0, flatTotal: 0 }
+  return { subtotal, discountAmt, afterDiscount, margin, tax, grandTotal, sqftTotal, equipTotal, labTotal, matTotal, laborTotal, xactTotal, flatTotal }
 }
 
 export const computeActualCosts = (job) => {

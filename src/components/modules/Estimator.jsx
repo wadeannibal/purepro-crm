@@ -480,6 +480,8 @@ export default function Estimator({ selectedJobId, setSelectedJobId, navigateTo 
   const [landingMode, setLandingMode] = useState('new')
   const [existingForm, setExistingForm] = useState(BLANK_EXISTING)
   const [scopeAI, setScopeAI] = useState({ open: false, context: '', loading: false })
+  const [showTemplatePicker, setShowTemplatePicker] = useState(false)
+
 
   const job = selectedJobId ? state.jobs.find(j => j.id === selectedJobId) : null
   const client = job ? state.clients.find(c => c.id === job.clientId) : null
@@ -582,7 +584,7 @@ Write a clean, professional scope of work. Use 3-4 numbered sections with bullet
   const startExisting = () => {
     if (!existingForm.clientId) return
     const jobId = uid()
-    dispatch({ type: ACTIONS.ADD_JOB, payload: { id: jobId, clientId: existingForm.clientId, type: existingForm.type, address: existingForm.address, stage: 'Lead', revenue: 0, notes: [], photos: [], documents: [], waivers: [], timeLogs: [], checklist: [], oshaChecklist: [], estimate: null, invoice: null, insurance: null, subcontractors: [], expenses: [] } })
+    dispatch({ type: ACTIONS.ADD_JOB, payload: { id: jobId, clientId: existingForm.clientId, type: existingForm.type, address: existingForm.address, stage: 'Lead', revenue: 0, notes: [], photos: [], documents: [], waivers: [], timeLogs: [], checklist: {}, oshaChecklist: {}, estimate: null, invoice: null, insurance: null, subcontractors: [], expenses: [] } })
     setSelectedJobId(jobId)
     setExistingForm(BLANK_EXISTING)
   }
@@ -592,7 +594,7 @@ Write a clean, professional scope of work. Use 3-4 numbered sections with bullet
     const clientId = uid()
     const jobId = uid()
     dispatch({ type: ACTIONS.ADD_CLIENT, payload: { id: clientId, name: newForm.name.trim(), phone: newForm.phone, email: newForm.email, type: 'Homeowner', communications: [], isVIP: false } })
-    dispatch({ type: ACTIONS.ADD_JOB, payload: { id: jobId, clientId, type: newForm.type, address: newForm.address, stage: 'Lead', revenue: 0, notes: [], photos: [], documents: [], waivers: [], timeLogs: [], checklist: [], oshaChecklist: [], estimate: null, invoice: null, insurance: null, subcontractors: [], expenses: [] } })
+    dispatch({ type: ACTIONS.ADD_JOB, payload: { id: jobId, clientId, type: newForm.type, address: newForm.address, stage: 'Lead', revenue: 0, notes: [], photos: [], documents: [], waivers: [], timeLogs: [], checklist: {}, oshaChecklist: {}, estimate: null, invoice: null, insurance: null, subcontractors: [], expenses: [] } })
     setSelectedJobId(jobId)
     setShowNewForm(false)
     setNewForm(BLANK_NEW)
@@ -734,7 +736,7 @@ Write a clean, professional scope of work. Use 3-4 numbered sections with bullet
                 {job.address && <span className="text-xs text-gray-400 hidden md:inline">· {job.address}</span>}
               </div>
               <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${estimateStatusColor(local.status)}`}>{local.status}</span>
-              <div className="ml-auto flex gap-2">
+              <div className="ml-auto flex gap-2 relative">
                 <button onClick={() => setSelectedJobId(null)} className="text-xs text-gray-400 hover:text-gray-600 px-2 py-1.5 rounded-lg hover:bg-gray-100">← Back</button>
                 <button
                   onClick={save}
@@ -742,6 +744,41 @@ Write a clean, professional scope of work. Use 3-4 numbered sections with bullet
                 >
                   {saved ? '✓ Saved' : 'Save Draft'}
                 </button>
+                <div className="relative">
+                  <button
+                    onClick={() => setShowTemplatePicker(p => !p)}
+                    className="flex items-center gap-1.5 bg-gray-800 hover:bg-gray-900 text-white text-xs font-semibold px-3 py-1.5 rounded-lg"
+                  >
+                    <BookOpen size={12} /> Apply Template
+                  </button>
+                  {showTemplatePicker && (
+                    <>
+                    <div className="fixed inset-0 z-40" onClick={() => setShowTemplatePicker(false)} />
+                    <div className="absolute right-0 top-full mt-1 w-64 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden">
+                      <div className="px-3 py-2 border-b border-gray-100 text-xs font-bold text-gray-500 uppercase tracking-wide">Proposal Templates</div>
+                      {(state.proposalTemplates ?? []).length === 0 ? (
+                        <div className="px-3 py-4 text-xs text-gray-400 text-center">No templates saved yet.<br/>Create them in the Proposals module.</div>
+                      ) : (
+                        <div className="max-h-64 overflow-y-auto">
+                          {(state.proposalTemplates ?? []).map(t => (
+                            <button
+                              key={t.id}
+                              onClick={() => {
+                                update({ lineItems: t.lineItems ?? [], scopeNotes: t.scopeNotes ?? '', termsNotes: t.termsNotes ?? '' })
+                                setShowTemplatePicker(false)
+                              }}
+                              className="w-full text-left px-3 py-2.5 hover:bg-red-50 hover:text-red-700 transition-colors border-b border-gray-50 last:border-0"
+                            >
+                              <div className="text-sm font-semibold text-gray-900">{t.name}</div>
+                              <div className="text-xs text-gray-400 mt-0.5">{t.jobType} · {(t.lineItems ?? []).length} line items</div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    </>
+                  )}
+                </div>
                 <button onClick={() => { save(); navigateTo?.('quote') }} className="flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg">
                   <FileText size={12} /> Quote PDF
                 </button>

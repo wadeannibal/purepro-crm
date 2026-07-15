@@ -140,8 +140,8 @@ To see more before/after results or to request a free assessment, contact ${comp
                       <div className="grid gap-2">
                         {befores.slice(0, 2).map(p => (
                           <div key={p.id} className="bg-gray-100 rounded-xl overflow-hidden aspect-video flex items-center justify-center">
-                            {p.url
-                              ? <img src={p.url} alt={p.name} className="w-full h-full object-cover" />
+                            {p.data
+                              ? <img src={p.data} alt={p.name} className="w-full h-full object-cover" />
                               : <Camera size={24} className="text-gray-300" />}
                           </div>
                         ))}
@@ -152,8 +152,8 @@ To see more before/after results or to request a free assessment, contact ${comp
                       <div className="grid gap-2">
                         {afters.slice(0, 2).map(p => (
                           <div key={p.id} className="bg-gray-100 rounded-xl overflow-hidden aspect-video flex items-center justify-center">
-                            {p.url
-                              ? <img src={p.url} alt={p.name} className="w-full h-full object-cover" />
+                            {p.data
+                              ? <img src={p.data} alt={p.name} className="w-full h-full object-cover" />
                               : <Camera size={24} className="text-gray-300" />}
                           </div>
                         ))}

@@ -131,7 +131,7 @@ export default function CRM({ navigateTo }) {
 
   const filtered = state.clients.filter(c => {
     const q = search.toLowerCase()
-    if (q && !c.name.toLowerCase().includes(q) && !c.email.toLowerCase().includes(q) && !c.phone.includes(q)) return false
+    if (q && !c.name.toLowerCase().includes(q) && !(c.email ?? '').toLowerCase().includes(q) && !(c.phone ?? '').includes(q)) return false
     if (typeFilter !== 'All' && c.type !== typeFilter) return false
     if (vipFilter && !c.isVIP) return false
     return true
@@ -152,7 +152,11 @@ export default function CRM({ navigateTo }) {
   }
 
   const deleteClient = (id) => {
-    if (!window.confirm('Delete this client? This will not delete their jobs.')) return
+    const linkedJobs = state.jobs.filter(j => j.clientId === id)
+    const msg = linkedJobs.length > 0
+      ? `Delete this client and their ${linkedJobs.length} linked job${linkedJobs.length > 1 ? 's' : ''}? This cannot be undone.`
+      : 'Delete this client? This cannot be undone.'
+    if (!window.confirm(msg)) return
     dispatch({ type: ACTIONS.DELETE_CLIENT, payload: { id } })
     setSelected(null)
   }

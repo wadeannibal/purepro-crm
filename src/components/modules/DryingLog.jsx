@@ -33,6 +33,7 @@ export default function DryingLog({ selectedJobId, setSelectedJobId, navigateTo 
   }
 
   const remove = (entryId) => {
+    if (!window.confirm('Delete this drying log entry?')) return
     dispatch({ type: ACTIONS.DELETE_DRYING_ENTRY, payload: { jobId: job.id, entryId } })
   }
 

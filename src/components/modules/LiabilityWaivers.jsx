@@ -23,7 +23,7 @@ export default function LiabilityWaivers({ selectedJobId, setSelectedJobId, navi
     setShowModal(false)
   }
 
-  const del = (waiverId) => dispatch({ type: ACTIONS.DELETE_WAIVER, payload: { jobId: selectedJobId, waiverId } })
+  const del = (waiverId) => { if (!window.confirm('Delete this waiver?')) return; dispatch({ type: ACTIONS.DELETE_WAIVER, payload: { jobId: selectedJobId, waiverId } }) }
 
   return (
     <div className="h-full flex flex-col overflow-hidden">

@@ -49,14 +49,13 @@ export default function QuoteGenerator({ selectedJobId, setSelectedJobId, naviga
     style.id = 'print-style'
     style.innerHTML = `
       @media print {
-        body > *:not(#quote-print-root) { display: none !important; }
-        #quote-print-root { display: block !important; position: fixed; top: 0; left: 0; width: 100%; }
+        body * { visibility: hidden !important; }
+        #quote-print-root, #quote-print-root * { visibility: visible !important; }
+        #quote-print-root { position: fixed !important; top: 0; left: 0; width: 100%; background: white; }
         @page { margin: 0.75in; size: letter; }
       }
     `
     document.head.appendChild(style)
-    const el = document.getElementById('quote-print-root')
-    if (el) el.style.display = 'block'
     window.print()
     document.head.removeChild(style)
   }

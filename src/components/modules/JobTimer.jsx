@@ -57,7 +57,7 @@ export default function JobTimer({ selectedJobId, setSelectedJobId, navigateTo }
     setNoteText('')
   }
 
-  const del = (logId) => dispatch({ type: ACTIONS.DELETE_TIME_LOG, payload: { jobId: selectedJobId, logId } })
+  const del = (logId) => { if (!window.confirm('Delete this time log entry?')) return; dispatch({ type: ACTIONS.DELETE_TIME_LOG, payload: { jobId: selectedJobId, logId } }) }
 
   return (
     <div className="h-full flex flex-col overflow-hidden">

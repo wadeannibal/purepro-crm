@@ -133,7 +133,7 @@ export default function DocumentStorage({ selectedJobId, setSelectedJobId, navig
                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button onClick={() => download(doc)} className="p-1.5 rounded-lg hover:bg-blue-50 text-gray-400 hover:text-blue-600 transition-colors"><Download size={15} /></button>
                   <button
-                    onClick={() => dispatch({ type: ACTIONS.DELETE_DOCUMENT, payload: { jobId: selectedJobId, docId: doc.id } })}
+                    onClick={() => { if (!window.confirm('Delete this document?')) return; dispatch({ type: ACTIONS.DELETE_DOCUMENT, payload: { jobId: selectedJobId, docId: doc.id } }) }}
                     className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-600 transition-colors"
                   >
                     <Trash2 size={15} />

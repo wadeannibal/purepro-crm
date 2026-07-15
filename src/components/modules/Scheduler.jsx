@@ -91,6 +91,7 @@ export default function Scheduler({ navigateTo }) {
   }
 
   const remove = () => {
+    if (!window.confirm('Delete this appointment?')) return
     dispatch({ type: ACTIONS.DELETE_EVENT, payload: { id: form.id } })
     setModal(null)
   }

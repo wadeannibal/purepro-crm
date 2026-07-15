@@ -272,7 +272,7 @@ function PartnerDetail({ partner, jobs, onClose, onEdit, onDelete, dispatch }) {
                       setEditingDeal(d.id)
                       setShowDealForm(true)
                     }} className="p-0.5 text-gray-400 hover:text-gray-700"><Edit2 size={11} /></button>
-                    <button onClick={() => dispatch({ type: ACTIONS.DELETE_PARTNER_DEAL, payload: { partnerId: partner.id, dealId: d.id } })}
+                    <button onClick={() => { if (!window.confirm('Delete this deal?')) return; dispatch({ type: ACTIONS.DELETE_PARTNER_DEAL, payload: { partnerId: partner.id, dealId: d.id } }) }}
                       className="p-0.5 text-gray-400 hover:text-red-600"><Trash2 size={11} /></button>
                   </div>
                 </div>

@@ -32,7 +32,7 @@ export default function CommunicationLog({ selectedClientId, setSelectedClientId
     setShowModal(false)
   }
 
-  const del = (commId) => dispatch({ type: ACTIONS.DELETE_COMMUNICATION, payload: { clientId: selectedClientId, commId } })
+  const del = (commId) => { if (!window.confirm('Delete this communication log entry?')) return; dispatch({ type: ACTIONS.DELETE_COMMUNICATION, payload: { clientId: selectedClientId, commId } }) }
 
   const f = (label, key, type = 'text', opts) => (
     <div>

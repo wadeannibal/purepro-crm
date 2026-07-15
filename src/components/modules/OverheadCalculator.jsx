@@ -19,7 +19,7 @@ export default function OverheadCalculator() {
   const items = state.overheadItems ?? []
   const totalMonthly = items.reduce((s, o) => s + (o.amount ?? 0), 0)
   const hourlyBreakEven = totalMonthly / WORK_HOURS_PER_MONTH
-  const minJobPrice = totalMonthly / Math.max(1, avgJobSize > 0 ? 1 : 1)
+  const minJobPrice = totalMonthly / Math.max(1, avgJobSize)
   const recommendedMarkup = targetMargin / (1 - targetMargin / 100)
 
   const handleAdd = () => {
@@ -29,7 +29,7 @@ export default function OverheadCalculator() {
     setAdding(false)
   }
 
-  const handleDelete = (id) => dispatch({ type: ACTIONS.DELETE_OVERHEAD_ITEM, payload: { id } })
+  const handleDelete = (id) => { if (!window.confirm('Delete this overhead item?')) return; dispatch({ type: ACTIONS.DELETE_OVERHEAD_ITEM, payload: { id } }) }
 
   const startEdit = (o) => { setEditId(o.id); setEditRow({ name: o.name, amount: o.amount }) }
 

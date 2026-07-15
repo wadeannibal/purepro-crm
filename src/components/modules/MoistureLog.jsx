@@ -96,6 +96,7 @@ export default function MoistureLog({ selectedJobId, setSelectedJobId, navigateT
   }
 
   const remove = (readingId) => {
+    if (!window.confirm('Delete this moisture reading?')) return
     dispatch({ type: ACTIONS.DELETE_MOISTURE_READING, payload: { jobId: job.id, readingId } })
   }
 

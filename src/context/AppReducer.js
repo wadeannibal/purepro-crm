@@ -179,7 +179,7 @@ export function reducer(state, action) {
       return { ...state, clients: state.clients.map(c => c.id === payload.id ? { ...c, ...payload } : c) }
 
     case ACTIONS.DELETE_CLIENT:
-      return { ...state, clients: state.clients.filter(c => c.id !== payload.id) }
+      return { ...state, clients: state.clients.filter(c => c.id !== payload.id), jobs: state.jobs.filter(j => j.clientId !== payload.id) }
 
     case ACTIONS.TOGGLE_VIP:
       return { ...state, clients: state.clients.map(c => c.id === payload.id ? { ...c, isVIP: !c.isVIP } : c) }

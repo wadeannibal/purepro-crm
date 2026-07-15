@@ -65,6 +65,7 @@ export default function SubcontractorManagement({ selectedJobId, setSelectedJobI
   }
 
   const deleteSub = (subId) => {
+    if (!window.confirm('Delete this subcontractor record?')) return
     dispatch({ type: ACTIONS.DELETE_SUBCONTRACTOR, payload: { jobId: selectedJobId, subId } })
   }
 

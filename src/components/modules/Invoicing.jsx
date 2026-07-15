@@ -91,13 +91,14 @@ export default function Invoicing({ selectedJobId, setSelectedJobId, navigateTo 
   }
 
   const deletePayment = (paymentId) => {
+    if (!window.confirm('Delete this payment record?')) return
     dispatch({ type: ACTIONS.DELETE_PAYMENT, payload: { jobId: job.id, paymentId } })
   }
 
   const handlePrint = () => {
     const style = document.createElement('style')
     style.id = 'invoice-print-style'
-    style.innerHTML = `@media print { body > *:not(#invoice-print-root) { display: none !important; } #invoice-print-root { display: block !important; position: fixed; top: 0; left: 0; width: 100%; padding: 0.75in; } @page { margin: 0; size: letter; } }`
+    style.innerHTML = `@media print { body * { visibility: hidden !important; } #invoice-print-root, #invoice-print-root * { visibility: visible !important; } #invoice-print-root { position: fixed !important; top: 0; left: 0; width: 100%; background: white; padding: 0.75in; box-sizing: border-box; } @page { margin: 0; size: letter; } }`
     document.head.appendChild(style)
     window.print()
     document.head.removeChild(style)

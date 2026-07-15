@@ -89,6 +89,8 @@ export async function loadFromSupabase() {
     overheadMarginPct: e.overhead_margin_pct ?? 20,
     taxPct: e.tax_pct ?? 0,
     grandTotal: e.grand_total ?? 0,
+    followUpCount: e.follow_up_count ?? 0,
+    lastFollowUpAt: e.last_follow_up_at ?? null,
     createdAt: e.created_at,
     updatedAt: e.updated_at,
   }) : null
@@ -399,9 +401,12 @@ export async function syncAction(action, preState) {
       case ACTIONS.UPDATE_CLIENT:
         await supabase.from('clients').update({ name: payload.name, type: payload.type, email: payload.email || null, phone: payload.phone || null, address: payload.address || null, is_vip: payload.isVIP ?? false, notes: payload.notes || null }).eq('id', payload.id)
         break
-      case ACTIONS.DELETE_CLIENT:
+      case ACTIONS.DELETE_CLIENT: {
+        const linkedJobIds = (preState.jobs ?? []).filter(j => j.clientId === payload.id).map(j => j.id)
+        if (linkedJobIds.length > 0) await supabase.from('jobs').delete().in('id', linkedJobIds)
         await supabase.from('clients').delete().eq('id', payload.id)
         break
+      }
       case ACTIONS.TOGGLE_VIP: {
         const c = preState.clients.find(x => x.id === payload.id)
         if (c) await supabase.from('clients').update({ is_vip: !c.isVIP }).eq('id', payload.id)
@@ -520,7 +525,9 @@ export async function syncAction(action, preState) {
           lab_items: est.labItems ?? [], material_items: est.materialItems ?? [],
           labor_items: est.laborItems ?? [], xactimate_items: est.xactimateItems ?? [],
           overhead_margin_pct: est.overheadMarginPct ?? 20, tax_pct: est.taxPct ?? 0,
-          grand_total: est.grandTotal ?? 0, updated_at: ts(),
+          grand_total: est.grandTotal ?? 0,
+          follow_up_count: est.followUpCount ?? 0, last_follow_up_at: est.lastFollowUpAt || null,
+          updated_at: ts(),
         })
         break
       }
