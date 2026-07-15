@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useApp } from '../../context/AppContext'
 import { ACTIONS } from '../../context/AppReducer'
 import { SmilePlus, Star, Copy, Check, CheckCircle, X } from 'lucide-react'
+import { getCompanySettings } from '../../utils/companySettings'
 
 function StarRating({ value, onChange, readonly }) {
   return (
@@ -50,7 +51,7 @@ function SurveyModal({ job, client, onClose }) {
               <div className="w-6 h-6 bg-red-600 rounded flex items-center justify-center">
                 <svg viewBox="0 0 24 24" fill="white" width="14" height="14"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
               </div>
-              <span className="text-white font-bold text-sm">PurePro Restoration</span>
+              <span className="text-white font-bold text-sm">{getCompanySettings().companyName}</span>
             </div>
             <div className="text-gray-400 text-xs mt-1">Job Satisfaction Survey</div>
           </div>
@@ -69,7 +70,7 @@ function SurveyModal({ job, client, onClose }) {
             <div className="space-y-6">
               <div>
                 <p className="text-sm font-medium text-gray-700 mb-3">
-                  Hi {client?.name?.split(' ')[0] ?? 'there'}, how would you rate your experience with PurePro Restoration?
+                  Hi {client?.name?.split(' ')[0] ?? 'there'}, how would you rate your experience with {getCompanySettings().companyName}?
                 </p>
                 <StarRating value={stars} onChange={setStars} />
                 {stars > 0 && (
@@ -129,12 +130,13 @@ function OutboundCard({ job, client }) {
   const [showSurvey, setShowSurvey] = useState(false)
 
   const firstName = client?.name?.split(' ')[0] ?? 'there'
-  const script = `Hi ${firstName}, thank you so much for trusting PurePro Restoration with your ${job.type.toLowerCase()} project. We'd love to hear your feedback — it only takes a minute and helps us keep improving.
+  const { companyName } = getCompanySettings()
+  const script = `Hi ${firstName}, thank you so much for trusting ${companyName} with your ${job.type.toLowerCase()} project. We'd love to hear your feedback — it only takes a minute and helps us keep improving.
 
 Could you fill out a quick satisfaction survey? Just reply "yes" and I'll walk you through it, or you can let me know how it went right here.
 
 Thank you again — it was great working with you!
-— PurePro Restoration`
+— ${companyName}`
 
   const copyScript = async () => {
     try { await navigator.clipboard.writeText(script) } catch {

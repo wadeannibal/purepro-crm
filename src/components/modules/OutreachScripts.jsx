@@ -3,78 +3,82 @@ import { useApp } from '../../context/AppContext'
 import { ACTIONS } from '../../context/AppReducer'
 import { PARTNER_TYPES } from '../../utils/helpers'
 import { Copy, Check, CheckCircle, Plus, Edit2, Trash2, X, ScrollText } from 'lucide-react'
+import { getCompanySettings } from '../../utils/companySettings'
 
-const DEFAULT_SCRIPTS = [
-  {
-    id: 'script-plumber-cold',
-    title: 'Cold Outreach — Plumber',
-    partnerType: 'Plumber',
-    isCustom: false,
-    sentHistory: [],
-    content: `Hi [Name], this is Wade with PurePro Restoration in Denver. I work specifically in mold and water damage remediation, and I know plumbers are often the first ones on scene when water damage happens.
+function getDefaultScripts() {
+  const { companyName, ownerName, city } = getCompanySettings()
+  return [
+    {
+      id: 'script-plumber-cold',
+      title: 'Cold Outreach — Plumber',
+      partnerType: 'Plumber',
+      isCustom: false,
+      sentHistory: [],
+      content: `Hi [Name], this is ${ownerName} with ${companyName} in ${city}. I work specifically in mold and water damage remediation, and I know plumbers are often the first ones on scene when water damage happens.
 
 I'd love to set up a referral partnership — any time you run into a job with mold or water damage beyond your scope, I'll take great care of your clients and make sure they know you sent them to the right place.
 
 Would you be open to a 10-minute call this week? I can work around your schedule.
-— Wade, PurePro Restoration`,
-  },
-  {
-    id: 'script-realtor-warm',
-    title: 'Warm Follow-Up — Real Estate Agent',
-    partnerType: 'Real Estate Agent',
-    isCustom: false,
-    sentHistory: [],
-    content: `Hi [Name], Wade from PurePro Restoration following up!
+— ${ownerName}, ${companyName}`,
+    },
+    {
+      id: 'script-realtor-warm',
+      title: 'Warm Follow-Up — Real Estate Agent',
+      partnerType: 'Real Estate Agent',
+      isCustom: false,
+      sentHistory: [],
+      content: `Hi [Name], ${ownerName} from ${companyName} following up!
 
-Just wanted to stay on your radar heading into the season. We've been handling a lot of pre-sale mold inspections and clearance letters in the Denver area — usually able to turn those around within 48-72 hours when you're up against a closing deadline.
+Just wanted to stay on your radar heading into the season. We've been handling a lot of pre-sale mold inspections and clearance letters in the ${city} area — usually able to turn those around within 48-72 hours when you're up against a closing deadline.
 
 If any of your buyers or sellers run into moisture or mold issues, I'd love to be your go-to call. Happy to set up a preferred vendor arrangement — we'll always make you look good with your clients.
 
 Want to grab coffee sometime?
-— Wade, PurePro Restoration`,
-  },
-  {
-    id: 'script-doctor-intro',
-    title: 'Introduction — Functional Medicine / CIRS Doctor',
-    partnerType: 'Functional Medicine / CIRS Doctor',
-    isCustom: false,
-    sentHistory: [],
-    content: `Hi Dr. [Name], my name is Wade with PurePro Restoration. I specialize in mold remediation for CIRS and mold-sensitive patients in the Denver area, and I wanted to reach out because I understand how critical proper environmental remediation is for your patients' recovery.
+— ${ownerName}, ${companyName}`,
+    },
+    {
+      id: 'script-doctor-intro',
+      title: 'Introduction — Functional Medicine / CIRS Doctor',
+      partnerType: 'Functional Medicine / CIRS Doctor',
+      isCustom: false,
+      sentHistory: [],
+      content: `Hi Dr. [Name], my name is ${ownerName} with ${companyName}. I specialize in mold remediation for CIRS and mold-sensitive patients in the ${city} area, and I wanted to reach out because I understand how critical proper environmental remediation is for your patients' recovery.
 
 I'm familiar with ERMI/HERTSMI protocols, IICRC S520 remediation standards, and the importance of clearance testing. I take a very thorough, documentation-heavy approach that supports the clinical process.
 
 Would you be open to a brief introduction call? I'd love to be a resource for your patients who need environmental support.
-— Wade, PurePro Restoration`,
-  },
-  {
-    id: 'script-adjuster-followup',
-    title: 'Follow-Up — Insurance Adjuster',
-    partnerType: 'Insurance Adjuster',
-    isCustom: false,
-    sentHistory: [],
-    content: `Hi [Name], Wade Annibal with PurePro Restoration. I wanted to follow up and make sure our documentation for [Claim # / Job] has everything you need for the review.
+— ${ownerName}, ${companyName}`,
+    },
+    {
+      id: 'script-adjuster-followup',
+      title: 'Follow-Up — Insurance Adjuster',
+      partnerType: 'Insurance Adjuster',
+      isCustom: false,
+      sentHistory: [],
+      content: `Hi [Name], ${ownerName} with ${companyName}. I wanted to follow up and make sure our documentation for [Claim # / Job] has everything you need for the review.
 
 We always provide ERMI testing results, detailed scope of work, and post-remediation clearance documentation — I know thorough documentation makes your approval process much smoother.
 
 If you're ever in a bind on a tight-timeline claim and need a quick mobilization or scope assessment, we can typically respond same-day. Let me know how I can make your job easier.
-— Wade, PurePro Restoration`,
-  },
-  {
-    id: 'script-cold-reengage',
-    title: 'Re-Engagement — Cold Partner',
-    partnerType: 'Plumber',
-    isCustom: false,
-    sentHistory: [],
-    content: `Hi [Name], it's Wade with PurePro Restoration — it's been a while and I just wanted to check in!
+— ${ownerName}, ${companyName}`,
+    },
+    {
+      id: 'script-cold-reengage',
+      title: 'Re-Engagement — Cold Partner',
+      partnerType: 'Plumber',
+      isCustom: false,
+      sentHistory: [],
+      content: `Hi [Name], it's ${ownerName} with ${companyName} — it's been a while and I just wanted to check in!
 
-We've been staying busy this season with some great projects around Denver and always keep you in mind when clients come our way who might need your help.
+We've been staying busy this season with some great projects around ${city} and always keep you in mind when clients come our way who might need your help.
 
 Wanted to make sure the connection stays warm. If you have any clients dealing with water damage or mold issues, we're still your best call in the metro — quick response, IICRC-certified, and we always make sure the referring partner looks good.
 
 Hope everything's going well. Let me know if there's anything I can do for you!
-— Wade, PurePro Restoration`,
-  },
-]
+— ${ownerName}, ${companyName}`,
+    },
+  ]
+}
 
 const BLANK = { title: '', partnerType: 'Plumber', content: '' }
 
@@ -142,10 +146,10 @@ export default function OutreachScripts() {
   const [editingId, setEditingId] = useState(null)
 
   useEffect(() => {
-    dispatch({ type: ACTIONS.INIT_SCRIPTS, payload: DEFAULT_SCRIPTS })
+    dispatch({ type: ACTIONS.INIT_SCRIPTS, payload: getDefaultScripts() })
   }, [])
 
-  const scripts = state.scripts ?? DEFAULT_SCRIPTS
+  const scripts = state.scripts ?? getDefaultScripts()
 
   const filtered = scripts.filter(s => filterType === 'All' || s.partnerType === filterType)
 

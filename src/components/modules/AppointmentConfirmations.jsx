@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useApp } from '../../context/AppContext'
 import { ACTIONS } from '../../context/AppReducer'
 import { BellRing, Copy, Check, CheckCircle, Clock, AlertCircle, CalendarPlus } from 'lucide-react'
+import { getCompanySettings } from '../../utils/companySettings'
 
 const fmtDate = (dateStr) =>
   new Date(dateStr + 'T12:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
@@ -14,26 +15,28 @@ const fmtTime = (t) => {
 }
 
 function buildConfirmation(event, job, client) {
+  const { companyName } = getCompanySettings()
   const clientName = client?.name?.split(' ')[0] ?? 'there'
   const address = job?.address ?? event.address ?? '[Address]'
   const date = fmtDate(event.date)
   const time = event.startTime ? `at ${fmtTime(event.startTime)}` : ''
-  return `Hi ${clientName}, this is PurePro Restoration confirming your ${event.eventType.toLowerCase()} appointment on ${date}${time ? ' ' + time : ''} at ${address}.
+  return `Hi ${clientName}, this is ${companyName} confirming your ${event.eventType.toLowerCase()} appointment on ${date}${time ? ' ' + time : ''} at ${address}.
 
 Please ensure access to the property at that time. If you need to reschedule or have any questions, call us anytime.
 
 We look forward to seeing you!
-— PurePro Restoration`
+— ${companyName}`
 }
 
 function buildReminder(event, job, client) {
+  const { companyName } = getCompanySettings()
   const clientName = client?.name?.split(' ')[0] ?? 'there'
   const time = event.startTime ? `at ${fmtTime(event.startTime)}` : 'tomorrow'
   const address = job?.address ?? event.address ?? '[Address]'
-  return `Hi ${clientName}, just a reminder that PurePro Restoration will be at ${address} tomorrow${event.startTime ? ' ' + time : ''} for your ${event.eventType.toLowerCase()}.
+  return `Hi ${clientName}, just a reminder that ${companyName} will be at ${address} tomorrow${event.startTime ? ' ' + time : ''} for your ${event.eventType.toLowerCase()}.
 
 Please make sure we have access to the property. See you then!
-— PurePro Restoration`
+— ${companyName}`
 }
 
 function EventCard({ event, job, client, type }) {

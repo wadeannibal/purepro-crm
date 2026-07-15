@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { Loader } from 'lucide-react'
+import { getCompanySettings } from '../../utils/companySettings'
 
 export default function Login() {
+  const company = getCompanySettings()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -21,19 +23,26 @@ export default function Login() {
     <div className="min-h-screen bg-gray-950 flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
         {/* Logo */}
-        <div className="flex items-center gap-3 justify-center mb-10">
-          <div className="w-10 h-10 bg-red-600 rounded-xl flex items-center justify-center flex-shrink-0">
-            <svg viewBox="0 0 24 24" fill="white" width="22" height="22">
-              <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
-            </svg>
-          </div>
-          <div className="leading-tight">
-            <div>
-              <span className="text-red-500 font-black text-xl tracking-tight">PURE</span>
-              <span className="text-white font-black text-xl tracking-tight">PRO</span>
-            </div>
-            <div className="text-gray-500 text-xs font-medium tracking-widest uppercase leading-none">Restoration</div>
-          </div>
+        <div className="flex items-center justify-center mb-10">
+          {company.logo
+            ? <img src={company.logo} alt={company.companyName} className="h-16 w-auto object-contain" />
+            : (
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-red-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <svg viewBox="0 0 24 24" fill="white" width="22" height="22">
+                    <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+                  </svg>
+                </div>
+                <div className="leading-tight">
+                  <div>
+                    <span className="text-red-500 font-black text-xl tracking-tight">PURE</span>
+                    <span className="text-white font-black text-xl tracking-tight">PRO</span>
+                  </div>
+                  <div className="text-gray-500 text-xs font-medium tracking-widest uppercase leading-none">Restoration</div>
+                </div>
+              </div>
+            )
+          }
         </div>
 
         {/* Card */}

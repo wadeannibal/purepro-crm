@@ -1,6 +1,7 @@
 import { useApp } from '../../context/AppContext'
 import { computeEstimateTotals, formatCurrencyExact, formatDate } from '../../utils/helpers'
 import { Printer, FileText } from 'lucide-react'
+import { getCompanySettings } from '../../utils/companySettings'
 
 function LineSection({ title, rows, columns }) {
   if (!rows || rows.length === 0) return null
@@ -269,16 +270,16 @@ export default function QuoteGenerator({ selectedJobId, setSelectedJobId, naviga
                 <div className="text-xs text-gray-500">Date</div>
               </div>
               <div>
-                <div className="text-xs text-gray-500 mb-2">By signing, you authorize PurePro Restoration Services to perform the work described in this estimate at the stated price. A 50% deposit is required before work begins.</div>
+                <div className="text-xs text-gray-500 mb-2">By signing, you authorize {getCompanySettings().companyName} to perform the work described in this estimate at the stated price. A 50% deposit is required before work begins.</div>
                 <div className="mt-4 border-b border-gray-400 mb-1 h-8" />
-                <div className="text-xs text-gray-500">PurePro Representative</div>
+                <div className="text-xs text-gray-500">{getCompanySettings().companyName} Representative</div>
               </div>
             </div>
           </div>
 
           {/* Footer */}
           <div className="mt-10 pt-4 border-t border-gray-100 text-center text-xs text-gray-400">
-            PurePro Restoration Services · Licensed & Insured · Thank you for your trust
+            {getCompanySettings().companyName} · Licensed & Insured · Thank you for your trust
           </div>
         </div>
       </div>

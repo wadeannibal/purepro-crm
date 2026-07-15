@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useApp } from '../../context/AppContext'
 import { ACTIONS } from '../../context/AppReducer'
 import { UserPlus, Star, Copy, Check, CheckCircle } from 'lucide-react'
+import { getCompanySettings } from '../../utils/companySettings'
 
 export default function ReferralAsk() {
   const { state, dispatch } = useApp()
@@ -91,13 +92,14 @@ function ReferralCard({ job, client, dispatch }) {
   const firstName = client?.name?.split(' ')[0] ?? 'there'
   const stars = job.survey?.stars ?? 0
 
+  const { companyName } = getCompanySettings()
   const [script, setScript] = useState(
     `Hi ${firstName}, we really appreciate your kind feedback${stars === 5 ? ' and the 5-star review' : ''}! We're so glad we could help with your ${job.type.toLowerCase()} project.
 
 If you know anyone — a neighbor, friend, or family member — who ever needs water, mold, or fire restoration work, we'd be so grateful if you kept us in mind. A personal referral means everything to a small business like ours.
 
-Thank you again for trusting PurePro Restoration!
-— PurePro Restoration`
+Thank you again for trusting ${companyName}!
+— ${companyName}`
   )
 
   const copyScript = async () => {

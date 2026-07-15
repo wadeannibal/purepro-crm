@@ -3,6 +3,7 @@ import { useApp } from '../../context/AppContext'
 import { ACTIONS } from '../../context/AppReducer'
 import { formatDate } from '../../utils/helpers'
 import { Zap, Copy, Check, CheckCircle, Clock, Phone, Mail } from 'lucide-react'
+import { getCompanySettings } from '../../utils/companySettings'
 
 const UNBOOKED = ['Lead', 'Inspection', 'Estimate Sent']
 
@@ -12,29 +13,30 @@ function daysSince(iso) {
 }
 
 function getTemplate(dayCount, job, client) {
+  const { companyName, ownerName } = getCompanySettings()
   const name = client?.name?.split(' ')[0] ?? 'there'
   if (dayCount <= 1) {
-    return `Hi ${name}, this is Wade with PurePro Restoration. I wanted to quickly follow up from our conversation about the ${job.type?.toLowerCase() ?? 'moisture'} issue at ${job.address ?? 'your property'}.
+    return `Hi ${name}, this is ${ownerName} with ${companyName}. I wanted to quickly follow up from our conversation about the ${job.type?.toLowerCase() ?? 'moisture'} issue at ${job.address ?? 'your property'}.
 
 I know these situations can feel overwhelming, and I want to make sure you have everything you need to make a decision. If you have any questions about the scope or process, I'm happy to walk through it with you again.
 
 Looking forward to hearing from you!
-— Wade, PurePro Restoration`
+— ${ownerName}, ${companyName}`
   }
   if (dayCount <= 3) {
-    return `Hi ${name}, Wade here from PurePro Restoration — just circling back on the ${job.type?.toLowerCase() ?? 'remediation'} assessment at ${job.address ?? 'your property'}.
+    return `Hi ${name}, ${ownerName} here from ${companyName} — just circling back on the ${job.type?.toLowerCase() ?? 'remediation'} assessment at ${job.address ?? 'your property'}.
 
 I understand you may be weighing your options, and that's completely fine. I just want to make sure the situation isn't getting worse while you decide. Mold can spread quickly if there's still an active moisture source.
 
 If timing or budget is a concern, I'm open to discussing options. Would love to help you get this resolved.
-— Wade, PurePro Restoration`
+— ${ownerName}, ${companyName}`
   }
   return `Hi ${name}, it's been about a week since we last spoke and I wanted to do one final check-in about the ${job.type?.toLowerCase() ?? 'remediation'} work at ${job.address ?? 'your property'}.
 
 I don't want to be a bother — if you've moved in a different direction, I completely understand. But if you're still considering it, I'd love to earn your business and get your home protected.
 
 Just reply or call anytime — I'm here when you're ready.
-— Wade, PurePro Restoration`
+— ${ownerName}, ${companyName}`
 }
 
 function getBadge(days) {

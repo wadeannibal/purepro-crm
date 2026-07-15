@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useApp } from '../../context/AppContext'
 import { ACTIONS } from '../../context/AppReducer'
 import { RefreshCw, Copy, Check, CheckCircle, Clock } from 'lucide-react'
+import { getCompanySettings } from '../../utils/companySettings'
 
 const MS_PER_DAY = 86400000
 const MS_PER_YEAR = 365 * MS_PER_DAY
@@ -17,15 +18,16 @@ function CheckInCard({ job, client, dispatch }) {
   const firstName = client?.name?.split(' ')[0] ?? 'there'
   const over = daysOverdue(job)
 
+  const { companyName } = getCompanySettings()
   const [script, setScript] = useState(
-    `Hi ${firstName}, it's been about a year since PurePro Restoration completed your ${job.type.toLowerCase()} project at ${job.address}. We just wanted to check in and make sure everything is still looking great!
+    `Hi ${firstName}, it's been about a year since ${companyName} completed your ${job.type.toLowerCase()} project at ${job.address}. We just wanted to check in and make sure everything is still looking great!
 
 If you've noticed anything unusual — moisture, odors, or any concerns at all — please don't hesitate to reach out. Many issues are easiest and most affordable to address when caught early.
 
 We also wanted to let you know we're still here for anything you need. If you have friends, neighbors, or family who ever run into water, mold, or fire damage, we'd love to help them too.
 
 Thanks again for trusting us with your home!
-— PurePro Restoration`
+— ${companyName}`
   )
 
   const copyScript = async () => {

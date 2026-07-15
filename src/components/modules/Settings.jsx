@@ -1,38 +1,38 @@
-import { useState, useEffect } from 'react'
-import { Settings2, Save, Check, Building2, LogOut } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { Settings2, Save, Check, Building2, LogOut, Upload, X, User } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
+import { COMPANY_DEFAULTS } from '../../utils/companySettings'
 
 const STORAGE_KEY = 'purepro_company_settings'
 
-const BLANK = {
-  companyName: '',
-  phone: '',
-  city: '',
-  website: '',
-  licenseNumber: '',
-  email: '',
-}
-
 function load() {
   try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) ?? BLANK
+    return { ...COMPANY_DEFAULTS, ...JSON.parse(localStorage.getItem(STORAGE_KEY)) }
   } catch {
-    return BLANK
+    return { ...COMPANY_DEFAULTS }
   }
 }
 
 export default function Settings() {
-  const [form, setForm] = useState(BLANK)
+  const [form, setForm] = useState(COMPANY_DEFAULTS)
   const [saved, setSaved] = useState(false)
+  const logoRef = useRef()
 
-  useEffect(() => {
-    setForm(load())
-  }, [])
+  useEffect(() => { setForm(load()) }, [])
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
+  const handleLogo = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (ev) => set('logo', ev.target.result)
+    reader.readAsDataURL(file)
+  }
+
   const save = () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(form))
+    window.dispatchEvent(new Event('company-settings-updated'))
     setSaved(true)
     setTimeout(() => setSaved(false), 2500)
   }
@@ -47,7 +47,40 @@ export default function Settings() {
           </div>
           <div>
             <h1 className="text-xl font-black text-gray-900">Company Settings</h1>
-            <p className="text-sm text-gray-500 mt-0.5">Your company info used across quotes, proposals, and messages</p>
+            <p className="text-sm text-gray-500 mt-0.5">Used across all quotes, proposals, messages, and documents</p>
+          </div>
+        </div>
+
+        {/* Logo */}
+        <div className="bg-white border border-gray-200 rounded-2xl p-6 space-y-4">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-wide">Company Logo</span>
+          </div>
+          <div className="flex items-center gap-5">
+            <div className="w-24 h-24 rounded-xl border-2 border-dashed border-gray-200 flex items-center justify-center bg-gray-50 overflow-hidden flex-shrink-0">
+              {form.logo
+                ? <img src={form.logo} alt="Logo" className="w-full h-full object-contain p-1" />
+                : <Upload size={22} className="text-gray-300" />
+              }
+            </div>
+            <div className="space-y-2">
+              <button
+                onClick={() => logoRef.current?.click()}
+                className="flex items-center gap-2 bg-gray-900 hover:bg-gray-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors"
+              >
+                <Upload size={14} /> {form.logo ? 'Change Logo' : 'Upload Logo'}
+              </button>
+              {form.logo && (
+                <button
+                  onClick={() => set('logo', null)}
+                  className="flex items-center gap-2 text-xs text-red-500 hover:text-red-700 font-medium"
+                >
+                  <X size={12} /> Remove logo
+                </button>
+              )}
+              <p className="text-xs text-gray-400">PNG or JPG. Appears in the sidebar, login screen, and printed documents.</p>
+              <input ref={logoRef} type="file" accept="image/png,image/jpeg,image/svg+xml" className="hidden" onChange={handleLogo} />
+            </div>
           </div>
         </div>
 
@@ -68,6 +101,18 @@ export default function Settings() {
                 placeholder="e.g. PurePro Restoration"
                 className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
               />
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-gray-600 uppercase tracking-wide mb-1.5 block">Owner / Rep Name</label>
+              <input
+                type="text"
+                value={form.ownerName}
+                onChange={e => set('ownerName', e.target.value)}
+                placeholder="e.g. Wade"
+                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+              />
+              <p className="text-xs text-gray-400 mt-1">Used in outreach scripts, follow-ups, and AI content sign-offs.</p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -132,22 +177,12 @@ export default function Settings() {
             <button
               onClick={save}
               className={`flex items-center gap-2 font-semibold px-5 py-2.5 rounded-xl text-sm transition-all ${
-                saved
-                  ? 'bg-green-600 text-white'
-                  : 'bg-gray-900 hover:bg-gray-700 text-white'
+                saved ? 'bg-green-600 text-white' : 'bg-gray-900 hover:bg-gray-700 text-white'
               }`}
             >
               {saved ? <><Check size={15} /> Saved!</> : <><Save size={15} /> Save Settings</>}
             </button>
           </div>
-        </div>
-
-        {/* Usage note */}
-        <div className="bg-blue-50 border border-blue-200 rounded-2xl px-5 py-4">
-          <div className="text-sm font-semibold text-blue-900 mb-1">How this is used</div>
-          <p className="text-xs text-blue-700 leading-relaxed">
-            This info auto-populates your proposals, invoices, liability waivers, and outbound message scripts. Stored locally on this device — update it once and it applies everywhere.
-          </p>
         </div>
 
         {/* Sign out */}

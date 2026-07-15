@@ -2,15 +2,18 @@ import { useState, useRef, useEffect } from 'react'
 import { useApp } from '../../context/AppContext'
 import { ACTIONS } from '../../context/AppReducer'
 import { PenLine, CheckCircle, Clock, Trash2, X, RotateCcw, ChevronLeft } from 'lucide-react'
+import { getCompanySettings } from '../../utils/companySettings'
 
 const uid = () => crypto.randomUUID()
 
-const DOC_TYPES = {
-  'Work Authorization': `WORK AUTHORIZATION AGREEMENT
+function getDocTypes() {
+  const { companyName } = getCompanySettings()
+  return {
+    'Work Authorization': `WORK AUTHORIZATION AGREEMENT
 
-This Work Authorization is entered into between PurePro Restoration ("Company") and the property owner/authorized representative ("Client").
+This Work Authorization is entered into between ${companyName} ("Company") and the property owner/authorized representative ("Client").
 
-Client authorizes PurePro Restoration to perform the following services at the property described below:
+Client authorizes ${companyName} to perform the following services at the property described below:
 
 SCOPE OF WORK: As outlined in the attached estimate and scope of work document. Client acknowledges that the scope may be adjusted based on conditions discovered during the work.
 
@@ -21,11 +24,11 @@ CLIENT AUTHORIZATION: By signing below, Client confirms they are authorized to a
 Property Address: [Property Address]
 Date of Authorization: [Date]`,
 
-  'Mold Disclosure': `MOLD DISCLOSURE AND ACKNOWLEDGMENT
+    'Mold Disclosure': `MOLD DISCLOSURE AND ACKNOWLEDGMENT
 
 Property Address: [Property Address]
 
-CLIENT DISCLOSURE: PurePro Restoration has identified the presence of mold growth at the above property. Client acknowledges the following:
+CLIENT DISCLOSURE: ${companyName} has identified the presence of mold growth at the above property. Client acknowledges the following:
 
 1. Mold can pose health risks, particularly to individuals with respiratory conditions, allergies, or compromised immune systems.
 2. Occupants, especially those with health sensitivities, should vacate affected areas during remediation.
@@ -33,11 +36,11 @@ CLIENT DISCLOSURE: PurePro Restoration has identified the presence of mold growt
 4. Post-remediation testing may be required to verify clearance.
 5. Mold may return if the underlying moisture problem is not permanently resolved.
 
-CLIENT ACKNOWLEDGMENT: I have been informed of the above risks and conditions and authorize PurePro Restoration to proceed with the recommended remediation scope.`,
+CLIENT ACKNOWLEDGMENT: I have been informed of the above risks and conditions and authorize ${companyName} to proceed with the recommended remediation scope.`,
 
-  'Certificate of Satisfaction': `CERTIFICATE OF SATISFACTION
+    'Certificate of Satisfaction': `CERTIFICATE OF SATISFACTION
 
-This Certificate confirms that PurePro Restoration has completed the contracted services at the property described below to the satisfaction of the client.
+This Certificate confirms that ${companyName} has completed the contracted services at the property described below to the satisfaction of the client.
 
 Property Address: [Property Address]
 Completion Date: [Date]
@@ -50,9 +53,9 @@ CLIENT CONFIRMATION: By signing below, I confirm that:
 • I have had the opportunity to inspect the completed work
 • All questions and concerns have been addressed`,
 
-  'Estimate Approval': `ESTIMATE APPROVAL
+    'Estimate Approval': `ESTIMATE APPROVAL
 
-I, the undersigned, hereby approve the estimate provided by PurePro Restoration for the work described therein.
+I, the undersigned, hereby approve the estimate provided by ${companyName} for the work described therein.
 
 I understand that:
 • The total amount is as stated in the accompanying estimate
@@ -60,9 +63,10 @@ I understand that:
 • Additional work discovered during the project will be communicated before proceeding
 • Payment in full is due upon completion unless otherwise arranged
 
-By signing, I authorize PurePro Restoration to proceed with the approved scope of work.`,
+By signing, I authorize ${companyName} to proceed with the approved scope of work.`,
 
-  'Custom': `[Enter your custom document text here]`,
+    'Custom': `[Enter your custom document text here]`,
+  }
 }
 
 function SignaturePad({ onSave, onCancel }) {
@@ -187,7 +191,7 @@ export default function ESignature({ selectedJobId, setSelectedJobId, navigateTo
   const signatures = job?.signatures ?? []
 
   const docContent = (docType, customText) =>
-    docType === 'Custom' ? customText : DOC_TYPES[docType] ?? ''
+    docType === 'Custom' ? customText : getDocTypes()[docType] ?? ''
 
   const createRequest = () => {
     if (!job) return
@@ -344,7 +348,7 @@ export default function ESignature({ selectedJobId, setSelectedJobId, navigateTo
                   onChange={e => setNewDoc(d => ({ ...d, docType: e.target.value }))}
                   className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
                 >
-                  {Object.keys(DOC_TYPES).map(t => <option key={t}>{t}</option>)}
+                  {Object.keys(getDocTypes()).map(t => <option key={t}>{t}</option>)}
                 </select>
               </div>
               <div>

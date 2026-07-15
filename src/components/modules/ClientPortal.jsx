@@ -3,6 +3,7 @@ import { useApp } from '../../context/AppContext'
 import { ACTIONS } from '../../context/AppReducer'
 import { computeEstimateTotals, formatCurrency } from '../../utils/helpers'
 import { Globe, Copy, Check, Eye, X, CheckCircle, Clock, ChevronRight, ChevronLeft } from 'lucide-react'
+import { getCompanySettings } from '../../utils/companySettings'
 
 const STAGE_ORDER = ['Lead', 'Inspection', 'Estimate Sent', 'Approved', 'Remediation', 'Post-Test', 'Invoiced', 'Closed']
 
@@ -180,7 +181,7 @@ function PortalPreview({ job, client, events, onClose, onApprove }) {
           </div>
 
           <div className="text-center text-xs text-gray-400 pb-2">
-            Questions? Call PurePro Restoration anytime.
+            Questions? Call {getCompanySettings().companyName} anytime.
           </div>
         </div>
       </div>

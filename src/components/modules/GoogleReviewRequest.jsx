@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useApp } from '../../context/AppContext'
 import { ACTIONS } from '../../context/AppReducer'
 import { Star, Copy, Check, CheckCircle, ExternalLink } from 'lucide-react'
+import { getCompanySettings } from '../../utils/companySettings'
 
 const GOOGLE_LINK_PLACEHOLDER = '[YOUR_GOOGLE_REVIEW_LINK]'
 
@@ -9,6 +10,7 @@ function ReviewCard({ job, client, dispatch }) {
   const [copied, setCopied] = useState(false)
   const firstName = client?.name?.split(' ')[0] ?? 'there'
 
+  const { companyName } = getCompanySettings()
   const [script, setScript] = useState(
     `Hi ${firstName}, it was great working with you on your recent ${job.type.toLowerCase()} project at ${job.address}!
 
@@ -17,8 +19,8 @@ If you have a moment, we'd really appreciate it if you could leave us a Google r
 Here's the link — it only takes 2 minutes:
 ${GOOGLE_LINK_PLACEHOLDER}
 
-Thank you so much for trusting PurePro Restoration!
-— PurePro Restoration`
+Thank you so much for trusting ${companyName}!
+— ${companyName}`
   )
 
   const copyScript = async () => {

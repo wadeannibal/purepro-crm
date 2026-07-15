@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useCompanySettings } from '../../hooks/useCompanySettings'
 import {
   Users, LayoutDashboard, FileText, Camera, Folder, MessageSquare,
   Wrench, Clock, Shield, ShieldCheck, Star, ChevronRight,
@@ -120,6 +121,7 @@ const GROUPS = [
 
 export default function Sidebar({ currentView, navigateTo, mobileOpen, onClose }) {
   const [collapsed, setCollapsed] = useState({})
+  const company = useCompanySettings()
 
   const toggle = (label) => setCollapsed(c => ({ ...c, [label]: !c[label] }))
 
@@ -131,19 +133,24 @@ export default function Sidebar({ currentView, navigateTo, mobileOpen, onClose }
   return (
     <aside className={`w-56 flex-shrink-0 bg-gray-950 flex flex-col h-full fixed md:relative inset-y-0 left-0 z-40 transition-transform duration-200 ${mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
       {/* Logo */}
-      <div className="px-4 py-5 border-b border-gray-800 flex-shrink-0">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center flex-shrink-0">
-            <svg viewBox="0 0 24 24" fill="white" width="18" height="18">
-              <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
-            </svg>
-          </div>
-          <div className="leading-tight">
-            <span className="text-red-500 font-black text-sm tracking-tight">PURE</span>
-            <span className="text-white font-black text-sm tracking-tight">PRO</span>
-            <div className="text-gray-500 text-[10px] font-medium tracking-wider uppercase leading-none">Restoration</div>
-          </div>
-        </div>
+      <div className="px-4 py-4 border-b border-gray-800 flex-shrink-0">
+        {company.logo
+          ? <img src={company.logo} alt={company.companyName} className="h-10 w-auto object-contain" />
+          : (
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                <svg viewBox="0 0 24 24" fill="white" width="18" height="18">
+                  <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+                </svg>
+              </div>
+              <div className="leading-tight">
+                <span className="text-red-500 font-black text-sm tracking-tight">PURE</span>
+                <span className="text-white font-black text-sm tracking-tight">PRO</span>
+                <div className="text-gray-500 text-[10px] font-medium tracking-wider uppercase leading-none">Restoration</div>
+              </div>
+            </div>
+          )
+        }
       </div>
 
       {/* Nav */}

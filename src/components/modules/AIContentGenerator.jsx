@@ -1,18 +1,21 @@
 import { useState } from 'react'
 import { useApp } from '../../context/AppContext'
 import { Sparkles, Copy, Check, CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
+import { getCompanySettings } from '../../utils/companySettings'
 
 const MODEL = 'claude-sonnet-4-6'
 const API_URL = 'https://api.anthropic.com/v1/messages'
 
-const TOOLS = [
-  {
-    id: 'instagram',
-    label: 'Instagram Post',
-    description: 'Engaging post for a completed job or educational mold content',
-    buildPrompt: (ctx) => `You are a social media copywriter for PurePro Restoration, a mold and water damage remediation company in Denver, CO. Write an engaging Instagram post (max 220 words).
+function getTools() {
+  const { companyName, ownerName, city } = getCompanySettings()
+  return [
+    {
+      id: 'instagram',
+      label: 'Instagram Post',
+      description: 'Engaging post for a completed job or educational mold content',
+      buildPrompt: (ctx) => `You are a social media copywriter for ${companyName}, a mold and water damage remediation company in ${city}. Write an engaging Instagram post (max 220 words).
 
-Context: ${ctx || 'Recent completed mold remediation job in Denver'}
+Context: ${ctx || `Recent completed mold remediation job in ${city}`}
 
 Requirements:
 - Hook in first line (no hashtag opener)
@@ -21,12 +24,12 @@ Requirements:
 - End with a soft CTA (DM us, link in bio, etc.)
 - Include 6-8 relevant hashtags at the end
 - Do NOT use emojis unless they fit naturally`,
-  },
-  {
-    id: 'referral',
-    label: 'Referral Outreach',
-    description: 'Personalized outreach message to a potential referral partner',
-    buildPrompt: (ctx) => `You are writing on behalf of Wade Annibal at PurePro Restoration in Denver, CO (mold & water damage remediation, IICRC-certified).
+    },
+    {
+      id: 'referral',
+      label: 'Referral Outreach',
+      description: 'Personalized outreach message to a potential referral partner',
+      buildPrompt: (ctx) => `You are writing on behalf of ${ownerName} at ${companyName} in ${city} (mold & water damage remediation, IICRC-certified).
 
 Write a short, personalized outreach message to a potential referral partner.
 
@@ -36,14 +39,14 @@ Requirements:
 - Warm, professional, not pushy
 - Mention the shared value of the referral relationship
 - Short enough to text or DM (under 150 words)
-- Personal sign-off: — Wade, PurePro Restoration
+- Personal sign-off: — ${ownerName}, ${companyName}
 - No formal greetings like "I hope this email finds you well"`,
-  },
-  {
-    id: 'review-response',
-    label: 'Google Review Response',
-    description: 'Professional response to a Google review (positive or negative)',
-    buildPrompt: (ctx) => `You are writing a Google review response for PurePro Restoration, a mold & water damage remediation company in Denver, CO, run by Wade Annibal.
+    },
+    {
+      id: 'review-response',
+      label: 'Google Review Response',
+      description: 'Professional response to a Google review (positive or negative)',
+      buildPrompt: (ctx) => `You are writing a Google review response for ${companyName}, a mold & water damage remediation company in ${city}, run by ${ownerName}.
 
 Review content: ${ctx || 'A 5-star review praising the team\'s thoroughness and professionalism'}
 
@@ -52,14 +55,14 @@ Requirements:
 - Thank them by first name if included
 - Reinforce 1-2 specific points from the review
 - For negative reviews: acknowledge, apologize, offer to make it right offline
-- Sign off: — Wade & the PurePro Team
+- Sign off: — ${ownerName} & the ${companyName} Team
 - Do NOT use "We're thrilled!" or "Delighted!" — keep it genuine`,
-  },
-  {
-    id: 'followup',
-    label: 'Follow-Up Message',
-    description: 'Custom follow-up for a specific lead or client situation',
-    buildPrompt: (ctx) => `You are writing on behalf of Wade Annibal at PurePro Restoration in Denver, CO.
+    },
+    {
+      id: 'followup',
+      label: 'Follow-Up Message',
+      description: 'Custom follow-up for a specific lead or client situation',
+      buildPrompt: (ctx) => `You are writing on behalf of ${ownerName} at ${companyName} in ${city}.
 
 Write a short follow-up message for the following situation:
 ${ctx || 'Lead who received an estimate 5 days ago and hasn\'t responded'}
@@ -68,14 +71,16 @@ Requirements:
 - Under 120 words
 - Not pushy — empathetic and helpful tone
 - Add one specific reason to act (e.g. mold spreads, limited schedule availability)
-- Personal sign-off: — Wade, PurePro Restoration
+- Personal sign-off: — ${ownerName}, ${companyName}
 - Ready to send as a text or email`,
-  },
-]
+    },
+  ]
+}
 
 export default function AIContentGenerator() {
   const { state } = useApp()
-  const [activeTool, setActiveTool] = useState(TOOLS[0])
+  const tools = getTools()
+  const [activeTool, setActiveTool] = useState(tools[0])
   const [context, setContext] = useState('')
   const [output, setOutput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -157,7 +162,7 @@ export default function AIContentGenerator() {
 
         {/* Tool selector */}
         <div className="grid grid-cols-2 gap-3">
-          {TOOLS.map(t => (
+          {tools.map(t => (
             <button key={t.id} onClick={() => { setActiveTool(t); setOutput(''); setError(null); setMarked(false) }}
               className={`text-left border rounded-xl p-4 transition-all ${activeTool.id === t.id
                 ? 'border-red-400 bg-red-50 ring-1 ring-red-300'

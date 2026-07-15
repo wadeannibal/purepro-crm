@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useApp } from '../../context/AppContext'
 import { ACTIONS } from '../../context/AppReducer'
 import { Camera, Star, StarOff, Copy, Check, CheckCircle } from 'lucide-react'
+import { getCompanySettings } from '../../utils/companySettings'
 
 export default function BeforeAfterShowcase({ navigateTo }) {
   const { state, dispatch } = useApp()
@@ -32,18 +33,19 @@ export default function BeforeAfterShowcase({ navigateTo }) {
   }
 
   const generateShowcaseText = (job, client) => {
-    const name = client?.name ?? 'a Denver homeowner'
+    const { companyName, ownerName, city, phone, website } = getCompanySettings()
+    const name = client?.name ?? `a ${city} homeowner`
     const type = job.type ?? 'restoration'
     const addr = job.address ?? ''
-    return `Before & After — PurePro Restoration
+    return `Before & After — ${companyName}
 ${type} Project${addr ? ` · ${addr}` : ''}
 Client: ${name}
 
-We're proud of the transformation on this project. From initial assessment through final clearance, the PurePro team handled every step with precision and professionalism.
+We're proud of the transformation on this project. From initial assessment through final clearance, our team handled every step with precision and professionalism.
 
-To see more before/after results or to request a free assessment, contact PurePro Restoration in Denver, CO.
-📞 Call or text Wade: [your number]
-🌐 [your website]`
+To see more before/after results or to request a free assessment, contact ${companyName} in ${city}.
+📞 Call or text ${ownerName}${phone ? `: ${phone}` : ': [your number]'}
+🌐 ${website || '[your website]'}`
   }
 
   const handleCopy = async (job, client) => {
