@@ -20,6 +20,8 @@ export async function loadFromSupabase() {
     { data: subs },
     { data: expenses },
     { data: overhead },
+    // Phase 3
+    { data: templateRows },
   ] = await Promise.all([
     supabase.from('clients').select('*').order('created_at'),
     supabase.from('jobs').select('*').order('created_at'),
@@ -37,6 +39,8 @@ export async function loadFromSupabase() {
     supabase.from('job_subcontractors').select('*').order('created_at'),
     supabase.from('job_expenses').select('*').order('date'),
     supabase.from('overhead_items').select('*').order('created_at'),
+    // Phase 3
+    supabase.from('proposal_templates').select('*').order('created_at'),
   ])
 
   const mapEstimate = (e) => e ? ({
@@ -46,6 +50,10 @@ export async function loadFromSupabase() {
     templateId: e.template_id,
     scopeNotes: e.scope_notes ?? '',
     termsNotes: e.terms_notes ?? '',
+    // New unified format (phase 3)
+    lineItems: e.line_items?.length > 0 ? e.line_items : null,
+    discountPct: e.discount_pct ?? 0,
+    // Legacy per-category arrays (kept for backward compat)
     sqftItems: e.sqft_items ?? [],
     equipmentItems: e.equipment_items ?? [],
     labItems: e.lab_items ?? [],
@@ -144,6 +152,21 @@ export async function loadFromSupabase() {
       amount: o.amount ?? 0,
       createdAt: o.created_at,
     })),
+    // Only include proposalTemplates if Supabase has them — lets INIT_TEMPLATES
+    // fire and seed defaults if the table is empty on a fresh device
+    ...((templateRows ?? []).length > 0 ? {
+      proposalTemplates: templateRows.map(t => ({
+        id: t.id,
+        name: t.name,
+        jobType: t.job_type,
+        description: t.description ?? '',
+        scopeNotes: t.scope_notes ?? '',
+        termsNotes: t.terms_notes ?? '',
+        lineItems: t.line_items ?? [],
+        createdAt: t.created_at,
+        updatedAt: t.updated_at,
+      })),
+    } : {}),
   }
 }
 
@@ -303,6 +326,10 @@ export async function syncAction(action, preState) {
           template_id: est.templateId || null,
           scope_notes: est.scopeNotes || '',
           terms_notes: est.termsNotes || '',
+          // New unified format
+          line_items: est.lineItems ?? [],
+          discount_pct: est.discountPct ?? 0,
+          // Legacy per-category arrays
           sqft_items: est.sqftItems ?? [],
           equipment_items: est.equipmentItems ?? [],
           lab_items: est.labItems ?? [],
@@ -431,6 +458,41 @@ export async function syncAction(action, preState) {
         break
       case ACTIONS.DELETE_OVERHEAD_ITEM:
         await supabase.from('overhead_items').delete().eq('id', payload.id)
+        break
+
+      // ── Phase 3: Proposal Templates ───────────────────────
+      case ACTIONS.INIT_TEMPLATES:
+        // Seed defaults — ignoreDuplicates so existing templates aren't overwritten
+        for (const t of (payload ?? [])) {
+          await supabase.from('proposal_templates').upsert({
+            id: t.id,
+            name: t.name,
+            job_type: t.jobType,
+            description: t.description ?? '',
+            scope_notes: t.scopeNotes ?? '',
+            terms_notes: t.termsNotes ?? '',
+            line_items: t.lineItems ?? [],
+            updated_at: ts(),
+          }, { onConflict: 'id', ignoreDuplicates: true })
+        }
+        break
+
+      case ACTIONS.ADD_TEMPLATE:
+      case ACTIONS.SAVE_TEMPLATE:
+        await supabase.from('proposal_templates').upsert({
+          id: payload.id,
+          name: payload.name,
+          job_type: payload.jobType,
+          description: payload.description ?? '',
+          scope_notes: payload.scopeNotes ?? '',
+          terms_notes: payload.termsNotes ?? '',
+          line_items: payload.lineItems ?? [],
+          updated_at: ts(),
+        })
+        break
+
+      case ACTIONS.DELETE_TEMPLATE:
+        await supabase.from('proposal_templates').delete().eq('id', payload.id)
         break
     }
   } catch (err) {
