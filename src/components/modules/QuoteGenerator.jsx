@@ -79,13 +79,15 @@ export default function QuoteGenerator({ selectedJobId, setSelectedJobId, naviga
 
   const totals = computeEstimateTotals(estimate)
 
-  const sqftRows = (estimate.sqftItems ?? []).map(i => ({ ...i, _total: (i.sqft ?? 0) * (i.ratePerSqft ?? 0) }))
-  const equipRows = (estimate.equipmentItems ?? []).map(i => ({ ...i, _total: (i.qty ?? 0) * (i.unitPrice ?? 0) }))
-  const labRows = (estimate.labItems ?? []).map(i => ({ ...i, _total: (i.qty ?? 0) * (i.unitPrice ?? 0) }))
-  const matRows = (estimate.materialItems ?? []).map(i => ({ ...i, _total: (i.qty ?? 0) * (i.unitPrice ?? 0) }))
-  const laborRows = (estimate.laborItems ?? []).map(i => ({ ...i, _total: (i.hours ?? 0) * (i.ratePerHour ?? 0) }))
-  const xactRows = (estimate.xactimateItems ?? []).map(i => ({ ...i, _total: (i.qty ?? 0) * (i.unitPrice ?? 0) }))
-  const flatRows = (estimate.flatFeeItems ?? []).map(i => ({ ...i, _total: i.amount ?? 0 }))
+  // Support both new unified lineItems format and legacy per-category arrays
+  const isNewFormat = Array.isArray(estimate.lineItems)
+  const sqftRows = isNewFormat ? [] : (estimate.sqftItems ?? []).map(i => ({ ...i, _total: (i.sqft ?? 0) * (i.ratePerSqft ?? 0) }))
+  const equipRows = isNewFormat ? [] : (estimate.equipmentItems ?? []).map(i => ({ ...i, _total: (i.qty ?? 0) * (i.unitPrice ?? 0) }))
+  const labRows = isNewFormat ? [] : (estimate.labItems ?? []).map(i => ({ ...i, _total: (i.qty ?? 0) * (i.unitPrice ?? 0) }))
+  const matRows = isNewFormat ? [] : (estimate.materialItems ?? []).map(i => ({ ...i, _total: (i.qty ?? 0) * (i.unitPrice ?? 0) }))
+  const laborRows = isNewFormat ? [] : (estimate.laborItems ?? []).map(i => ({ ...i, _total: (i.hours ?? 0) * (i.ratePerHour ?? 0) }))
+  const xactRows = isNewFormat ? [] : (estimate.xactimateItems ?? []).map(i => ({ ...i, _total: (i.qty ?? 0) * (i.unitPrice ?? 0) }))
+  const flatRows = isNewFormat ? [] : (estimate.flatFeeItems ?? []).map(i => ({ ...i, _total: i.amount ?? 0 }))
 
   const today = new Date().toISOString()
   const validUntil = new Date(Date.now() + 30 * 86400000).toISOString()
@@ -172,6 +174,38 @@ export default function QuoteGenerator({ selectedJobId, setSelectedJobId, naviga
           <div className="mb-8">
             <h2 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Itemized Estimate</h2>
 
+            {/* New unified format */}
+            {isNewFormat && (estimate.lineItems ?? []).length > 0 && (
+              <table className="w-full text-sm mb-6">
+                <thead>
+                  <tr>
+                    <th className="text-xs font-semibold text-gray-500 pb-1.5 text-left w-8">#</th>
+                    <th className="text-xs font-semibold text-gray-500 pb-1.5 text-left" style={{ width: '40%' }}>Description</th>
+                    <th className="text-xs font-semibold text-gray-500 pb-1.5 text-right w-12">Qty</th>
+                    <th className="text-xs font-semibold text-gray-500 pb-1.5 text-right w-12">Unit</th>
+                    <th className="text-xs font-semibold text-gray-500 pb-1.5 text-right" style={{ width: '18%' }}>Unit Price</th>
+                    <th className="text-xs font-semibold text-gray-500 pb-1.5 text-right" style={{ width: '18%' }}>Total</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {(estimate.lineItems ?? []).map((item, idx) => {
+                    const total = (item.qty ?? 0) * (item.unitPrice ?? 0)
+                    return (
+                      <tr key={item.id ?? idx}>
+                        <td className="py-1.5 text-gray-400 text-xs">{idx + 1}</td>
+                        <td className="py-1.5 text-gray-800">{item.name}</td>
+                        <td className="py-1.5 text-gray-800 text-right">{item.qty}</td>
+                        <td className="py-1.5 text-gray-500 text-right text-xs">{item.unit}</td>
+                        <td className="py-1.5 text-gray-800 text-right">{formatCurrencyExact(item.unitPrice)}</td>
+                        <td className={`py-1.5 text-right font-medium ${total < 0 ? 'text-green-700' : 'text-gray-800'}`}>{formatCurrencyExact(total)}</td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            )}
+
+            {/* Legacy per-category format */}
             <LineSection title="Area / Square Footage" rows={sqftRows} columns={[
               { key: 'description', label: 'Description', width: '45%' },
               { key: 'sqft', label: 'Sq Ft', align: 'right', width: '18%', format: v => v?.toLocaleString() ?? '—' },
