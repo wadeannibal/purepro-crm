@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useApp } from '../../context/AppContext'
 import { ACTIONS } from '../../context/AppReducer'
@@ -8,7 +8,7 @@ import {
 import { STANDARD_TERMS } from '../../data/proposalTemplates'
 import {
   Plus, Trash2, Send, CheckCircle, XCircle, FileText, ChevronRight, User,
-  ChevronUp, ChevronDown, Search, X, Star, BookOpen, Sparkles, Loader2,
+  ChevronUp, ChevronDown, Search, X, Star, BookOpen, Sparkles, Loader2, GripVertical, ImagePlus,
 } from 'lucide-react'
 
 // ── Category definitions ─────────────────────────────────────────────────────
@@ -124,7 +124,8 @@ const BLANK_ESTIMATE = {
   scopeNotes: '',
   termsNotes: STANDARD_TERMS,
   lineItems: [],
-  overheadMarginPct: 25,
+  photos: [],
+  overheadMarginPct: 0,
   taxPct: 0,
   discountPct: 0,
 }
@@ -205,10 +206,20 @@ function TotalsPanel({ estimate, onMarginChange, onTaxChange, onDiscountChange }
 }
 
 // ── Single line item row ─────────────────────────────────────────────────────
-function LineItemRow({ item, isFirst, isLast, onUpdate, onDelete, onMoveUp, onMoveDown, onSaveToLibrary }) {
+function LineItemRow({ item, isFirst, isLast, onUpdate, onDelete, onMoveUp, onMoveDown, onSaveToLibrary, onDragStart, onDrop }) {
+  const [isDragOver, setIsDragOver] = useState(false)
   const total = (item.qty ?? 0) * (item.unitPrice ?? 0)
   return (
-    <div className="group flex items-center gap-2 py-2 border-b border-gray-100 last:border-0">
+    <div
+      className={`group flex items-center gap-2 py-2 border-b border-gray-100 last:border-0 transition-colors ${isDragOver ? 'bg-red-50 border-t-2 border-t-red-400' : ''}`}
+      draggable
+      onDragStart={e => { e.dataTransfer.effectAllowed = 'move'; onDragStart() }}
+      onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; setIsDragOver(true) }}
+      onDragLeave={() => setIsDragOver(false)}
+      onDrop={e => { e.preventDefault(); setIsDragOver(false); onDrop() }}
+      onDragEnd={() => setIsDragOver(false)}
+    >
+      <GripVertical size={13} className="shrink-0 text-gray-300 cursor-grab active:cursor-grabbing" />
       <span className={`shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-tight text-center ${catColor(item.category)}`} style={{ minWidth: '68px' }}>
         {catLabel(item.category)}
       </span>
@@ -527,6 +538,38 @@ export default function Estimator({ selectedJobId, setSelectedJobId, navigateTo 
       ;[items[index], items[ni]] = [items[ni], items[index]]
       return { ...e, lineItems: items }
     })
+    setSaved(false)
+  }, [])
+
+  const dragIndex = useRef(null)
+
+  const reorderItems = useCallback((fromIndex, toIndex) => {
+    if (fromIndex === null || fromIndex === toIndex) return
+    setLocal(e => {
+      const items = [...(e.lineItems ?? [])]
+      const [moved] = items.splice(fromIndex, 1)
+      items.splice(toIndex, 0, moved)
+      return { ...e, lineItems: items }
+    })
+    setSaved(false)
+  }, [])
+
+  const handleAddPhotos = useCallback((e) => {
+    const files = Array.from(e.target.files ?? [])
+    if (!files.length) return
+    files.forEach(file => {
+      const reader = new FileReader()
+      reader.onload = (ev) => {
+        setLocal(est => ({ ...est, photos: [...(est.photos ?? []), { name: file.name, data: ev.target.result }] }))
+        setSaved(false)
+      }
+      reader.readAsDataURL(file)
+    })
+    e.target.value = ''
+  }, [])
+
+  const removePhoto = useCallback((index) => {
+    setLocal(e => ({ ...e, photos: (e.photos ?? []).filter((_, i) => i !== index) }))
     setSaved(false)
   }, [])
 
@@ -849,6 +892,8 @@ Write a clean, professional scope of work. Use 3-4 numbered sections with bullet
                     onMoveUp={() => moveItem(index, -1)}
                     onMoveDown={() => moveItem(index, 1)}
                     onSaveToLibrary={() => handleSaveToLibrary(item)}
+                    onDragStart={() => { dragIndex.current = index }}
+                    onDrop={() => reorderItems(dragIndex.current, index)}
                   />
                 ))}
               </div>
@@ -922,6 +967,41 @@ Write a clean, professional scope of work. Use 3-4 numbered sections with bullet
                 rows={8}
                 className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
               />
+            </div>
+
+            {/* Photos */}
+            <div className="bg-white border border-gray-200 rounded-2xl p-5">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-bold text-gray-900">Photos</h3>
+                  {(local.photos ?? []).length > 0 && (
+                    <span className="text-xs font-semibold bg-red-100 text-red-700 px-2 py-0.5 rounded-full">
+                      {(local.photos ?? []).length}
+                    </span>
+                  )}
+                </div>
+                <label className="flex items-center gap-1.5 cursor-pointer text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors">
+                  <ImagePlus size={12} /> Add Photo
+                  <input type="file" accept="image/*" multiple className="hidden" onChange={handleAddPhotos} />
+                </label>
+              </div>
+              {(local.photos ?? []).length === 0 ? (
+                <p className="text-xs text-gray-400 text-center py-3">No photos attached — optional</p>
+              ) : (
+                <div className="grid grid-cols-4 gap-2">
+                  {(local.photos ?? []).map((photo, i) => (
+                    <div key={i} className="relative group/photo aspect-square">
+                      <img src={photo.data} alt={photo.name} className="w-full h-full object-cover rounded-lg border border-gray-200" />
+                      <button
+                        onClick={() => removePhoto(i)}
+                        className="absolute top-1 right-1 bg-black/60 hover:bg-red-600 text-white rounded-full p-0.5 opacity-0 group-hover/photo:opacity-100 transition-opacity"
+                      >
+                        <X size={10} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Bottom actions */}

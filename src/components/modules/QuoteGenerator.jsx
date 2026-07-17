@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useApp } from '../../context/AppContext'
 import { computeEstimateTotals, formatCurrencyExact, formatDate } from '../../utils/helpers'
 import { Printer, FileText } from 'lucide-react'
@@ -7,7 +8,7 @@ function LineSection({ title, rows, columns }) {
   if (!rows || rows.length === 0) return null
   const total = rows.reduce((s, r) => s + (r._total ?? 0), 0)
   return (
-    <div className="mb-6">
+    <div className="mb-6" style={{ breakInside: 'avoid', pageBreakInside: 'avoid' }}>
       <div className="flex items-center justify-between border-b-2 border-gray-800 pb-1 mb-2">
         <h3 className="font-bold text-gray-900 text-sm uppercase tracking-wide">{title}</h3>
         <span className="text-sm font-bold text-gray-900">{formatCurrencyExact(total)}</span>
@@ -60,6 +61,8 @@ export default function QuoteGenerator({ selectedJobId, setSelectedJobId, naviga
           margin: 0 !important; box-shadow: none !important;
           background: white !important;
         }
+        #quote-print-root tr { page-break-inside: avoid; break-inside: avoid; }
+        #quote-print-root .print-section { page-break-inside: avoid; break-inside: avoid; }
       }
     `
     const orig = document.title
@@ -98,9 +101,9 @@ export default function QuoteGenerator({ selectedJobId, setSelectedJobId, naviga
   const xactRows = isNewFormat ? [] : (estimate.xactimateItems ?? []).map(i => ({ ...i, _total: (i.qty ?? 0) * (i.unitPrice ?? 0) }))
   const flatRows = isNewFormat ? [] : (estimate.flatFeeItems ?? []).map(i => ({ ...i, _total: i.amount ?? 0 }))
 
-  const today = new Date().toISOString()
-  const validUntil = new Date(Date.now() + 30 * 86400000).toISOString()
   const co = useCompanySettings()
+  const [estimateDate, setEstimateDate] = useState(() => new Date().toISOString().slice(0, 10))
+  const [validUntilDate, setValidUntilDate] = useState(() => new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10))
 
   return (
     <div className="h-full overflow-y-auto bg-gray-100">
@@ -115,7 +118,12 @@ export default function QuoteGenerator({ selectedJobId, setSelectedJobId, naviga
             return <option key={j.id} value={j.id}>{j.type} — {c?.name}</option>
           })}
         </select>
-        <span className="text-xs text-gray-500 flex-1">Professional quote ready to print or save as PDF</span>
+        <div className="flex items-center gap-2 flex-1">
+          <label className="text-xs text-gray-500 shrink-0">Date</label>
+          <input type="date" value={estimateDate} onChange={e => setEstimateDate(e.target.value)} className="border border-gray-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-red-500" />
+          <label className="text-xs text-gray-500 shrink-0 ml-2">Valid Until</label>
+          <input type="date" value={validUntilDate} onChange={e => setValidUntilDate(e.target.value)} className="border border-gray-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-red-500" />
+        </div>
         <button onClick={handlePrint} className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white font-semibold text-sm px-4 py-2 rounded-lg transition-colors">
           <Printer size={15} /> Print / Save PDF
         </button>
@@ -134,6 +142,7 @@ export default function QuoteGenerator({ selectedJobId, setSelectedJobId, naviga
               <div className="text-xs text-gray-500 mt-1 space-y-0.5">
                 {co.phone && <div>{co.phone}</div>}
                 {co.email && <div>{co.email}</div>}
+                {co.website && <div>{co.website}</div>}
                 {co.city && <div>{co.city}</div>}
                 {co.licenseNumber && <div>Lic# {co.licenseNumber}</div>}
               </div>
@@ -141,8 +150,8 @@ export default function QuoteGenerator({ selectedJobId, setSelectedJobId, naviga
             <div className="text-right">
               <div className="text-3xl font-black text-gray-900 tracking-tight">ESTIMATE</div>
               <div className="text-xs text-gray-500 mt-2 space-y-0.5">
-                <div>Date: <span className="font-medium text-gray-700">{formatDate(today)}</span></div>
-                <div>Valid Until: <span className="font-medium text-gray-700">{formatDate(validUntil)}</span></div>
+                <div>Date: <span className="font-medium text-gray-700">{formatDate(estimateDate + 'T12:00:00')}</span></div>
+                <div>Valid Until: <span className="font-medium text-gray-700">{formatDate(validUntilDate + 'T12:00:00')}</span></div>
                 <div className="mt-1">
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
                     estimate.status === 'Approved' ? 'bg-green-100 text-green-800' :
@@ -178,7 +187,7 @@ export default function QuoteGenerator({ selectedJobId, setSelectedJobId, naviga
 
           {/* Scope of work */}
           {estimate.scopeNotes && (
-            <div className="mb-8">
+            <div className="mb-8 print-section">
               <h2 className="text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 pb-1 mb-3">Scope of Work</h2>
               <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{estimate.scopeNotes}</div>
             </div>
@@ -272,7 +281,7 @@ export default function QuoteGenerator({ selectedJobId, setSelectedJobId, naviga
           </div>
 
           {/* Totals */}
-          <div className="flex justify-end mb-8">
+          <div className="flex justify-end mb-8 print-section">
             <div className="w-64">
               <div className="space-y-2">
                 <div className="flex justify-between text-sm text-gray-600">
@@ -307,14 +316,14 @@ export default function QuoteGenerator({ selectedJobId, setSelectedJobId, naviga
 
           {/* Terms */}
           {estimate.termsNotes && (
-            <div className="mb-8 border-t border-gray-200 pt-6">
+            <div className="mb-8 border-t border-gray-200 pt-6 print-section">
               <h2 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Terms & Conditions</h2>
               <div className="text-xs text-gray-500 leading-relaxed whitespace-pre-line">{estimate.termsNotes}</div>
             </div>
           )}
 
           {/* Signature block */}
-          <div className="border-t border-gray-200 pt-6">
+          <div className="border-t border-gray-200 pt-6 print-section">
             <h2 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-6">Authorization</h2>
             <div className="grid grid-cols-2 gap-12">
               <div>
@@ -333,7 +342,7 @@ export default function QuoteGenerator({ selectedJobId, setSelectedJobId, naviga
 
           {/* Footer */}
           <div className="mt-10 pt-4 border-t border-gray-100 text-center text-xs text-gray-400">
-            {co.companyName} · Licensed & Insured · Thank you for your trust
+            {co.companyName} · Thank you for your trust
           </div>
         </div>
       </div>
