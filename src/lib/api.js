@@ -140,6 +140,7 @@ export async function loadFromSupabase() {
       type: j.type,
       stage: j.stage,
       revenue: j.revenue,
+      archived: j.archived ?? false,
       address: j.address ?? '',
       description: j.description ?? '',
       createdAt: j.created_at,
@@ -529,8 +530,13 @@ export async function syncAction(action, preState) {
           follow_up_count: est.followUpCount ?? 0, last_follow_up_at: est.lastFollowUpAt || null,
           updated_at: ts(),
         })
+        await supabase.from('jobs').update({ revenue: est.grandTotal ?? 0, updated_at: ts() }).eq('id', payload.jobId)
         break
       }
+
+      case ACTIONS.ARCHIVE_JOB:
+        await supabase.from('jobs').update({ archived: payload.archived, updated_at: ts() }).eq('id', payload.id)
+        break
       case ACTIONS.UPDATE_ESTIMATE_STATUS: {
         const job = preState.jobs.find(j => j.id === payload.jobId)
         if (job?.estimate) {

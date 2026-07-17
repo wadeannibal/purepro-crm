@@ -156,6 +156,9 @@ export const ACTIONS = {
 
   // Phase 5 — Before/After Showcase
   TOGGLE_SHOWCASE: 'TOGGLE_SHOWCASE',
+
+  // Pipeline
+  ARCHIVE_JOB: 'ARCHIVE_JOB',
 }
 
 const uid = () => crypto.randomUUID()
@@ -360,7 +363,14 @@ export function reducer(state, action) {
         jobs: updateJob(state.jobs, payload.jobId, j => ({
           ...j,
           estimate: { ...payload.estimate, updatedAt: now() },
+          revenue: payload.estimate.grandTotal ?? j.revenue,
         })),
+      }
+
+    case ACTIONS.ARCHIVE_JOB:
+      return {
+        ...state,
+        jobs: updateJob(state.jobs, payload.id, j => ({ ...j, archived: payload.archived })),
       }
 
     case ACTIONS.UPDATE_ESTIMATE_STATUS:

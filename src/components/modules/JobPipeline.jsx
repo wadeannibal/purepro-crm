@@ -3,15 +3,16 @@ import { useApp } from '../../context/AppContext'
 import { ACTIONS } from '../../context/AppReducer'
 import { JOB_STAGES, JOB_TYPES, CLIENT_TYPES, LEAD_SOURCES, LOSS_REASONS, formatCurrency, jobTypeColor, stageColor } from '../../utils/helpers'
 import Modal from '../shared/Modal'
-import { Plus, GripVertical, DollarSign } from 'lucide-react'
+import { Plus, GripVertical, DollarSign, Archive } from 'lucide-react'
 
-function JobCard({ job, client, onDragStart, onClick }) {
+function JobCard({ job, client, onDragStart, onClick, onArchive }) {
+  const displayRevenue = job.estimate?.grandTotal ?? job.revenue ?? 0
   return (
     <div
       draggable
       onDragStart={onDragStart}
       onClick={onClick}
-      className="bg-white rounded-lg border border-gray-200 p-3 cursor-pointer hover:border-red-300 hover:shadow-sm transition-all group"
+      className={`bg-white rounded-lg border p-3 cursor-pointer hover:border-red-300 hover:shadow-sm transition-all group ${job.archived ? 'border-gray-100 opacity-60' : 'border-gray-200'}`}
     >
       <div className="flex items-start justify-between gap-2 mb-2">
         <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${jobTypeColor(job.type)}`}>
@@ -23,16 +24,25 @@ function JobCard({ job, client, onDragStart, onClick }) {
         {client?.name ?? 'Unknown Client'}
       </div>
       <div className="text-xs text-gray-500 truncate mb-2">{job.address}</div>
-      <div className="flex items-center gap-1 text-green-700 font-semibold text-sm">
-        <DollarSign size={12} />
-        {formatCurrency(job.revenue).replace('$', '')}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-1 text-green-700 font-semibold text-sm">
+          <DollarSign size={12} />
+          {formatCurrency(displayRevenue).replace('$', '')}
+        </div>
+        <button
+          onClick={e => { e.stopPropagation(); onArchive() }}
+          title={job.archived ? 'Unarchive' : 'Archive job'}
+          className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-gray-600 transition-all p-0.5 rounded"
+        >
+          <Archive size={13} />
+        </button>
       </div>
     </div>
   )
 }
 
-function KanbanColumn({ stage, jobs, clients, onDrop, onDragOver, onDragLeave, isDragOver, onJobClick }) {
-  const total = jobs.reduce((s, j) => s + (j.revenue ?? 0), 0)
+function KanbanColumn({ stage, jobs, clients, onDrop, onDragOver, onDragLeave, isDragOver, onJobClick, onArchive }) {
+  const total = jobs.reduce((s, j) => s + (j.estimate?.grandTotal ?? j.revenue ?? 0), 0)
   return (
     <div
       className={`flex-shrink-0 w-52 flex flex-col rounded-xl transition-colors ${isDragOver ? 'bg-red-50' : 'bg-gray-100'}`}
@@ -55,6 +65,7 @@ function KanbanColumn({ stage, jobs, clients, onDrop, onDragOver, onDragLeave, i
             client={clients.find(c => c.id === job.clientId)}
             onDragStart={e => { e.dataTransfer.setData('jobId', job.id); e.dataTransfer.effectAllowed = 'move' }}
             onClick={() => onJobClick(job.id)}
+            onArchive={() => onArchive(job.id, !job.archived)}
           />
         ))}
         {isDragOver && (
@@ -76,10 +87,17 @@ export default function JobPipeline({ navigateTo }) {
   const [showModal, setShowModal] = useState(false)
   const [form, setForm] = useState(BLANK_JOB)
   const [filterType, setFilterType] = useState('All')
+  const [showArchived, setShowArchived] = useState(false)
   const [lossModal, setLossModal] = useState(null) // { jobId, stage }
   const [lossForm, setLossForm] = useState(BLANK_LOSS)
 
-  const visibleJobs = filterType === 'All' ? state.jobs : state.jobs.filter(j => j.type === filterType)
+  const visibleJobs = state.jobs
+    .filter(j => showArchived ? j.archived : !j.archived)
+    .filter(j => filterType === 'All' || j.type === filterType)
+
+  const handleArchive = (id, archived) => {
+    dispatch({ type: ACTIONS.ARCHIVE_JOB, payload: { id, archived } })
+  }
 
   const handleDrop = (e, stage) => {
     e.preventDefault()
@@ -151,7 +169,13 @@ export default function JobPipeline({ navigateTo }) {
             </button>
           ))}
         </div>
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-2">
+          <button
+            onClick={() => setShowArchived(a => !a)}
+            className={`px-3 py-1 text-xs font-semibold rounded-full transition-colors ${showArchived ? 'bg-gray-700 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+          >
+            {showArchived ? 'Hide Archived' : `Archived (${state.jobs.filter(j => j.archived).length})`}
+          </button>
           <button
             onClick={() => setShowModal(true)}
             className="flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold px-4 py-1.5 rounded-lg transition-colors"
@@ -175,6 +199,7 @@ export default function JobPipeline({ navigateTo }) {
               onDragOver={e => handleDragOver(e, stage)}
               onDragLeave={() => setDragOverStage(null)}
               onJobClick={id => navigateTo('jobs', { jobId: id })}
+              onArchive={handleArchive}
             />
           ))}
         </div>
