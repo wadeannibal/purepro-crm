@@ -48,19 +48,33 @@ export default function QuoteGenerator({ selectedJobId, setSelectedJobId, naviga
 
   const [saving, setSaving] = useState(false)
 
+  const pdfOpts = {
+    margin: [0.5, 0.75],
+    filename: `Estimate${client?.name ? ' - ' + client.name : ''}.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true, logging: false },
+    jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
+    pagebreak: { mode: 'css', avoid: 'tr' },
+  }
+
+  const handleSavePDF = async () => {
+    const el = document.getElementById('quote-print-root')
+    if (!el) return
+    setSaving('pdf')
+    try {
+      await html2pdf().set(pdfOpts).from(el).save()
+    } finally {
+      setSaving(false)
+    }
+  }
+
   const handlePrint = async () => {
     const el = document.getElementById('quote-print-root')
     if (!el) return
-    setSaving(true)
+    setSaving('print')
     try {
-      await html2pdf().set({
-        margin: [0.5, 0.75],
-        filename: `Estimate${client?.name ? ' - ' + client.name : ''}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, logging: false },
-        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
-        pagebreak: { mode: 'avoid-all' },
-      }).from(el).save()
+      const blobUrl = await html2pdf().set(pdfOpts).from(el).output('bloburl')
+      window.open(blobUrl, '_blank')
     } finally {
       setSaving(false)
     }
@@ -117,8 +131,11 @@ export default function QuoteGenerator({ selectedJobId, setSelectedJobId, naviga
           <label className="text-xs text-gray-500 shrink-0 ml-2">Valid Until</label>
           <input type="date" value={validUntilDate} onChange={e => setValidUntilDate(e.target.value)} className="border border-gray-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-red-500" />
         </div>
-        <button onClick={handlePrint} disabled={saving} className="flex items-center gap-2 bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white font-semibold text-sm px-4 py-2 rounded-lg transition-colors">
-          {saving ? <><Loader2 size={15} className="animate-spin" /> Generating…</> : <><Printer size={15} /> Save as PDF</>}
+        <button onClick={handlePrint} disabled={!!saving} className="flex items-center gap-2 border border-gray-300 hover:border-gray-400 text-gray-700 font-semibold text-sm px-4 py-2 rounded-lg transition-colors disabled:opacity-60">
+          {saving === 'print' ? <><Loader2 size={15} className="animate-spin" /> Generating…</> : <><Printer size={15} /> Print</>}
+        </button>
+        <button onClick={handleSavePDF} disabled={!!saving} className="flex items-center gap-2 bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white font-semibold text-sm px-4 py-2 rounded-lg transition-colors">
+          {saving === 'pdf' ? <><Loader2 size={15} className="animate-spin" /> Generating…</> : <><FileText size={15} /> Save PDF</>}
         </button>
       </div>
 
@@ -145,13 +162,6 @@ export default function QuoteGenerator({ selectedJobId, setSelectedJobId, naviga
               <div className="text-xs text-gray-500 mt-2 space-y-0.5">
                 <div>Date: <span className="font-medium text-gray-700">{formatDate(estimateDate + 'T12:00:00')}</span></div>
                 <div>Valid Until: <span className="font-medium text-gray-700">{formatDate(validUntilDate + 'T12:00:00')}</span></div>
-                <div className="mt-1">
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                    estimate.status === 'Approved' ? 'bg-green-100 text-green-800' :
-                    estimate.status === 'Sent' ? 'bg-blue-100 text-blue-800' :
-                    'bg-gray-100 text-gray-700'
-                  }`}>{estimate.status}</span>
-                </div>
               </div>
             </div>
           </div>
