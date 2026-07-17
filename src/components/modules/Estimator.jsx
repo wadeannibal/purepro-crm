@@ -778,7 +778,19 @@ Write a clean, professional scope of work. Use 3-4 numbered sections with bullet
                 <span className="text-xs text-gray-500">— {job.type}</span>
                 {job.address && <span className="text-xs text-gray-400 hidden md:inline">· {job.address}</span>}
               </div>
-              <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${estimateStatusColor(local.status)}`}>{local.status}</span>
+              <select
+                value={local.status}
+                onChange={e => {
+                  const status = e.target.value
+                  dispatch({ type: ACTIONS.UPDATE_ESTIMATE_STATUS, payload: { jobId: selectedJobId, status } })
+                  setLocal(est => ({ ...est, status }))
+                }}
+                className={`text-xs font-bold px-2.5 py-1 rounded-full border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-red-400 ${estimateStatusColor(local.status)}`}
+              >
+                {['Draft', 'Sent', 'Approved', 'Declined', 'Completed'].map(s => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
               <div className="ml-auto flex gap-2 relative">
                 <button onClick={() => setSelectedJobId(null)} className="text-xs text-gray-400 hover:text-gray-600 px-2 py-1.5 rounded-lg hover:bg-gray-100">← Back</button>
                 <button

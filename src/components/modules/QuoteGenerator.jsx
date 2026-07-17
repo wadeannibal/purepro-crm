@@ -8,7 +8,7 @@ function LineSection({ title, rows, columns }) {
   if (!rows || rows.length === 0) return null
   const total = rows.reduce((s, r) => s + (r._total ?? 0), 0)
   return (
-    <div className="mb-6" style={{ breakInside: 'avoid', pageBreakInside: 'avoid' }}>
+    <div className="mb-6">
       <div className="flex items-center justify-between border-b-2 border-gray-800 pb-1 mb-2">
         <h3 className="font-bold text-gray-900 text-sm uppercase tracking-wide">{title}</h3>
         <span className="text-sm font-bold text-gray-900">{formatCurrencyExact(total)}</span>
@@ -187,7 +187,7 @@ export default function QuoteGenerator({ selectedJobId, setSelectedJobId, naviga
 
           {/* Scope of work */}
           {estimate.scopeNotes && (
-            <div className="mb-8 print-section">
+            <div className="mb-8">
               <h2 className="text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 pb-1 mb-3">Scope of Work</h2>
               <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{estimate.scopeNotes}</div>
             </div>
@@ -316,7 +316,7 @@ export default function QuoteGenerator({ selectedJobId, setSelectedJobId, naviga
 
           {/* Terms */}
           {estimate.termsNotes && (
-            <div className="mb-8 border-t border-gray-200 pt-6 print-section">
+            <div className="mb-8 border-t border-gray-200 pt-6">
               <h2 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Terms & Conditions</h2>
               <div className="text-xs text-gray-500 leading-relaxed whitespace-pre-line">{estimate.termsNotes}</div>
             </div>
