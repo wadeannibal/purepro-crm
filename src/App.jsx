@@ -4,6 +4,7 @@ import Sidebar from './components/layout/Sidebar'
 import Header from './components/layout/Header'
 import Login from './components/auth/Login'
 import { supabase } from './lib/supabase'
+import { COMPANY_DEFAULTS } from './utils/companySettings'
 
 // Phase 1
 import CRM from './components/modules/CRM'
@@ -79,6 +80,26 @@ export default function App() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => setSession(s))
     return () => subscription.unsubscribe()
   }, [])
+
+  // Fetch company settings from Supabase on login so every module has the right values immediately
+  useEffect(() => {
+    if (!session) return
+    supabase.from('company_settings').select('*').eq('id', 'singleton').single().then(({ data }) => {
+      if (!data) return
+      const settings = {
+        companyName: data.company_name ?? COMPANY_DEFAULTS.companyName,
+        ownerName: data.owner_name ?? COMPANY_DEFAULTS.ownerName,
+        phone: data.phone ?? '',
+        email: data.email ?? '',
+        city: data.city ?? COMPANY_DEFAULTS.city,
+        licenseNumber: data.license_number ?? '',
+        website: data.website ?? '',
+        logo: data.logo ?? null,
+      }
+      localStorage.setItem('purepro_company_settings', JSON.stringify(settings))
+      window.dispatchEvent(new Event('company-settings-updated'))
+    })
+  }, [session])
 
   const [currentView, setCurrentView] = useState('operations')
   const [selectedJobId, setSelectedJobId] = useState(null)

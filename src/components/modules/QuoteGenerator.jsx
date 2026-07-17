@@ -1,7 +1,7 @@
 import { useApp } from '../../context/AppContext'
 import { computeEstimateTotals, formatCurrencyExact, formatDate } from '../../utils/helpers'
 import { Printer, FileText } from 'lucide-react'
-import { getCompanySettings } from '../../utils/companySettings'
+import { useCompanySettings } from '../../hooks/useCompanySettings'
 
 function LineSection({ title, rows, columns }) {
   if (!rows || rows.length === 0) return null
@@ -90,6 +90,7 @@ export default function QuoteGenerator({ selectedJobId, setSelectedJobId, naviga
 
   const today = new Date().toISOString()
   const validUntil = new Date(Date.now() + 30 * 86400000).toISOString()
+  const co = useCompanySettings()
 
   return (
     <div className="h-full overflow-y-auto bg-gray-100">
@@ -116,11 +117,15 @@ export default function QuoteGenerator({ selectedJobId, setSelectedJobId, naviga
           {/* Header */}
           <div className="flex items-start justify-between mb-10">
             <div>
-              <div className="text-2xl font-black text-red-600 tracking-tight">PUREPRO</div>
-              <div className="text-sm font-semibold text-gray-700">Restoration Services</div>
-              <div className="text-xs text-gray-500 mt-2">
-                <div>info@purepro.com</div>
-                <div>(720) 555-0100</div>
+              {co.logo
+                ? <img src={co.logo} alt={co.companyName} className="h-16 max-w-[200px] object-contain mb-2" />
+                : <div className="text-2xl font-black text-red-600 tracking-tight">{co.companyName}</div>
+              }
+              <div className="text-xs text-gray-500 mt-1 space-y-0.5">
+                {co.phone && <div>{co.phone}</div>}
+                {co.email && <div>{co.email}</div>}
+                {co.city && <div>{co.city}</div>}
+                {co.licenseNumber && <div>Lic# {co.licenseNumber}</div>}
               </div>
             </div>
             <div className="text-right">
@@ -309,16 +314,16 @@ export default function QuoteGenerator({ selectedJobId, setSelectedJobId, naviga
                 <div className="text-xs text-gray-500">Date</div>
               </div>
               <div>
-                <div className="text-xs text-gray-500 mb-2">By signing, you authorize {getCompanySettings().companyName} to perform the work described in this estimate at the stated price. A 50% deposit is required before work begins.</div>
+                <div className="text-xs text-gray-500 mb-2">By signing, you authorize {co.companyName} to perform the work described in this estimate at the stated price. A 50% deposit is required before work begins.</div>
                 <div className="mt-4 border-b border-gray-400 mb-1 h-8" />
-                <div className="text-xs text-gray-500">{getCompanySettings().companyName} Representative</div>
+                <div className="text-xs text-gray-500">{co.companyName} Representative</div>
               </div>
             </div>
           </div>
 
           {/* Footer */}
           <div className="mt-10 pt-4 border-t border-gray-100 text-center text-xs text-gray-400">
-            {getCompanySettings().companyName} · Licensed & Insured · Thank you for your trust
+            {co.companyName} · Licensed & Insured · Thank you for your trust
           </div>
         </div>
       </div>
