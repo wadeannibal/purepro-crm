@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useApp } from '../../context/AppContext'
 import { computeEstimateTotals, formatCurrencyExact, formatDate } from '../../utils/helpers'
-import { Printer, FileText } from 'lucide-react'
+import { Printer, FileText, Loader2 } from 'lucide-react'
+import html2pdf from 'html2pdf.js'
 import { useCompanySettings } from '../../hooks/useCompanySettings'
 
 function LineSection({ title, rows, columns }) {
@@ -45,50 +46,23 @@ export default function QuoteGenerator({ selectedJobId, setSelectedJobId, naviga
   const client = job ? state.clients.find(c => c.id === job.clientId) : null
   const estimate = job?.estimate
 
-  const handlePrint = () => {
+  const [saving, setSaving] = useState(false)
+
+  const handlePrint = async () => {
     const el = document.getElementById('quote-print-root')
     if (!el) return
-
-    // Copy all CSS from the current page into the popup
-    const linkTags = Array.from(document.querySelectorAll('link[rel="stylesheet"]'))
-      .map(l => `<link rel="stylesheet" href="${l.href}">`)
-      .join('\n')
-    const styleTags = Array.from(document.querySelectorAll('style'))
-      .map(s => s.outerHTML)
-      .join('\n')
-
-    const win = window.open('', '_blank', 'width=900,height=700')
-    if (!win) return
-
-    win.document.write(`<!DOCTYPE html><html><head>
-<meta charset="utf-8"><title></title>
-<style>
-  @page { margin: 0.5in 0.75in; size: letter; }
-  html, body { background: white; margin: 0; padding: 0; }
-  #quote-print-root { max-width: 100% !important; margin: 0 auto !important; min-height: 0 !important; box-shadow: none !important; }
-  tr { page-break-inside: avoid; break-inside: avoid; }
-  .print-section { page-break-inside: avoid; break-inside: avoid; }
-</style>
-${linkTags}
-${styleTags}
-</head><body>${el.outerHTML}</body></html>`)
-    win.document.close()
-
-    const triggerPrint = () => {
-      win.focus()
-      win.onafterprint = () => win.close()
-      win.print()
-    }
-
-    const sheets = Array.from(win.document.querySelectorAll('link[rel="stylesheet"]'))
-    if (sheets.length === 0) {
-      setTimeout(triggerPrint, 400)
-    } else {
-      let pending = sheets.length
-      sheets.forEach(l => {
-        l.onload = () => { if (--pending === 0) triggerPrint() }
-        l.onerror = () => { if (--pending === 0) triggerPrint() }
-      })
+    setSaving(true)
+    try {
+      await html2pdf().set({
+        margin: [0.5, 0.75],
+        filename: `Estimate${client?.name ? ' - ' + client.name : ''}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, logging: false },
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
+        pagebreak: { mode: 'avoid-all' },
+      }).from(el).save()
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -143,8 +117,8 @@ ${styleTags}
           <label className="text-xs text-gray-500 shrink-0 ml-2">Valid Until</label>
           <input type="date" value={validUntilDate} onChange={e => setValidUntilDate(e.target.value)} className="border border-gray-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-red-500" />
         </div>
-        <button onClick={handlePrint} className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white font-semibold text-sm px-4 py-2 rounded-lg transition-colors">
-          <Printer size={15} /> Print / Save PDF
+        <button onClick={handlePrint} disabled={saving} className="flex items-center gap-2 bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white font-semibold text-sm px-4 py-2 rounded-lg transition-colors">
+          {saving ? <><Loader2 size={15} className="animate-spin" /> Generating…</> : <><Printer size={15} /> Save as PDF</>}
         </button>
       </div>
 
