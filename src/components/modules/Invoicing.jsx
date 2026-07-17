@@ -98,10 +98,13 @@ export default function Invoicing({ selectedJobId, setSelectedJobId, navigateTo 
   const handlePrint = () => {
     const style = document.createElement('style')
     style.id = 'invoice-print-style'
-    style.innerHTML = `@media print { body * { visibility: hidden !important; } #invoice-print-root, #invoice-print-root * { visibility: visible !important; } #invoice-print-root { position: fixed !important; top: 0; left: 0; width: 100%; background: white; padding: 0.75in; box-sizing: border-box; } @page { margin: 0; size: letter; } }`
+    style.innerHTML = `@page { margin: 0; size: letter; } @media print { html, body { height: auto !important; overflow: visible !important; } body * { visibility: hidden !important; } #invoice-print-root, #invoice-print-root * { visibility: visible !important; } #invoice-print-root { position: absolute !important; top: 0 !important; left: 0 !important; width: 100% !important; max-width: 100% !important; margin: 0 !important; background: white !important; box-shadow: none !important; } }`
+    const orig = document.title
+    document.title = ''
     document.head.appendChild(style)
     window.print()
     document.head.removeChild(style)
+    document.title = orig
   }
 
   // Summary view — all jobs with invoices

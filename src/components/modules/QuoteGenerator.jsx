@@ -48,16 +48,26 @@ export default function QuoteGenerator({ selectedJobId, setSelectedJobId, naviga
     const style = document.createElement('style')
     style.id = 'print-style'
     style.innerHTML = `
+      @page { margin: 0; size: letter; }
       @media print {
+        html, body { height: auto !important; overflow: visible !important; }
         body * { visibility: hidden !important; }
         #quote-print-root, #quote-print-root * { visibility: visible !important; }
-        #quote-print-root { position: fixed !important; top: 0; left: 0; width: 100%; background: white; }
-        @page { margin: 0.75in; size: letter; }
+        #quote-print-root {
+          position: absolute !important;
+          top: 0 !important; left: 0 !important;
+          width: 100% !important; max-width: 100% !important;
+          margin: 0 !important; box-shadow: none !important;
+          background: white !important;
+        }
       }
     `
+    const orig = document.title
+    document.title = ''
     document.head.appendChild(style)
     window.print()
     document.head.removeChild(style)
+    document.title = orig
   }
 
   if (!selectedJobId || !estimate) {
