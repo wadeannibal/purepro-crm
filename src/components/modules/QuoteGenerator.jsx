@@ -46,31 +46,50 @@ export default function QuoteGenerator({ selectedJobId, setSelectedJobId, naviga
   const estimate = job?.estimate
 
   const handlePrint = () => {
-    const style = document.createElement('style')
-    style.id = 'print-style'
-    style.innerHTML = `
-      @page { margin: 0; size: letter; }
-      @media print {
-        html, body { height: auto !important; overflow: visible !important; }
-        body * { visibility: hidden !important; }
-        #quote-print-root, #quote-print-root * { visibility: visible !important; }
-        #quote-print-root {
-          position: absolute !important;
-          top: 0 !important; left: 0 !important;
-          width: 100% !important; max-width: 100% !important;
-          margin: 0 !important; box-shadow: none !important;
-          background: white !important;
-        }
-        #quote-print-root tr { page-break-inside: avoid; break-inside: avoid; }
-        #quote-print-root .print-section { page-break-inside: avoid; break-inside: avoid; }
-      }
-    `
-    const orig = document.title
-    document.title = ''
-    document.head.appendChild(style)
-    window.print()
-    document.head.removeChild(style)
-    document.title = orig
+    const el = document.getElementById('quote-print-root')
+    if (!el) return
+
+    // Copy all CSS from the current page into the popup
+    const linkTags = Array.from(document.querySelectorAll('link[rel="stylesheet"]'))
+      .map(l => `<link rel="stylesheet" href="${l.href}">`)
+      .join('\n')
+    const styleTags = Array.from(document.querySelectorAll('style'))
+      .map(s => s.outerHTML)
+      .join('\n')
+
+    const win = window.open('', '_blank', 'width=900,height=700')
+    if (!win) return
+
+    win.document.write(`<!DOCTYPE html><html><head>
+<meta charset="utf-8"><title></title>
+<style>
+  @page { margin: 0.5in 0.75in; size: letter; }
+  html, body { background: white; margin: 0; padding: 0; }
+  #quote-print-root { max-width: 100% !important; margin: 0 auto !important; min-height: 0 !important; box-shadow: none !important; }
+  tr { page-break-inside: avoid; break-inside: avoid; }
+  .print-section { page-break-inside: avoid; break-inside: avoid; }
+</style>
+${linkTags}
+${styleTags}
+</head><body>${el.outerHTML}</body></html>`)
+    win.document.close()
+
+    const triggerPrint = () => {
+      win.focus()
+      win.onafterprint = () => win.close()
+      win.print()
+    }
+
+    const sheets = Array.from(win.document.querySelectorAll('link[rel="stylesheet"]'))
+    if (sheets.length === 0) {
+      setTimeout(triggerPrint, 400)
+    } else {
+      let pending = sheets.length
+      sheets.forEach(l => {
+        l.onload = () => { if (--pending === 0) triggerPrint() }
+        l.onerror = () => { if (--pending === 0) triggerPrint() }
+      })
+    }
   }
 
   if (!selectedJobId || !estimate) {
