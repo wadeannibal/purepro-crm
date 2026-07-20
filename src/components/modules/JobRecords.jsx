@@ -5,10 +5,10 @@ import {
   JOB_STAGES, JOB_TYPES, formatCurrency, formatDate, formatDateTime,
   jobTypeColor, stageColor, getChecklistForJobType, OSHA_CHECKLIST
 } from '../../utils/helpers'
-import { Search, ChevronRight, Send, Camera, Folder, Clock, Shield, ShieldCheck, Trash2 } from 'lucide-react'
+import { Search, ChevronRight, Send, Camera, Folder, Clock, Shield, ShieldCheck, Trash2, X, ExternalLink } from 'lucide-react'
 import Modal from '../shared/Modal'
 
-const TABS = ['Details', 'Notes', 'Checklist', 'OSHA']
+const TABS = ['Details', 'Notes', 'Photos', 'Checklist', 'OSHA']
 
 export default function JobRecords({ selectedJobId, setSelectedJobId, navigateTo }) {
   const { state, dispatch } = useApp()
@@ -18,6 +18,7 @@ export default function JobRecords({ selectedJobId, setSelectedJobId, navigateTo
   const [noteText, setNoteText] = useState('')
   const [showEditModal, setShowEditModal] = useState(false)
   const [editForm, setEditForm] = useState({})
+  const [lightbox, setLightbox] = useState(null)
 
   const jobs = state.jobs.filter(j => {
     const q = search.toLowerCase()
@@ -174,6 +175,9 @@ export default function JobRecords({ selectedJobId, setSelectedJobId, navigateTo
                 {t === 'Checklist' && checklist.length > 0 && (
                   <span className="ml-1 opacity-70">{completedItems}/{checklist.length}</span>
                 )}
+                {t === 'Photos' && (job?.photos?.length ?? 0) > 0 && (
+                  <span className="ml-1 opacity-70">{job.photos.length}</span>
+                )}
               </button>
             ))}
           </div>
@@ -228,6 +232,64 @@ export default function JobRecords({ selectedJobId, setSelectedJobId, navigateTo
                   ))}
                   {job.notes.length === 0 && <p className="text-sm text-gray-400 text-center py-8">No notes yet. Add the first one above.</p>}
                 </div>
+              </div>
+            )}
+
+            {tab === 'Photos' && (
+              <div className="max-w-2xl">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-sm font-semibold text-gray-700">
+                    {job.photos?.length ?? 0} photo{(job.photos?.length ?? 0) !== 1 ? 's' : ''}
+                  </span>
+                  <button
+                    onClick={() => navigateTo('photos', { jobId: job.id })}
+                    className="flex items-center gap-1.5 text-xs font-semibold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition-colors"
+                  >
+                    <ExternalLink size={12} /> Upload / Manage
+                  </button>
+                </div>
+
+                {!job.photos?.length ? (
+                  <div className="text-center py-12">
+                    <Camera size={36} className="mx-auto mb-3 text-gray-300" />
+                    <p className="text-sm text-gray-500 font-medium">No photos yet</p>
+                    <p className="text-xs text-gray-400 mt-1 mb-4">Upload before/after, progress, or documentation photos</p>
+                    <button
+                      onClick={() => navigateTo('photos', { jobId: job.id })}
+                      className="text-xs font-semibold text-white bg-red-600 hover:bg-red-700 px-4 py-2 rounded-xl transition-colors"
+                    >
+                      Go to Photos
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {[...job.photos].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).map(photo => (
+                      <div
+                        key={photo.id}
+                        className="group relative aspect-square rounded-xl overflow-hidden bg-gray-100 cursor-pointer"
+                        onClick={() => setLightbox(photo)}
+                      >
+                        <img
+                          src={photo.data}
+                          alt={photo.name}
+                          className="w-full h-full object-cover group-hover:opacity-90 transition-opacity"
+                        />
+                        {(photo.photoType || photo.room) && (
+                          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent px-2 py-1.5">
+                            <p className="text-white text-[10px] font-semibold truncate">
+                              {[photo.photoType, photo.room].filter(Boolean).join(' · ')}
+                            </p>
+                          </div>
+                        )}
+                        {photo.isShowcase && (
+                          <div className="absolute top-1.5 right-1.5 bg-yellow-400 text-yellow-900 text-[9px] font-bold px-1.5 py-0.5 rounded-full">
+                            Showcase
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
@@ -288,6 +350,30 @@ export default function JobRecords({ selectedJobId, setSelectedJobId, navigateTo
                 )}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {lightbox && (
+        <div
+          className="fixed inset-0 z-50 bg-black/90 flex flex-col items-center justify-center p-4"
+          onClick={() => setLightbox(null)}
+        >
+          <img
+            src={lightbox.data}
+            alt={lightbox.name}
+            className="max-w-full max-h-[80vh] rounded-xl object-contain"
+          />
+          <div className="mt-4 flex items-center gap-3" onClick={e => e.stopPropagation()}>
+            {(lightbox.photoType || lightbox.room) && (
+              <span className="text-gray-400 text-sm">{[lightbox.photoType, lightbox.room].filter(Boolean).join(' · ')}</span>
+            )}
+            <button
+              onClick={() => setLightbox(null)}
+              className="flex items-center gap-1.5 bg-white/20 hover:bg-white/30 text-white text-sm font-semibold px-4 py-2 rounded-xl backdrop-blur-sm transition-colors"
+            >
+              <X size={14} /> Close
+            </button>
           </div>
         </div>
       )}
