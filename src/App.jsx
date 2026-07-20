@@ -3,6 +3,7 @@ import { AppProvider } from './context/AppContext'
 import Sidebar from './components/layout/Sidebar'
 import Header from './components/layout/Header'
 import Login from './components/auth/Login'
+import SigningPage from './components/signing/SigningPage'
 import { supabase } from './lib/supabase'
 import { COMPANY_DEFAULTS } from './utils/companySettings'
 
@@ -72,10 +73,14 @@ import GoogleReviewRequest from './components/modules/GoogleReviewRequest'
 import WarrantyTracking from './components/modules/WarrantyTracking'
 import AnnualCheckIn from './components/modules/AnnualCheckIn'
 
+// Detect public signing route at module level (before any component code)
+const signingToken = window.location.pathname.match(/^\/sign\/(.+)/)?.[1]
+
 export default function App() {
   const [session, setSession] = useState(undefined)
 
   useEffect(() => {
+    if (signingToken) return  // skip auth setup for public signing pages
     supabase.auth.getSession().then(({ data }) => setSession(data.session ?? null))
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => setSession(s))
     return () => subscription.unsubscribe()
@@ -235,6 +240,7 @@ export default function App() {
 
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
+  if (signingToken) return <SigningPage token={signingToken} />
   if (session === undefined) return null
   if (!session) return <Login />
 

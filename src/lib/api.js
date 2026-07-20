@@ -36,6 +36,8 @@ export async function loadFromSupabase() {
     { data: kpiRows },
     { data: reviewRow },
     { data: gbpRow },
+    // Remote signing
+    { data: sigReqRows },
   ] = await Promise.all([
     supabase.from('clients').select('*').order('created_at'),
     supabase.from('jobs').select('*').order('created_at'),
@@ -69,6 +71,7 @@ export async function loadFromSupabase() {
     supabase.from('kpi_goals').select('*'),
     supabase.from('review_tracker').select('*').eq('id', 'singleton').maybeSingle(),
     supabase.from('gbp_checklist').select('*').eq('id', 'singleton').maybeSingle(),
+    supabase.from('signature_requests').select('*').order('created_at'),
   ])
 
   const mapEstimate = (e) => e ? ({
@@ -303,6 +306,24 @@ export async function loadFromSupabase() {
 
     // Phase 5 — GBP checklist
     ...(gbpRow ? { gbpChecklist: gbpRow.data } : {}),
+
+    // Remote signing requests
+    signatureRequests: (sigReqRows ?? []).map(r => ({
+      id: r.id,
+      jobId: r.job_id,
+      title: r.title,
+      documentName: r.document_name,
+      documentData: r.document_data,
+      fields: r.fields ?? [],
+      signerName: r.signer_name ?? '',
+      signerEmail: r.signer_email ?? '',
+      status: r.status,
+      token: r.token,
+      createdAt: r.created_at,
+      signedAt: r.signed_at,
+      signerIp: r.signer_ip ?? '',
+      signedFields: r.signed_fields ?? [],
+    })),
   }
 }
 
@@ -536,6 +557,26 @@ export async function syncAction(action, preState) {
 
       case ACTIONS.ARCHIVE_JOB:
         await supabase.from('jobs').update({ archived: payload.archived, updated_at: ts() }).eq('id', payload.id)
+        break
+
+      // ── Remote E-Signature ────────────────────────────────────────────────────
+      case ACTIONS.ADD_REMOTE_REQUEST:
+        await supabase.from('signature_requests').insert({
+          id: payload.id,
+          job_id: payload.jobId,
+          title: payload.title,
+          document_name: payload.documentName,
+          document_data: payload.documentData,
+          fields: payload.fields,
+          signer_name: payload.signerName,
+          signer_email: payload.signerEmail,
+          status: 'pending',
+          token: payload.token,
+          created_at: payload.createdAt,
+        })
+        break
+      case ACTIONS.DELETE_REMOTE_REQUEST:
+        await supabase.from('signature_requests').delete().eq('id', payload.id)
         break
       case ACTIONS.UPDATE_ESTIMATE_STATUS: {
         const job = preState.jobs.find(j => j.id === payload.jobId)

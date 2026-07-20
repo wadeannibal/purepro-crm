@@ -159,6 +159,10 @@ export const ACTIONS = {
 
   // Pipeline
   ARCHIVE_JOB: 'ARCHIVE_JOB',
+
+  // Remote E-Signature
+  ADD_REMOTE_REQUEST: 'ADD_REMOTE_REQUEST',
+  DELETE_REMOTE_REQUEST: 'DELETE_REMOTE_REQUEST',
 }
 
 const uid = () => crypto.randomUUID()
@@ -372,6 +376,12 @@ export function reducer(state, action) {
         ...state,
         jobs: updateJob(state.jobs, payload.id, j => ({ ...j, archived: payload.archived })),
       }
+
+    case ACTIONS.ADD_REMOTE_REQUEST:
+      return { ...state, signatureRequests: [...(state.signatureRequests ?? []), payload] }
+
+    case ACTIONS.DELETE_REMOTE_REQUEST:
+      return { ...state, signatureRequests: (state.signatureRequests ?? []).filter(r => r.id !== payload.id) }
 
     case ACTIONS.UPDATE_ESTIMATE_STATUS:
       return {
