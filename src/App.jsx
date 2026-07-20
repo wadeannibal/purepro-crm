@@ -65,6 +65,7 @@ import Scheduler from './components/modules/Scheduler'
 import MoistureLog from './components/modules/MoistureLog'
 import DryingLog from './components/modules/DryingLog'
 import ClientPortal from './components/modules/ClientPortal'
+import PublicPortal from './components/portal/PublicPortal'
 import ESignature from './components/modules/ESignature'
 import AppointmentConfirmations from './components/modules/AppointmentConfirmations'
 import SatisfactionSurvey from './components/modules/SatisfactionSurvey'
@@ -73,14 +74,15 @@ import GoogleReviewRequest from './components/modules/GoogleReviewRequest'
 import WarrantyTracking from './components/modules/WarrantyTracking'
 import AnnualCheckIn from './components/modules/AnnualCheckIn'
 
-// Detect public signing route at module level (before any component code)
+// Detect public routes at module level (before any component code)
 const signingToken = window.location.pathname.match(/^\/sign\/(.+)/)?.[1]
+const portalCode   = window.location.pathname.match(/^\/portal\/(.+)/)?.[1]
 
 export default function App() {
   const [session, setSession] = useState(undefined)
 
   useEffect(() => {
-    if (signingToken) return  // skip auth setup for public signing pages
+    if (signingToken || portalCode) return  // skip auth setup for public pages
     supabase.auth.getSession().then(({ data }) => setSession(data.session ?? null))
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => setSession(s))
     return () => subscription.unsubscribe()
@@ -241,6 +243,7 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   if (signingToken) return <SigningPage token={signingToken} />
+  if (portalCode)   return <PublicPortal code={portalCode} />
   if (session === undefined) return null
   if (!session) return <Login />
 
