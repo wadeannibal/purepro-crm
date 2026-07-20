@@ -101,27 +101,54 @@ function RemoteBuilder({ job, onDone }) {
 
   const pageRefs = useRef([])
   const dragging = useRef(null) // { id, page, offsetX, offsetY }
+  const resizing = useRef(null) // { id, page, startMouseX, startMouseY, startW, startH }
 
-  // Global drag tracking
+  // Global drag + resize tracking
   useEffect(() => {
     const onMove = (e) => {
-      if (!dragging.current) return
-      const el = pageRefs.current[dragging.current.page]
-      if (!el) return
-      const rect = el.getBoundingClientRect()
-      const nx = (e.clientX - rect.left) / rect.width - dragging.current.offsetX
-      const ny = (e.clientY - rect.top) / rect.height - dragging.current.offsetY
-      setFields(prev => prev.map(f => f.id !== dragging.current.id ? f : {
-        ...f,
-        x: Math.max(0, Math.min(nx, 1 - f.width)),
-        y: Math.max(0, Math.min(ny, 1 - f.height)),
-      }))
+      if (dragging.current) {
+        const el = pageRefs.current[dragging.current.page]
+        if (!el) return
+        const rect = el.getBoundingClientRect()
+        const nx = (e.clientX - rect.left) / rect.width - dragging.current.offsetX
+        const ny = (e.clientY - rect.top) / rect.height - dragging.current.offsetY
+        setFields(prev => prev.map(f => f.id !== dragging.current.id ? f : {
+          ...f,
+          x: Math.max(0, Math.min(nx, 1 - f.width)),
+          y: Math.max(0, Math.min(ny, 1 - f.height)),
+        }))
+      } else if (resizing.current) {
+        const el = pageRefs.current[resizing.current.page]
+        if (!el) return
+        const rect = el.getBoundingClientRect()
+        const dx = (e.clientX - resizing.current.startMouseX) / rect.width
+        const dy = (e.clientY - resizing.current.startMouseY) / rect.height
+        const minW = 0.04, minH = 0.03
+        setFields(prev => prev.map(f => f.id !== resizing.current.id ? f : {
+          ...f,
+          width: Math.max(minW, Math.min(resizing.current.startW + dx, 1 - f.x)),
+          height: Math.max(minH, Math.min(resizing.current.startH + dy, 1 - f.y)),
+        }))
+      }
     }
-    const onUp = () => { dragging.current = null }
+    const onUp = () => { dragging.current = null; resizing.current = null }
     window.addEventListener('mousemove', onMove)
     window.addEventListener('mouseup', onUp)
     return () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp) }
   }, [])
+
+  const startResize = (e, field) => {
+    e.stopPropagation()
+    e.preventDefault()
+    resizing.current = {
+      id: field.id,
+      page: field.page,
+      startMouseX: e.clientX,
+      startMouseY: e.clientY,
+      startW: field.width,
+      startH: field.height,
+    }
+  }
 
   const handlePdfUpload = async (file) => {
     if (!file || file.type !== 'application/pdf') return
@@ -357,6 +384,12 @@ function RemoteBuilder({ job, onDone }) {
                     >
                       <X size={10} />
                     </button>
+                    {/* Resize handle — bottom-right corner */}
+                    <div
+                      onMouseDown={e => startResize(e, field)}
+                      className="absolute bottom-0 right-0 w-3 h-3 cursor-se-resize"
+                      style={{ background: 'rgba(0,0,0,0.25)', borderRadius: '2px 0 3px 0' }}
+                    />
                   </div>
                 )
               })}
