@@ -4,7 +4,7 @@ import { Sparkles, Copy, Check, CheckCircle, AlertCircle, Loader2 } from 'lucide
 import { getCompanySettings } from '../../utils/companySettings'
 
 const MODEL = 'claude-sonnet-4-6'
-const API_URL = 'https://api.anthropic.com/v1/messages'
+const API_URL = '/api/claude'
 
 function getTools() {
   const { companyName, ownerName, city } = getCompanySettings()
@@ -89,13 +89,7 @@ export default function AIContentGenerator() {
   const [marked, setMarked] = useState(false)
   const [sentHistory, setSentHistory] = useState([])
 
-  const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY
-
   const generate = async () => {
-    if (!apiKey) {
-      setError('No API key found. Add VITE_ANTHROPIC_API_KEY to your .env file.')
-      return
-    }
     setLoading(true)
     setOutput('')
     setError(null)
@@ -104,12 +98,7 @@ export default function AIContentGenerator() {
     try {
       const res = await fetch(API_URL, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: MODEL,
           max_tokens: 600,
@@ -206,9 +195,6 @@ export default function AIContentGenerator() {
             <div>
               <p className="text-sm font-semibold text-red-900">Generation failed</p>
               <p className="text-xs text-red-700 mt-0.5">{error}</p>
-              {!apiKey && <p className="text-xs text-red-600 mt-1.5 font-medium">
-                Add <code className="bg-red-100 px-1 rounded">VITE_ANTHROPIC_API_KEY=your_key</code> to <code className="bg-red-100 px-1 rounded">.env</code> and restart the dev server.
-              </p>}
             </div>
           </div>
         )}

@@ -582,18 +582,12 @@ export default function Estimator({ selectedJobId, setSelectedJobId, navigateTo 
   }, [])
 
   const generateScope = useCallback(async () => {
-    const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY
-    if (!apiKey || !scopeAI.context.trim()) return
+    if (!scopeAI.context.trim()) return
     setScopeAI(s => ({ ...s, loading: true }))
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const res = await fetch('/api/claude', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'claude-sonnet-4-6',
           max_tokens: 700,
