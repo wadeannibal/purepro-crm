@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../../lib/supabase'
 import { renderPdfToImages } from '../../lib/pdfUtils'
-import { CheckCircle, AlertCircle, RotateCcw } from 'lucide-react'
+import { CheckCircle, AlertCircle, RotateCcw, X, PenLine } from 'lucide-react'
 
-function MiniSignPad({ label, onAccept }) {
+// ── Signature pad used inside the modal ───────────────────────────────────────
+function SignPad({ label, onAccept, onCancel }) {
   const canvasRef = useRef(null)
   const drawing = useRef(false)
   const [hasDrawn, setHasDrawn] = useState(false)
@@ -11,7 +12,7 @@ function MiniSignPad({ label, onAccept }) {
   useEffect(() => {
     const ctx = canvasRef.current.getContext('2d')
     ctx.strokeStyle = '#1f2937'
-    ctx.lineWidth = 2
+    ctx.lineWidth = 2.5
     ctx.lineCap = 'round'
     ctx.lineJoin = 'round'
   }, [])
@@ -25,45 +26,118 @@ function MiniSignPad({ label, onAccept }) {
     }
   }
   const start = e => { e.preventDefault(); drawing.current = true; const c = canvasRef.current; const p = pos(e, c); c.getContext('2d').beginPath(); c.getContext('2d').moveTo(p.x, p.y) }
-  const move = e => { e.preventDefault(); if (!drawing.current) return; const c = canvasRef.current; const p = pos(e, c); const ctx = c.getContext('2d'); ctx.lineTo(p.x, p.y); ctx.stroke(); setHasDrawn(true) }
-  const end = () => { drawing.current = false }
+  const move  = e => { e.preventDefault(); if (!drawing.current) return; const c = canvasRef.current; const p = pos(e, c); const ctx = c.getContext('2d'); ctx.lineTo(p.x, p.y); ctx.stroke(); setHasDrawn(true) }
+  const end   = () => { drawing.current = false }
   const clear = () => { canvasRef.current.getContext('2d').clearRect(0, 0, canvasRef.current.width, canvasRef.current.height); setHasDrawn(false) }
 
   return (
-    <div className="border-2 border-dashed border-gray-300 rounded-lg overflow-hidden bg-white">
-      <div className="flex items-center justify-between px-2 py-1 bg-gray-50 border-b border-gray-200">
-        <span className="text-xs font-medium text-gray-500">{label} — draw below</span>
-        <button onClick={clear} className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1"><RotateCcw size={10} /> Clear</button>
-      </div>
-      <canvas
-        ref={canvasRef}
-        width={500}
-        height={120}
-        className="w-full touch-none cursor-crosshair"
-        style={{ touchAction: 'none' }}
-        onMouseDown={start} onMouseMove={move} onMouseUp={end} onMouseLeave={end}
-        onTouchStart={start} onTouchMove={move} onTouchEnd={end}
-      />
-      {hasDrawn && (
-        <div className="px-2 py-1.5 bg-gray-50 border-t border-gray-200">
-          <button
-            onClick={() => onAccept(canvasRef.current.toDataURL('image/png'))}
-            className="w-full text-xs font-bold bg-green-600 hover:bg-green-700 text-white py-1.5 rounded transition-colors"
-          >
-            Use this {label}
-          </button>
+    <div className="space-y-4">
+      <div className="border-2 border-dashed border-gray-300 rounded-xl overflow-hidden bg-white">
+        <div className="flex items-center justify-between px-3 py-2 bg-gray-50 border-b border-gray-200">
+          <span className="text-sm font-semibold text-gray-600">Draw your {label}</span>
+          <button onClick={clear} className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1"><RotateCcw size={11} /> Clear</button>
         </div>
-      )}
+        <canvas
+          ref={canvasRef}
+          width={600}
+          height={160}
+          className="w-full touch-none cursor-crosshair"
+          style={{ touchAction: 'none' }}
+          onMouseDown={start} onMouseMove={move} onMouseUp={end} onMouseLeave={end}
+          onTouchStart={start} onTouchMove={move} onTouchEnd={end}
+        />
+        {!hasDrawn && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <span className="text-gray-300 text-sm select-none">Sign here</span>
+          </div>
+        )}
+      </div>
+      <div className="flex gap-3">
+        <button onClick={onCancel} className="flex-1 py-2.5 border border-gray-300 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">Cancel</button>
+        <button
+          onClick={() => hasDrawn && onAccept(canvasRef.current.toDataURL('image/png'))}
+          disabled={!hasDrawn}
+          className="flex-1 py-2.5 bg-green-600 hover:bg-green-700 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl text-sm font-bold transition-colors"
+        >
+          Accept {label}
+        </button>
+      </div>
     </div>
   )
 }
 
+// ── Modal for filling a single field ─────────────────────────────────────────
+function FieldModal({ field, currentValue, onAccept, onCancel }) {
+  const [text, setText] = useState(currentValue ?? '')
+  const [date, setDate] = useState(currentValue ?? new Date().toISOString().slice(0, 10))
+
+  const isDrawType = field.type === 'Signature' || field.type === 'Initials'
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.55)' }}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+          <div className="flex items-center gap-2">
+            <PenLine size={16} className="text-gray-500" />
+            <span className="font-bold text-gray-900">{field.type}</span>
+          </div>
+          <button onClick={onCancel} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
+        </div>
+
+        {/* Body */}
+        <div className="p-5">
+          {isDrawType ? (
+            <SignPad label={field.type} onAccept={onAccept} onCancel={onCancel} />
+          ) : field.type === 'Date' ? (
+            <div className="space-y-4">
+              <input
+                type="date"
+                value={date}
+                onChange={e => setDate(e.target.value)}
+                className="w-full border-2 border-blue-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500"
+              />
+              <div className="flex gap-3">
+                <button onClick={onCancel} className="flex-1 py-2.5 border border-gray-300 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50">Cancel</button>
+                <button onClick={() => onAccept(date)} className="flex-1 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-sm font-bold">Confirm Date</button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <input
+                type="text"
+                placeholder={`Enter ${field.type}`}
+                value={text}
+                onChange={e => setText(e.target.value)}
+                autoFocus
+                className="w-full border-2 border-blue-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500"
+              />
+              <div className="flex gap-3">
+                <button onClick={onCancel} className="flex-1 py-2.5 border border-gray-300 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50">Cancel</button>
+                <button
+                  onClick={() => text.trim() && onAccept(text.trim())}
+                  disabled={!text.trim()}
+                  className="flex-1 py-2.5 bg-green-600 hover:bg-green-700 disabled:opacity-40 text-white rounded-xl text-sm font-bold"
+                >
+                  Confirm
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Main signing page ─────────────────────────────────────────────────────────
 export default function SigningPage({ token }) {
-  const [request, setRequest] = useState(null)
-  const [status, setStatus] = useState('loading') // loading | ready | already_signed | done | error
-  const [pages, setPages] = useState([])
-  const [values, setValues] = useState({})
-  const [submitting, setSubmitting] = useState(false)
+  const [request, setRequest]   = useState(null)
+  const [status, setStatus]     = useState('loading')
+  const [pages, setPages]       = useState([])
+  const [values, setValues]     = useState({})
+  const [activeField, setActiveField] = useState(null)
+  const [submitting, setSubmitting]   = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
 
   useEffect(() => {
@@ -78,7 +152,10 @@ export default function SigningPage({ token }) {
       })
   }, [token])
 
-  const set = (id, val) => setValues(prev => ({ ...prev, [id]: val }))
+  const accept = (id, val) => {
+    setValues(prev => ({ ...prev, [id]: val }))
+    setActiveField(null)
+  }
 
   const allFilled = () => request && (request.fields ?? []).every(f => {
     const v = values[f.id]
@@ -101,6 +178,7 @@ export default function SigningPage({ token }) {
     else setStatus('done')
   }
 
+  // ── Status screens ──────────────────────────────────────────────────────────
   if (status === 'loading') return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
       <div className="text-center">
@@ -150,10 +228,23 @@ export default function SigningPage({ token }) {
 
   return (
     <div className="min-h-screen bg-gray-100">
+      {/* Modal */}
+      {activeField && (
+        <FieldModal
+          field={activeField}
+          currentValue={values[activeField.id]}
+          onAccept={val => accept(activeField.id, val)}
+          onCancel={() => setActiveField(null)}
+        />
+      )}
+
+      {/* Header */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10 px-4 py-3 flex items-center justify-between shadow-sm">
         <div>
           <div className="text-sm font-bold text-gray-900">{request.title}</div>
-          <div className="text-xs text-gray-500">Fill all required fields, then click Sign</div>
+          <div className="text-xs text-gray-500">
+            {Object.keys(values).length}/{fields.length} fields completed — tap any box to fill it
+          </div>
         </div>
         <button
           onClick={submit}
@@ -164,62 +255,57 @@ export default function SigningPage({ token }) {
         </button>
       </div>
 
+      {/* Pages */}
       <div className="max-w-3xl mx-auto py-6 px-4 space-y-4">
         {pages.map((page, pi) => {
           const pageFields = fields.filter(f => f.page === pi)
           return (
             <div key={pi} className="relative shadow-xl rounded-lg overflow-hidden bg-white select-none">
               <img src={page.dataUrl} alt={`Page ${pi + 1}`} className="w-full block" draggable={false} />
-              {pageFields.map(field => (
-                <div
-                  key={field.id}
-                  className="absolute"
-                  style={{
-                    left: `${field.x * 100}%`,
-                    top: `${field.y * 100}%`,
-                    width: `${field.width * 100}%`,
-                    height: `${field.height * 100}%`,
-                  }}
-                >
-                  {(field.type === 'Signature' || field.type === 'Initials') ? (
-                    values[field.id] ? (
-                      <div className="w-full h-full border-2 border-green-400 rounded-sm bg-white/90 relative">
+              {pageFields.map(field => {
+                const filled = !!values[field.id]
+                const isDrawType = field.type === 'Signature' || field.type === 'Initials'
+                return (
+                  <button
+                    key={field.id}
+                    onClick={() => setActiveField(field)}
+                    className={`absolute rounded-sm border-2 transition-all overflow-hidden
+                      ${filled
+                        ? 'border-green-400 bg-green-50/80'
+                        : 'border-blue-400 bg-blue-50/80 hover:bg-blue-100/90 animate-pulse-subtle'
+                      }`}
+                    style={{
+                      left: `${field.x * 100}%`,
+                      top: `${field.y * 100}%`,
+                      width: `${field.width * 100}%`,
+                      height: `${field.height * 100}%`,
+                    }}
+                  >
+                    {filled ? (
+                      isDrawType ? (
                         <img src={values[field.id]} alt={field.type} className="w-full h-full object-contain p-0.5" />
-                        <button
-                          onClick={() => set(field.id, '')}
-                          className="absolute top-0 right-0 text-[9px] bg-red-500 text-white px-1 leading-4 rounded-bl font-bold"
-                        >redo</button>
-                      </div>
+                      ) : (
+                        <span className="text-[10px] font-semibold text-green-800 px-1 truncate block w-full text-left leading-none" style={{ marginTop: '2px' }}>
+                          {values[field.id]}
+                        </span>
+                      )
                     ) : (
-                      <MiniSignPad
-                        label={field.type}
-                        onAccept={dataUrl => set(field.id, dataUrl)}
-                      />
-                    )
-                  ) : field.type === 'Date' ? (
-                    <input
-                      type="date"
-                      value={values[field.id] ?? new Date().toISOString().slice(0, 10)}
-                      onChange={e => set(field.id, e.target.value)}
-                      className="w-full h-full border-2 border-blue-400 rounded-sm bg-blue-50 text-xs px-1 focus:outline-none"
-                    />
-                  ) : (
-                    <input
-                      type="text"
-                      placeholder={field.type}
-                      value={values[field.id] ?? ''}
-                      onChange={e => set(field.id, e.target.value)}
-                      className="w-full h-full border-2 border-blue-400 rounded-sm bg-blue-50 text-xs px-1 focus:outline-none"
-                    />
-                  )}
-                </div>
-              ))}
+                      <span className="text-[9px] font-bold text-blue-600 uppercase tracking-wide px-1 truncate block w-full text-left leading-none" style={{ marginTop: '2px' }}>
+                        {field.type}
+                      </span>
+                    )}
+                  </button>
+                )
+              })}
             </div>
           )
         })}
 
+        {/* Footer */}
         <div className="bg-white border border-gray-200 rounded-xl p-5 text-center">
-          <p className="text-xs text-gray-400 mb-3">By clicking "Sign Document" you agree that this electronic signature is the legal equivalent of your handwritten signature.</p>
+          <p className="text-xs text-gray-400 mb-3">
+            By clicking "Sign Document" you agree this electronic signature is the legal equivalent of your handwritten signature.
+          </p>
           <button
             onClick={submit}
             disabled={!allFilled() || submitting}
