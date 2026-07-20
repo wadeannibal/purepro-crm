@@ -5,7 +5,7 @@ import { renderPdfToImages, fileToBase64 } from '../../lib/pdfUtils'
 import { supabase } from '../../lib/supabase'
 import {
   PenLine, CheckCircle, Clock, Trash2, X, RotateCcw, ChevronLeft,
-  Upload, Link, Copy, Check, MousePointer, ArrowLeft, ExternalLink,
+  Upload, Link, Copy, Check, MousePointer, ArrowLeft, ExternalLink, Printer, FileText,
 } from 'lucide-react'
 
 // ── Field type config ─────────────────────────────────────────────────────────
@@ -417,11 +417,133 @@ function RemoteBuilder({ job, onDone }) {
   )
 }
 
+// ── Signed document viewer ────────────────────────────────────────────────────
+function SignedDocumentModal({ req, onClose }) {
+  const [pages, setPages] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    renderPdfToImages(req.documentData, 1.5)
+      .then(p => { setPages(p); setLoading(false) })
+      .catch(() => setLoading(false))
+  }, [req.documentData])
+
+  // Build a lookup: fieldId -> signedValue
+  const valueMap = Object.fromEntries((req.signedFields ?? []).map(sf => [sf.id, sf.value]))
+
+  const isDrawType = t => t === 'Signature' || t === 'Initials'
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/80 flex flex-col">
+      {/* Toolbar */}
+      <div className="no-print flex items-center justify-between bg-gray-900 px-5 py-3 flex-shrink-0">
+        <div className="flex items-center gap-3">
+          <FileText size={16} className="text-gray-400" />
+          <div>
+            <div className="text-white text-sm font-semibold">{req.title}</div>
+            <div className="text-gray-400 text-xs">
+              Signed {new Date(req.signedAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+              {req.signerIp ? ` · IP ${req.signerIp}` : ''}
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => window.print()}
+            className="flex items-center gap-2 bg-white hover:bg-gray-100 text-gray-900 text-sm font-semibold px-4 py-2 rounded-xl transition-colors"
+          >
+            <Printer size={14} /> Print / Save PDF
+          </button>
+          <button onClick={onClose} className="text-gray-400 hover:text-white p-2 rounded-lg transition-colors">
+            <X size={18} />
+          </button>
+        </div>
+      </div>
+
+      {/* Print styles */}
+      <style>{`
+        @media print {
+          .no-print { display: none !important; }
+          body { background: white !important; margin: 0; }
+          .signed-doc-scroll { overflow: visible !important; background: white !important; }
+          .signed-doc-page { break-inside: avoid; box-shadow: none !important; margin-bottom: 0 !important; }
+        }
+      `}</style>
+
+      {/* Pages */}
+      <div className="signed-doc-scroll flex-1 overflow-y-auto bg-gray-700 py-6 px-4">
+        {loading ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center">
+              <div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+              <p className="text-gray-300 text-sm">Rendering document…</p>
+            </div>
+          </div>
+        ) : (
+          <div className="max-w-3xl mx-auto space-y-4">
+            {pages.map((page, pi) => {
+              const pageFields = (req.fields ?? []).filter(f => f.page === pi)
+              return (
+                <div key={pi} className="signed-doc-page relative shadow-2xl rounded-lg overflow-hidden bg-white">
+                  <img src={page.dataUrl} alt={`Page ${pi + 1}`} className="w-full block pointer-events-none" draggable={false} />
+                  {pageFields.map(field => {
+                    const val = valueMap[field.id]
+                    if (!val) return null
+                    return (
+                      <div
+                        key={field.id}
+                        className="absolute"
+                        style={{
+                          left: `${field.x * 100}%`,
+                          top: `${field.y * 100}%`,
+                          width: `${field.width * 100}%`,
+                          height: `${field.height * 100}%`,
+                        }}
+                      >
+                        {isDrawType(field.type) ? (
+                          <img src={val} alt={field.type} className="w-full h-full object-contain" />
+                        ) : (
+                          <div className="w-full h-full flex items-center px-1 overflow-hidden">
+                            <span className="text-gray-900 text-xs font-medium leading-tight truncate">{val}</span>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              )
+            })}
+            {/* Audit trail footer */}
+            <div className="no-print bg-gray-800 rounded-xl p-4 text-xs text-gray-400 space-y-1">
+              <div className="font-semibold text-gray-300 mb-2">Signature Audit Trail</div>
+              <div>Document: {req.title}</div>
+              {req.signerName && <div>Signer: {req.signerName}</div>}
+              {req.signerEmail && <div>Email: {req.signerEmail}</div>}
+              <div>Signed: {new Date(req.signedAt).toLocaleString()}</div>
+              {req.signerIp && <div>IP Address: {req.signerIp}</div>}
+            </div>
+            {/* Print-only audit trail */}
+            <div className="hidden print:block mt-6 border-t border-gray-300 pt-4 text-xs text-gray-500 space-y-1">
+              <div className="font-semibold text-gray-700 mb-1">Signature Audit Trail</div>
+              <div>Document: {req.title}</div>
+              {req.signerName && <div>Signer: {req.signerName}</div>}
+              {req.signerEmail && <div>Email: {req.signerEmail}</div>}
+              <div>Signed: {new Date(req.signedAt).toLocaleString()}</div>
+              {req.signerIp && <div>IP Address: {req.signerIp}</div>}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ── Remote requests list ──────────────────────────────────────────────────────
 function RemoteRequestsList({ job, requests, onNew, onRefresh }) {
   const { dispatch } = useApp()
   const [expanded, setExpanded] = useState(null)
   const [copied, setCopied] = useState(null)
+  const [viewingDoc, setViewingDoc] = useState(null)
 
   const jobRequests = requests.filter(r => r.jobId === job.id)
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
@@ -500,13 +622,22 @@ function RemoteRequestsList({ job, requests, onNew, onRefresh }) {
                     </button>
                   )}
                   {req.status === 'signed' && (
-                    <button
-                      onClick={() => setExpanded(expanded === req.id ? null : req.id)}
-                      className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
-                      title="View signed fields"
-                    >
-                      <ExternalLink size={13} />
-                    </button>
+                    <>
+                      <button
+                        onClick={() => setViewingDoc(req)}
+                        className="flex items-center gap-1.5 text-xs font-semibold bg-gray-900 hover:bg-gray-700 text-white px-3 py-1.5 rounded-lg transition-colors"
+                        title="View full signed document"
+                      >
+                        <FileText size={12} /> View Document
+                      </button>
+                      <button
+                        onClick={() => setExpanded(expanded === req.id ? null : req.id)}
+                        className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+                        title="View signed field summary"
+                      >
+                        <ExternalLink size={13} />
+                      </button>
+                    </>
                   )}
                   <button onClick={() => del(req.id)} className="p-1.5 rounded-lg hover:bg-red-50 text-gray-300 hover:text-red-500 transition-colors">
                     <Trash2 size={13} />
@@ -535,6 +666,10 @@ function RemoteRequestsList({ job, requests, onNew, onRefresh }) {
             </div>
           ))}
         </div>
+      )}
+
+      {viewingDoc && (
+        <SignedDocumentModal req={viewingDoc} onClose={() => setViewingDoc(null)} />
       )}
     </div>
   )
