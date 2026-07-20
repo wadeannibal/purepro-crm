@@ -1,8 +1,23 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { computeEstimateTotals, formatCurrency } from '../../utils/helpers'
-import { CheckCircle, Clock, ChevronRight, AlertCircle, Loader2, Image, MessageSquare, Calendar, FileText } from 'lucide-react'
+import { CheckCircle, Clock, ChevronRight, AlertCircle, Loader2, Image, MessageSquare, Calendar, FileText, Download, Printer } from 'lucide-react'
 import { getCompanySettings } from '../../utils/companySettings'
+
+async function downloadBlob(url, filename) {
+  try {
+    const res = await fetch(url)
+    const blob = await res.blob()
+    const ext = blob.type.split('/')[1]?.split(';')[0] || 'jpg'
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = filename ? filename : `photo.${ext}`
+    a.click()
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000)
+  } catch {
+    window.open(url, '_blank')
+  }
+}
 
 const STAGE_ORDER = ['Lead', 'Inspection', 'Estimate Sent', 'Approved', 'Remediation', 'Post-Test', 'Invoiced', 'Closed']
 
@@ -111,27 +126,58 @@ export default function PublicPortal({ code }) {
       {/* Lightbox */}
       {lightbox && (
         <div
-          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 cursor-pointer"
+          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
           onClick={() => setLightbox(null)}
         >
-          <img src={lightbox} alt="Photo" className="max-w-full max-h-full rounded-xl object-contain" />
+          <img src={lightbox} alt="Photo" className="max-w-full max-h-[85vh] rounded-xl object-contain" />
+          <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-3 no-print" onClick={e => e.stopPropagation()}>
+            <button
+              onClick={() => downloadBlob(lightbox, 'photo.jpg')}
+              className="flex items-center gap-2 bg-white/20 hover:bg-white/30 text-white text-sm font-semibold px-4 py-2 rounded-xl backdrop-blur-sm transition-colors"
+            >
+              <Download size={14} /> Download
+            </button>
+            <button
+              onClick={() => setLightbox(null)}
+              className="flex items-center gap-2 bg-white/20 hover:bg-white/30 text-white text-sm font-semibold px-4 py-2 rounded-xl backdrop-blur-sm transition-colors"
+            >
+              Close
+            </button>
+          </div>
         </div>
       )}
 
+      {/* Print-only styles */}
+      <style>{`
+        @media print {
+          .no-print { display: none !important; }
+          body { background: white !important; }
+          .print-page { box-shadow: none !important; border: 1px solid #e5e7eb !important; break-inside: avoid; }
+        }
+      `}</style>
+
       {/* Header */}
       <div className="bg-gray-950 px-5 py-5">
-        <div className="max-w-2xl mx-auto flex items-center gap-3">
-          <div className="w-9 h-9 bg-red-600 rounded-lg flex items-center justify-center flex-shrink-0">
-            <svg viewBox="0 0 24 24" fill="white" width="18" height="18"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
-          </div>
-          <div>
-            <div>
-              <span className="text-red-500 font-black text-base">PURE</span>
-              <span className="text-white font-black text-base">PRO</span>
-              <span className="text-gray-400 text-base"> Restoration</span>
+        <div className="max-w-2xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 bg-red-600 rounded-lg flex items-center justify-center flex-shrink-0">
+              <svg viewBox="0 0 24 24" fill="white" width="18" height="18"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
             </div>
-            <div className="text-xs text-gray-500 uppercase tracking-wider">Client Job Portal</div>
+            <div>
+              <div>
+                <span className="text-red-500 font-black text-base">PURE</span>
+                <span className="text-white font-black text-base">PRO</span>
+                <span className="text-gray-400 text-base"> Restoration</span>
+              </div>
+              <div className="text-xs text-gray-500 uppercase tracking-wider">Client Job Portal</div>
+            </div>
           </div>
+          <button
+            onClick={() => window.print()}
+            className="no-print flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-semibold px-3 py-2 rounded-xl transition-colors"
+          >
+            <Printer size={13} /> Save as PDF
+          </button>
         </div>
         <div className="max-w-2xl mx-auto mt-4 border-t border-gray-800 pt-4">
           {clientName && <div className="text-white font-semibold">{clientName}</div>}
@@ -176,6 +222,27 @@ export default function PublicPortal({ code }) {
                 </div>
               ))}
             </div>
+            <button
+              onClick={() => {
+                const lines = [
+                  `Job Updates — ${companyName}`,
+                  `Client: ${clientName}`,
+                  `Address: ${job.address}`,
+                  `Downloaded: ${new Date().toLocaleDateString()}`,
+                  '',
+                  ...updates.map(u => `[${new Date(u.createdAt).toLocaleDateString()}]\n${u.text}`),
+                ]
+                const blob = new Blob([lines.join('\n\n')], { type: 'text/plain' })
+                const a = document.createElement('a')
+                a.href = URL.createObjectURL(blob)
+                a.download = 'job-updates.txt'
+                a.click()
+                setTimeout(() => URL.revokeObjectURL(a.href), 2000)
+              }}
+              className="no-print mt-4 flex items-center gap-2 text-xs font-semibold text-gray-500 hover:text-gray-700 border border-gray-200 hover:border-gray-300 px-3 py-2 rounded-xl transition-colors"
+            >
+              <Download size={12} /> Download Updates
+            </button>
           </Section>
         )}
 
@@ -203,20 +270,39 @@ export default function PublicPortal({ code }) {
           <Section icon={Image} title="Job Photos">
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {photos.map(p => (
-                <button
-                  key={p.id}
-                  onClick={() => setLightbox(p.storage_path)}
-                  className="aspect-square rounded-xl overflow-hidden bg-gray-100 hover:opacity-90 transition-opacity"
-                >
+                <div key={p.id} className="relative group aspect-square rounded-xl overflow-hidden bg-gray-100">
                   <img
                     src={p.storage_path}
                     alt={p.name ?? 'Job photo'}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                    onClick={() => setLightbox(p.storage_path)}
                   />
-                </button>
+                  <button
+                    onClick={() => downloadBlob(p.storage_path, p.name || `photo-${p.id}.jpg`)}
+                    className="no-print absolute bottom-1.5 right-1.5 bg-black/60 hover:bg-black/80 text-white rounded-lg p-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                    title="Download photo"
+                  >
+                    <Download size={12} />
+                  </button>
+                </div>
               ))}
             </div>
-            <p className="text-xs text-gray-400 mt-3">Tap any photo to enlarge</p>
+            <div className="flex items-center justify-between mt-3">
+              <p className="text-xs text-gray-400">Tap any photo to enlarge</p>
+              {photos.length > 1 && (
+                <button
+                  onClick={async () => {
+                    for (const p of photos) {
+                      await downloadBlob(p.storage_path, p.name || `photo-${p.id}.jpg`)
+                      await new Promise(r => setTimeout(r, 300))
+                    }
+                  }}
+                  className="no-print flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-gray-700 border border-gray-200 hover:border-gray-300 px-3 py-1.5 rounded-xl transition-colors"
+                >
+                  <Download size={12} /> Download All ({photos.length})
+                </button>
+              )}
+            </div>
           </Section>
         )}
 

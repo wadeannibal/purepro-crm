@@ -151,8 +151,13 @@ export default function ClientPortal({ selectedJobId, setSelectedJobId, navigate
   }
 
   const revoke = () => {
-    if (!job || !window.confirm('Disable this portal? The link will stop working.')) return
+    if (!job || !window.confirm('Disable this portal? The link will stop working for the client, but all data stays saved.')) return
     savePortal({ ...portal, enabled: false })
+  }
+
+  const reEnable = () => {
+    if (!job) return
+    savePortal({ ...portal, enabled: true })
   }
 
   const copyLink = async () => {
@@ -234,6 +239,20 @@ export default function ClientPortal({ selectedJobId, setSelectedJobId, navigate
                   <p className="text-xs text-gray-400 mb-5">Share a unique link with your client to show job status, estimates, photos, and updates</p>
                   <button onClick={generate} className="bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-2.5 rounded-xl text-sm transition-colors">
                     Generate Client Portal
+                  </button>
+                </div>
+              ) : !portal?.enabled ? (
+                <div>
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-4">
+                    <p className="text-sm font-semibold text-yellow-800 mb-1">Portal is disabled</p>
+                    <p className="text-xs text-yellow-700">The client link is inactive. All updates, photos, and estimate data are still saved — nothing was deleted.</p>
+                  </div>
+                  <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 mb-4">
+                    <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-1">Portal Link (inactive)</div>
+                    <div className="text-sm text-gray-400 font-mono break-all">{portalUrl}</div>
+                  </div>
+                  <button onClick={reEnable} className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold px-5 py-2.5 rounded-xl text-sm transition-colors">
+                    <Globe size={14} /> Re-enable Portal
                   </button>
                 </div>
               ) : (
