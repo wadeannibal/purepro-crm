@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useApp } from '../../context/AppContext'
 import { ACTIONS } from '../../context/AppReducer'
 import { CLIENT_TYPES, formatDate, formatCurrency, clientTypeColor, jobTypeColor, stageColor } from '../../utils/helpers'
 import Modal from '../shared/Modal'
-import { Plus, Search, Star, Phone, Mail, MapPin, Briefcase, X, Edit2, Trash2, ChevronLeft } from 'lucide-react'
+import { Plus, Search, Star, Phone, Mail, MapPin, Briefcase, X, Edit2, Trash2, ChevronLeft, AlertTriangle } from 'lucide-react'
 
 const BLANK = { name: '', type: 'Homeowner', email: '', phone: '', address: '', notes: '', isVIP: false }
 
@@ -145,6 +145,24 @@ export default function CRM({ navigateTo }) {
   const openAdd = () => { setForm(BLANK); setEditing(null); setShowModal(true) }
   const openEdit = (c) => { setForm({ ...c }); setEditing(c.id); setShowModal(true) }
 
+  const clientDupes = useMemo(() => {
+    if (!showModal) return []
+    const name = (form.name ?? '').toLowerCase().trim()
+    const phone = (form.phone ?? '').replace(/\D/g, '')
+    const email = (form.email ?? '').toLowerCase().trim()
+    const results = []
+    for (const c of state.clients) {
+      if (c.id === editing) continue
+      const reasons = []
+      const cName = (c.name ?? '').toLowerCase().trim()
+      if (name.length >= 4 && (cName === name || cName.includes(name) || name.includes(cName))) reasons.push('name')
+      if (phone.length >= 7 && phone === (c.phone ?? '').replace(/\D/g, '')) reasons.push('phone')
+      if (email.length >= 5 && email === (c.email ?? '').toLowerCase().trim()) reasons.push('email')
+      if (reasons.length) results.push({ record: c, reasons })
+    }
+    return results
+  }, [form.name, form.phone, form.email, state.clients, showModal, editing])
+
   const save = () => {
     if (!form.name) return
     if (editing) {
@@ -265,6 +283,20 @@ export default function CRM({ navigateTo }) {
               <input type="checkbox" checked={form.isVIP} onChange={e => setForm(f => ({ ...f, isVIP: e.target.checked }))} className="accent-red-600" />
               <span className="text-sm font-medium text-gray-700">Mark as VIP Client</span>
             </label>
+            {clientDupes.length > 0 && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 space-y-1.5">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-yellow-800">
+                  <AlertTriangle size={12} /> Possible duplicate{clientDupes.length > 1 ? 's' : ''} found
+                </div>
+                {clientDupes.map(({ record, reasons }) => (
+                  <div key={record.id} className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-yellow-900">{record.name}</span>
+                    <span className="text-[10px] font-semibold text-yellow-600 uppercase tracking-wide">{reasons.join(' · ')}</span>
+                  </div>
+                ))}
+                <p className="text-[10px] text-yellow-500">You can still save — this is just a heads up.</p>
+              </div>
+            )}
             <div className="flex justify-end gap-2 pt-2">
               <button onClick={() => setShowModal(false)} className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800">Cancel</button>
               <button onClick={save} className="px-4 py-2 text-sm font-semibold bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors">
