@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useApp } from '../../context/AppContext'
 import { ACTIONS } from '../../context/AppReducer'
 import {
-  JOB_STAGES, JOB_TYPES, LEAD_SOURCES, formatCurrency, formatDate, formatDateTime,
+  JOB_STAGES, JOB_TYPES, LEAD_SOURCES, LOSS_REASONS, formatCurrency, formatDate, formatDateTime,
   jobTypeColor, stageColor, getChecklistForJobType, OSHA_CHECKLIST
 } from '../../utils/helpers'
 import { Search, ChevronLeft, ChevronRight, Send, Camera, Folder, Clock, Shield, ShieldCheck, Trash2, X, ExternalLink, Archive, ArchiveRestore } from 'lucide-react'
@@ -19,6 +19,8 @@ export default function JobRecords({ selectedJobId, setSelectedJobId, navigateTo
   const [showEditModal, setShowEditModal] = useState(false)
   const [editForm, setEditForm] = useState({})
   const [lightbox, setLightbox] = useState(null)
+  const [lossModal, setLossModal] = useState(null)
+  const [lossForm, setLossForm] = useState({ lostReason: 'Price too high', lostCompetitor: '' })
   const [showArchived, setShowArchived] = useState(false)
 
   const archivedCount = state.jobs.filter(j => j.archived).length
@@ -137,7 +139,11 @@ export default function JobRecords({ selectedJobId, setSelectedJobId, navigateTo
                   <ChevronRight size={14} className="text-gray-400" />
                   <select
                     value={job.stage}
-                    onChange={e => dispatch({ type: ACTIONS.UPDATE_JOB, payload: { id: job.id, stage: e.target.value } })}
+                    onChange={e => {
+                      const s = e.target.value
+                      if (s === 'Lost') { setLossForm({ lostReason: 'Price too high', lostCompetitor: '' }); setLossModal(job.id) }
+                      else dispatch({ type: ACTIONS.UPDATE_JOB, payload: { id: job.id, stage: s } })
+                    }}
                     className={`text-xs font-semibold px-2.5 py-1 rounded-full border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-red-500 ${stageColor(job.stage)}`}
                   >
                     {JOB_STAGES.map(s => <option key={s}>{s}</option>)}
@@ -423,6 +429,30 @@ export default function JobRecords({ selectedJobId, setSelectedJobId, navigateTo
         </div>
       )}
 
+      {lossModal && (
+        <Modal title="Mark as Lost" onClose={() => setLossModal(null)}>
+          <div className="space-y-3">
+            <p className="text-sm text-gray-500">What was the reason this job was lost?</p>
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1">Loss Reason</label>
+              <select value={lossForm.lostReason} onChange={e => setLossForm(f => ({ ...f, lostReason: e.target.value, lostCompetitor: e.target.value !== 'Went with competitor' ? '' : f.lostCompetitor }))} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500">
+                {LOSS_REASONS.map(r => <option key={r}>{r}</option>)}
+              </select>
+            </div>
+            {lossForm.lostReason === 'Went with competitor' && (
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1">Competitor Name</label>
+                <input type="text" placeholder="e.g. ServPro, Paul Davis…" value={lossForm.lostCompetitor} onChange={e => setLossForm(f => ({ ...f, lostCompetitor: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500" />
+              </div>
+            )}
+            <div className="flex justify-end gap-2 pt-1">
+              <button onClick={() => setLossModal(null)} className="px-4 py-2 text-sm font-medium text-gray-600">Cancel</button>
+              <button onClick={() => { dispatch({ type: ACTIONS.UPDATE_JOB, payload: { id: lossModal, stage: 'Lost', ...lossForm } }); setLossModal(null) }} className="px-4 py-2 text-sm font-semibold bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors">Confirm Lost</button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
       {showEditModal && (
         <Modal title="Edit Job" onClose={() => setShowEditModal(false)} wide>
           <div className="space-y-4">
@@ -435,11 +465,27 @@ export default function JobRecords({ selectedJobId, setSelectedJobId, navigateTo
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1">Stage</label>
-                <select value={editForm.stage} onChange={e => setEditForm(f => ({ ...f, stage: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500">
+                <select value={editForm.stage} onChange={e => setEditForm(f => ({ ...f, stage: e.target.value, lostReason: e.target.value === 'Lost' ? (f.lostReason || 'Price too high') : f.lostReason, lostCompetitor: e.target.value !== 'Lost' ? '' : f.lostCompetitor }))} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500">
                   {JOB_STAGES.map(s => <option key={s}>{s}</option>)}
                 </select>
               </div>
             </div>
+            {editForm.stage === 'Lost' && (
+              <div className="space-y-3 p-3 bg-red-50 border border-red-200 rounded-xl">
+                <div>
+                  <label className="block text-xs font-semibold text-red-700 mb-1">Loss Reason</label>
+                  <select value={editForm.lostReason ?? 'Price too high'} onChange={e => setEditForm(f => ({ ...f, lostReason: e.target.value, lostCompetitor: e.target.value !== 'Went with competitor' ? '' : f.lostCompetitor }))} className="w-full border border-red-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500">
+                    {LOSS_REASONS.map(r => <option key={r}>{r}</option>)}
+                  </select>
+                </div>
+                {editForm.lostReason === 'Went with competitor' && (
+                  <div>
+                    <label className="block text-xs font-semibold text-red-700 mb-1">Competitor Name</label>
+                    <input type="text" placeholder="e.g. ServPro, Paul Davis…" value={editForm.lostCompetitor ?? ''} onChange={e => setEditForm(f => ({ ...f, lostCompetitor: e.target.value }))} className="w-full border border-red-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500" />
+                  </div>
+                )}
+              </div>
+            )}
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1">Revenue ($)</label>
               <input type="number" value={editForm.revenue ?? ''} onChange={e => setEditForm(f => ({ ...f, revenue: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500" />
