@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { useApp } from '../../context/AppContext'
 import { formatCurrency, isInvoiceOverdue, invoiceBalance } from '../../utils/helpers'
-import { TrendingUp, Search, Bell, X, Briefcase, Users, AlertCircle, Clock, ShieldAlert, Calendar, Menu } from 'lucide-react'
+import { TrendingUp, Search, Bell, X, Briefcase, Users, AlertCircle, Clock, ShieldAlert, Calendar, Menu, WifiOff, RefreshCw } from 'lucide-react'
 
 const TITLES = {
   pipeline: 'Job Pipeline',
@@ -73,7 +73,7 @@ const NOTIF_COLOR = {
 const NOTIF_ICON = { invoice: AlertCircle, warranty: ShieldAlert, appt: Calendar, followup: Clock }
 
 export default function Header({ currentView, selectedJobId, navigateTo, onMenuClick }) {
-  const { state } = useApp()
+  const { state, syncStatus, syncToast, retrySync } = useApp()
   const [searchQ, setSearchQ] = useState('')
   const [searchOpen, setSearchOpen] = useState(false)
   const [notifOpen, setNotifOpen] = useState(false)
@@ -293,12 +293,37 @@ export default function Header({ currentView, selectedJobId, navigateTo, onMenuC
         )}
       </div>
 
+      {/* Sync status indicator */}
+      {syncStatus === 'offline' ? (
+        <button
+          onClick={retrySync}
+          className="flex items-center gap-1.5 bg-orange-50 border border-orange-200 text-orange-700 rounded-lg px-2.5 py-1.5 flex-shrink-0 hover:bg-orange-100 transition-colors"
+          title="Using cached data — click to reconnect"
+        >
+          <WifiOff size={13} />
+          <span className="text-xs font-semibold hidden sm:inline">Offline</span>
+          <RefreshCw size={11} className="hidden sm:inline opacity-60" />
+        </button>
+      ) : (
+        <div className="flex-shrink-0" title="Synced with cloud">
+          <div className="w-2 h-2 rounded-full bg-green-500" />
+        </div>
+      )}
+
       {/* Pipeline total */}
       <div className="hidden md:flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 flex-shrink-0">
         <TrendingUp size={14} className="text-red-500" />
         <span className="text-xs font-semibold text-gray-700">{formatCurrency(totalPipeline)}</span>
         <span className="text-xs text-gray-400">active pipeline</span>
       </div>
+
+      {/* Write-failure toast — fixed bottom-right */}
+      {syncToast && (
+        <div className="fixed bottom-5 right-5 z-[9999] flex items-center gap-3 bg-red-600 text-white text-sm font-medium px-4 py-3 rounded-xl shadow-xl animate-in slide-in-from-bottom-2">
+          <AlertCircle size={16} className="flex-shrink-0" />
+          <span>{syncToast}</span>
+        </div>
+      )}
     </header>
   )
 }

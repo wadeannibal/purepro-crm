@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useApp } from '../../context/AppContext'
 import { ACTIONS } from '../../context/AppReducer'
 import { computeEstimateTotals, formatCurrency } from '../../utils/helpers'
-import { Globe, Copy, Check, Eye, X, CheckCircle, Clock, ChevronRight, ChevronLeft, Send, Trash2, Image, MessageSquare } from 'lucide-react'
+import { Globe, Copy, Check, Eye, X, CheckCircle, Clock, ChevronRight, ChevronLeft, Send, Trash2, Image, MessageSquare, Upload, Loader, FileText } from 'lucide-react'
 import { getCompanySettings } from '../../utils/companySettings'
+import { uploadDocument } from '../../lib/supabase'
 
 const STAGE_ORDER = ['Lead', 'Inspection', 'Estimate Sent', 'Approved', 'Remediation', 'Post-Test', 'Invoiced', 'Closed']
 
@@ -16,7 +17,7 @@ function PortalPreview({ job, client, events, onClose, onApprove }) {
   const totals = estimate ? computeEstimateTotals(estimate) : null
   const stageIdx = STAGE_ORDER.indexOf(job.stage)
   const jobEvents = events.filter(e => e.jobId === job.id).sort((a, b) => a.date.localeCompare(b.date))
-  const updates = (job.portal?.updates ?? []).sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+  const updates = (job.portal?.updates ?? []).sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? ''))
 
   return (
     <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
@@ -131,6 +132,8 @@ export default function ClientPortal({ selectedJobId, setSelectedJobId, navigate
   const [preview, setPreview] = useState(false)
   const [updateText, setUpdateText] = useState('')
   const [posting, setPosting] = useState(false)
+  const [docUploading, setDocUploading] = useState(false)
+  const docRef = useRef()
 
   const job = state.jobs.find(j => j.id === selectedJobId) ?? state.jobs[0] ?? null
   const client = job ? state.clients.find(c => c.id === job.clientId) : null
@@ -138,8 +141,9 @@ export default function ClientPortal({ selectedJobId, setSelectedJobId, navigate
 
   const portal = job?.portal ?? null
   const portalUrl = portal?.code ? `${window.location.origin}/portal/${portal.code}` : null
-  const updates = (portal?.updates ?? []).sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-  const showcaseCount = (job?.photos ?? []).filter(p => p.isShowcase).length
+  const updates = (portal?.updates ?? []).sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? ''))
+  const showcasePhotos = (job?.photos ?? []).filter(p => (state.showcasePhotos ?? {})[p.id] ?? p.isShowcase)
+  const showcaseCount = showcasePhotos.length
 
   const savePortal = (updatedPortal) => {
     dispatch({ type: ACTIONS.SAVE_PORTAL, payload: { jobId: job.id, portal: updatedPortal } })
@@ -180,7 +184,30 @@ export default function ClientPortal({ selectedJobId, setSelectedJobId, navigate
 
   const deleteUpdate = (id) => {
     if (!portal) return
+    if (!window.confirm('Delete this client update? The client will no longer see it.')) return
     savePortal({ ...portal, updates: (portal.updates ?? []).filter(u => u.id !== id) })
+  }
+
+  const uploadPortalDoc = async (files) => {
+    setDocUploading(true)
+    try {
+      const newDocs = []
+      for (const file of Array.from(files)) {
+        const url = await uploadDocument(file, job.id)
+        newDocs.push({ id: crypto.randomUUID(), name: file.name, url, size: file.size, uploadedAt: new Date().toISOString() })
+      }
+      savePortal({ ...portal, documents: [...(portal.documents ?? []), ...newDocs] })
+    } catch (err) {
+      alert('Upload failed: ' + err.message)
+    } finally {
+      setDocUploading(false)
+      if (docRef.current) docRef.current.value = ''
+    }
+  }
+
+  const removePortalDoc = (id) => {
+    if (!window.confirm('Remove this document from the client portal?')) return
+    savePortal({ ...portal, documents: (portal.documents ?? []).filter(d => d.id !== id) })
   }
 
   const approveEstimate = () => {
@@ -190,7 +217,7 @@ export default function ClientPortal({ selectedJobId, setSelectedJobId, navigate
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="max-w-3xl mx-auto p-6 space-y-5">
+      <div className="max-w-3xl mx-auto p-3 md:p-6 space-y-5">
         {selectedJobId && navigateTo && (
           <button onClick={() => navigateTo('jobs', { jobId: selectedJobId })} className="flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-red-600 transition-colors">
             <ChevronLeft size={14} /> Back to Job
@@ -339,10 +366,71 @@ export default function ClientPortal({ selectedJobId, setSelectedJobId, navigate
               </div>
             )}
 
-            {/* Showcase photos info */}
+            {/* Shared Documents */}
+            {portal?.code && portal?.enabled && (
+              <div className="bg-white border border-gray-200 rounded-2xl p-6 space-y-4">
+                <div className="flex items-center gap-2">
+                  <FileText size={16} className="text-blue-500" />
+                  <h3 className="font-bold text-gray-900">Shared Documents</h3>
+                  <span className="text-xs text-gray-400 ml-1">visible to client</span>
+                  {(portal.documents ?? []).length > 0 && (
+                    <span className="ml-auto text-xs font-semibold bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                      {portal.documents.length} file{portal.documents.length !== 1 ? 's' : ''}
+                    </span>
+                  )}
+                </div>
+
+                <input
+                  ref={docRef}
+                  type="file"
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.png,.jpg,.jpeg"
+                  multiple
+                  className="hidden"
+                  onChange={e => { if (e.target.files.length) uploadPortalDoc(e.target.files) }}
+                />
+                <button
+                  onClick={() => docRef.current?.click()}
+                  disabled={docUploading}
+                  className="flex items-center justify-center gap-2 w-full border-2 border-dashed border-gray-200 hover:border-red-400 hover:bg-red-50 disabled:opacity-50 text-gray-500 hover:text-red-600 text-sm font-medium px-4 py-3 rounded-xl transition-colors"
+                >
+                  {docUploading ? <Loader size={14} className="animate-spin" /> : <Upload size={14} />}
+                  {docUploading ? 'Uploading…' : 'Upload Documents'}
+                </button>
+
+                {(portal.documents ?? []).length > 0 ? (
+                  <div className="space-y-2">
+                    {portal.documents.map(doc => (
+                      <div key={doc.id} className="flex items-center gap-3 bg-gray-50 border border-gray-100 rounded-xl px-3 py-2.5">
+                        <FileText size={14} className="text-gray-400 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-gray-800 font-medium truncate">{doc.name}</p>
+                          <p className="text-xs text-gray-400">
+                            {new Date(doc.uploadedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                            {doc.size ? ` · ${(doc.size / 1024).toFixed(0)} KB` : ''}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => removePortalDoc(doc.id)}
+                          className="text-gray-300 hover:text-red-500 flex-shrink-0 transition-colors"
+                          title="Remove from portal"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-gray-400">
+                    Upload PDFs, spreadsheets, or images that the client can download from their portal.
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Showcase photos */}
             {portal?.code && (
               <div className={`rounded-2xl border p-5 ${showcaseCount > 0 ? 'bg-white border-gray-200' : 'bg-gray-50 border-gray-200'}`}>
-                <div className="flex items-center gap-2 mb-2">
+                <div className="flex items-center gap-2 mb-3">
                   <Image size={16} className={showcaseCount > 0 ? 'text-blue-500' : 'text-gray-400'} />
                   <h3 className="font-bold text-gray-900 text-sm">Photo Gallery</h3>
                   {showcaseCount > 0 && (
@@ -353,12 +441,21 @@ export default function ClientPortal({ selectedJobId, setSelectedJobId, navigate
                 </div>
                 {showcaseCount === 0 ? (
                   <p className="text-xs text-gray-500">
-                    No photos are visible to the client yet. In the <strong>Job Photos</strong> section, mark photos as "Showcase" to display them here.
+                    No photos are visible to the client yet. Go to <strong>Job Photos</strong> and click the star icon on any photo to add it here.
                   </p>
                 ) : (
-                  <p className="text-xs text-gray-500">
-                    {showcaseCount} photo{showcaseCount !== 1 ? 's' : ''} marked as showcase will appear in the client portal. Manage them in the <strong>Job Photos</strong> section.
-                  </p>
+                  <>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                      {showcasePhotos.map(photo => (
+                        <div key={photo.id} className="aspect-square rounded-xl overflow-hidden bg-gray-100">
+                          <img src={photo.data} alt={photo.name} className="w-full h-full object-cover" />
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-xs text-gray-400 mt-3">
+                      Manage in <strong className="text-gray-600">Job Photos</strong> — star/unstar to control what the client sees.
+                    </p>
+                  </>
                 )}
               </div>
             )}

@@ -104,7 +104,7 @@ function EstimateCard({ job, client, daysElapsed, totals, onApprove, onDecline, 
             <CheckCircle size={13} /> Mark Approved
           </button>
           <button
-            onClick={onDecline}
+            onClick={() => { if (window.confirm('Mark this estimate as declined? This will update the estimate status.')) onDecline() }}
             className="flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
           >
             <XCircle size={13} /> Mark Declined
@@ -153,9 +153,9 @@ export default function EstimateFollowUp({ navigateTo }) {
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="max-w-3xl mx-auto p-6 space-y-6">
+      <div className="max-w-3xl mx-auto p-3 md:p-6 space-y-6">
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           <div className="bg-white border border-gray-200 rounded-2xl p-5">
             <div className="text-xs text-gray-500 mb-1">Awaiting Response</div>
             <div className="text-3xl font-bold text-gray-900">{staleEstimates.length}</div>

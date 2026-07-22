@@ -14,7 +14,7 @@ export default function CashFlowForecast({ navigateTo }) {
 
   // Build forecast entries from jobs
   const entries = state.jobs
-    .filter(j => j.stage !== 'Closed')
+    .filter(j => j.stage !== 'Closed' && j.stage !== 'Lost')
     .map(j => {
       const client = state.clients.find(c => c.id === j.clientId)
       const prob = STAGE_PROBABILITY[j.stage] ?? 0
@@ -88,9 +88,9 @@ export default function CashFlowForecast({ navigateTo }) {
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="max-w-3xl mx-auto p-6 space-y-6">
+      <div className="max-w-3xl mx-auto p-3 md:p-6 space-y-6">
         {/* Summary cards */}
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div className="bg-white border border-gray-200 rounded-2xl p-4">
             <div className="text-xs text-gray-500 mb-1">0–30 Days</div>
             <div className="text-xl font-bold text-gray-900">{formatCurrency(total30)}</div>

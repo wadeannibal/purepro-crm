@@ -2,11 +2,14 @@ import { useState, useMemo } from 'react'
 import { useApp } from '../../context/AppContext'
 import { ACTIONS } from '../../context/AppReducer'
 import { PARTNER_TYPES, formatCurrency, formatDate } from '../../utils/helpers'
-import { Plus, Phone, Mail, Star, Clock, TrendingUp, Users, ChevronRight, X, Edit2, Trash2, MessageSquare, UserCheck, AlertCircle } from 'lucide-react'
+import { Plus, Phone, Mail, Star, Clock, TrendingUp, Users, ChevronLeft, ChevronRight, X, Edit2, Trash2, MessageSquare, UserCheck, AlertCircle, CheckCircle2 } from 'lucide-react'
 
-const BLANK_PARTNER = { name: '', company: '', phone: '', email: '', partnerType: 'Plumber', temperature: 'cold', notes: '' }
+const BLANK_PARTNER = { name: '', company: '', phone: '', email: '', partnerType: 'Plumber', temperature: 'cold', notes: '', priority: 3 }
+
+const PRIORITY_COLORS = ['', 'bg-green-500', 'bg-lime-400', 'bg-yellow-400', 'bg-orange-400', 'bg-red-500']
+const PRIORITY_LABELS = ['', 'P1 – Top', 'P2 – High', 'P3 – Mid', 'P4 – Low', 'P5 – Lowest']
 const BLANK_CONTACT = { method: 'Call', summary: '' }
-const BLANK_DEAL = { agreementType: 'Mutual Referral', referralFee: '', feeType: 'percent', startDate: new Date().toISOString().slice(0, 10), termsNotes: '', jobsSent: 0, jobsReceived: 0 }
+const BLANK_DEAL = { agreementType: 'Mutual Referral', referralFee: '', feeType: 'percent', startDate: (d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`)(new Date()), termsNotes: '', jobsSent: 0, jobsReceived: 0 }
 
 const TEMP_COLORS = {
   cold: 'bg-blue-100 text-blue-700',
@@ -15,6 +18,10 @@ const TEMP_COLORS = {
 }
 
 const TEMP_LABEL = { cold: '❄ Cold', warm: '☀ Warm', hot: '🔥 Hot' }
+
+const WON_STAGES = new Set(['Invoiced', 'Closed'])
+const PIPELINE_STAGES = new Set(['Approved', 'Remediation', 'Post-Test'])
+const canonicalRev = (j) => j.estimate?.grandTotal ?? j.revenue ?? 0
 
 const CONTACT_METHODS = ['Call', 'Text', 'Email', 'In Person', 'LinkedIn', 'Other']
 const AGREEMENT_TYPES = ['Mutual Referral', 'Referral Fee', 'Preferred Vendor']
@@ -25,8 +32,9 @@ function daysSince(iso) {
 }
 
 function PartnerCard({ partner, jobs, onClick, isOverdue }) {
-  const jobsReferred = jobs.filter(j => j.leadSourcePartnerId === partner.id).length
-  const revenue = jobs.filter(j => j.leadSourcePartnerId === partner.id).reduce((s, j) => s + (j.revenue ?? 0), 0)
+  const linked = jobs.filter(j => j.leadSourcePartnerId === partner.id)
+  const wonRevenue = linked.filter(j => WON_STAGES.has(j.stage)).reduce((s, j) => s + canonicalRev(j), 0)
+  const pipeRevenue = linked.filter(j => PIPELINE_STAGES.has(j.stage)).reduce((s, j) => s + canonicalRev(j), 0)
   const days = daysSince(partner.lastContactDate)
   return (
     <div
@@ -39,9 +47,16 @@ function PartnerCard({ partner, jobs, onClick, isOverdue }) {
           <div className="text-xs text-gray-500 truncate">{partner.company}</div>
         </div>
         <div className="flex flex-col items-end gap-1">
-          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${TEMP_COLORS[partner.temperature]}`}>
-            {TEMP_LABEL[partner.temperature]}
-          </span>
+          <div className="flex items-center gap-1">
+            {partner.priority && (
+              <span className={`text-[10px] font-black text-white px-1.5 py-0.5 rounded-full ${PRIORITY_COLORS[partner.priority]}`}>
+                P{partner.priority}
+              </span>
+            )}
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${TEMP_COLORS[partner.temperature]}`}>
+              {TEMP_LABEL[partner.temperature]}
+            </span>
+          </div>
           {isOverdue && (
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 flex items-center gap-0.5">
               <AlertCircle size={9} /> Overdue
@@ -54,19 +69,40 @@ function PartnerCard({ partner, jobs, onClick, isOverdue }) {
       </div>
       <div className="grid grid-cols-3 gap-2 text-xs">
         <div className="text-center">
-          <div className="font-bold text-gray-900">{jobsReferred}</div>
+          <div className="font-bold text-gray-900">{linked.length}</div>
           <div className="text-gray-400">Jobs</div>
         </div>
         <div className="text-center">
-          <div className="font-bold text-green-700">{formatCurrency(revenue)}</div>
-          <div className="text-gray-400">Revenue</div>
+          <div className="font-bold text-green-700">{wonRevenue > 0 ? formatCurrency(wonRevenue) : '—'}</div>
+          <div className="text-gray-400">Won</div>
         </div>
         <div className="text-center">
-          <div className={`font-bold ${days !== null && days > 30 ? 'text-orange-600' : 'text-gray-900'}`}>
-            {days !== null ? `${days}d` : '—'}
-          </div>
-          <div className="text-gray-400">Since contact</div>
+          <div className="font-bold text-blue-600">{pipeRevenue > 0 ? formatCurrency(pipeRevenue) : '—'}</div>
+          <div className="text-gray-400">Pipeline</div>
         </div>
+      </div>
+      {/* Last contacted strip */}
+      <div className={`mt-3 pt-2.5 border-t flex items-center gap-1.5 ${
+        days === null ? 'border-gray-100' :
+        days === 0 ? 'border-green-100' :
+        days <= 7 ? 'border-green-100' :
+        days <= 30 ? 'border-yellow-100' : 'border-orange-200'
+      }`}>
+        <Clock size={10} className={
+          days === null ? 'text-gray-300' :
+          days <= 7 ? 'text-green-500' :
+          days <= 30 ? 'text-yellow-600' : 'text-orange-500'
+        } />
+        <span className={`text-[11px] font-medium ${
+          days === null ? 'text-gray-400' :
+          days <= 7 ? 'text-green-600' :
+          days <= 30 ? 'text-yellow-700' : 'text-orange-600 font-semibold'
+        }`}>
+          {days === null ? 'Never contacted' :
+           days === 0 ? 'Contacted today' :
+           days === 1 ? 'Contacted yesterday' :
+           `Last contact: ${days}d ago`}
+        </span>
       </div>
     </div>
   )
@@ -81,7 +117,8 @@ function PartnerDetail({ partner, jobs, onClose, onEdit, onDelete, dispatch }) {
   const [editingDeal, setEditingDeal] = useState(null)
 
   const jobsReferred = jobs.filter(j => j.leadSourcePartnerId === partner.id)
-  const revenue = jobsReferred.reduce((s, j) => s + (j.revenue ?? 0), 0)
+  const wonRevenue = jobsReferred.filter(j => WON_STAGES.has(j.stage)).reduce((s, j) => s + canonicalRev(j), 0)
+  const pipeRevenue = jobsReferred.filter(j => PIPELINE_STAGES.has(j.stage)).reduce((s, j) => s + canonicalRev(j), 0)
   const days = daysSince(partner.lastContactDate)
 
   const saveContact = () => {
@@ -104,12 +141,22 @@ function PartnerDetail({ partner, jobs, onClose, onEdit, onDelete, dispatch }) {
   }
 
   return (
-    <div className="bg-white border-l border-gray-200 w-96 flex-shrink-0 flex flex-col h-full">
+    <div className="bg-white border-l border-gray-200 w-full md:w-96 flex-shrink-0 flex flex-col h-full">
+      <div className="md:hidden flex items-center gap-2 px-5 py-3 border-b border-gray-100 flex-shrink-0">
+        <button onClick={onClose} className="flex items-center gap-1 text-red-600 font-semibold text-sm">
+          <ChevronLeft size={16} /> Back
+        </button>
+      </div>
       <div className="flex items-start justify-between px-5 py-4 border-b border-gray-100">
         <div className="flex-1 min-w-0">
           <div className="font-semibold text-gray-900">{partner.name}</div>
           <div className="text-xs text-gray-500">{partner.company}</div>
-          <div className="flex items-center gap-2 mt-1.5">
+          <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+            {partner.priority && (
+              <span className={`text-[10px] font-black text-white px-1.5 py-0.5 rounded-full ${PRIORITY_COLORS[partner.priority]}`}>
+                {PRIORITY_LABELS[partner.priority]}
+              </span>
+            )}
             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${TEMP_COLORS[partner.temperature]}`}>
               {TEMP_LABEL[partner.temperature]}
             </span>
@@ -124,17 +171,25 @@ function PartnerDetail({ partner, jobs, onClose, onEdit, onDelete, dispatch }) {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-0 border-b border-gray-100">
-        {[
-          { label: 'Jobs Referred', value: jobsReferred.length },
-          { label: 'Revenue', value: formatCurrency(revenue) },
-          { label: 'Days Since Contact', value: days !== null ? `${days}d` : '—', warn: days !== null && days > 30 },
-        ].map(({ label, value, warn }) => (
-          <div key={label} className="text-center py-3 px-2">
-            <div className={`text-lg font-bold ${warn ? 'text-orange-600' : 'text-gray-900'}`}>{value}</div>
-            <div className="text-[10px] text-gray-400">{label}</div>
+      <div className="grid grid-cols-2 gap-0 border-b border-gray-100">
+        <div className="text-center py-3 px-2 border-r border-gray-100">
+          <div className="text-lg font-bold text-gray-900">{jobsReferred.length}</div>
+          <div className="text-[10px] text-gray-400">Jobs Linked</div>
+        </div>
+        <div className="text-center py-3 px-2">
+          <div className="text-lg font-bold text-green-700">{wonRevenue > 0 ? formatCurrency(wonRevenue) : '—'}</div>
+          <div className="text-[10px] text-gray-400">Won Revenue</div>
+        </div>
+        <div className="text-center py-2 px-2 border-t border-r border-gray-100">
+          <div className="text-base font-bold text-blue-600">{pipeRevenue > 0 ? formatCurrency(pipeRevenue) : '—'}</div>
+          <div className="text-[10px] text-gray-400">Pipeline</div>
+        </div>
+        <div className="text-center py-2 px-2 border-t border-gray-100">
+          <div className={`text-base font-bold ${days !== null && days > 30 ? 'text-orange-600' : 'text-gray-900'}`}>
+            {days !== null ? `${days}d` : '—'}
           </div>
-        ))}
+          <div className="text-[10px] text-gray-400">Since Contact</div>
+        </div>
       </div>
 
       {/* Contact info */}
@@ -142,6 +197,24 @@ function PartnerDetail({ partner, jobs, onClose, onEdit, onDelete, dispatch }) {
         {partner.phone && <div className="flex items-center gap-2 text-xs text-gray-600"><Phone size={12} />{partner.phone}</div>}
         {partner.email && <div className="flex items-center gap-2 text-xs text-gray-600"><Mail size={12} />{partner.email}</div>}
         {partner.notes && <p className="text-xs text-gray-500 mt-2 italic">{partner.notes}</p>}
+      </div>
+
+      {/* Quick contact log */}
+      <div className="px-4 py-2 border-b border-gray-100 bg-gray-50 flex items-center gap-1.5 flex-wrap">
+        <span className="text-[10px] font-bold text-gray-400 uppercase mr-0.5">Quick log:</span>
+        {['Call', 'Text', 'Email', 'In Person'].map(method => (
+          <button key={method}
+            onClick={() => dispatch({ type: ACTIONS.ADD_PARTNER_CONTACT, payload: { partnerId: partner.id, contact: { method, summary: `Touched base — ${method}` } } })}
+            className="text-[10px] font-semibold text-gray-600 bg-white border border-gray-200 rounded-lg px-2 py-1 hover:bg-green-50 hover:text-green-700 hover:border-green-300 transition-colors flex items-center gap-1">
+            <CheckCircle2 size={9} />
+            {method}
+          </button>
+        ))}
+        {days !== null && (
+          <span className={`ml-auto text-[10px] font-semibold ${days <= 7 ? 'text-green-600' : days <= 30 ? 'text-yellow-600' : 'text-orange-600'}`}>
+            {days === 0 ? 'Contacted today' : days === 1 ? '1 day ago' : `${days} days ago`}
+          </span>
+        )}
       </div>
 
       {/* Tabs */}
@@ -292,16 +365,28 @@ function PartnerDetail({ partner, jobs, onClose, onEdit, onDelete, dispatch }) {
         {tab === 'jobs' && (
           <div className="p-4 space-y-2">
             {jobsReferred.length === 0 && <p className="text-xs text-gray-400 text-center py-4">No jobs attributed to this partner yet</p>}
-            {jobsReferred.map(j => (
-              <div key={j.id} className="border border-gray-100 rounded-xl p-3">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-semibold text-gray-900">{j.type}</span>
-                  <span className="text-green-700 font-semibold text-xs">{formatCurrency(j.revenue)}</span>
+            {jobsReferred.map(j => {
+              const rev = canonicalRev(j)
+              const isWon = WON_STAGES.has(j.stage)
+              const isPipe = PIPELINE_STAGES.has(j.stage)
+              const isLost = j.stage === 'Lost'
+              return (
+                <div key={j.id} className="border border-gray-100 rounded-xl p-3">
+                  <div className="flex items-center justify-between mb-1 gap-2">
+                    <span className="text-xs font-semibold text-gray-900 truncate">{j.type} – {j.stage}</span>
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      {isWon && <span className="text-[10px] font-bold bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full">Won</span>}
+                      {isPipe && <span className="text-[10px] font-bold bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full">Pipeline</span>}
+                      {isLost && <span className="text-[10px] font-bold bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full">Lost</span>}
+                      {!isWon && !isPipe && !isLost && <span className="text-[10px] font-bold bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full">Lead</span>}
+                      <span className={`font-semibold text-xs ${isWon ? 'text-green-700' : isPipe ? 'text-blue-600' : 'text-gray-400'}`}>{rev > 0 ? formatCurrency(rev) : '—'}</span>
+                    </div>
+                  </div>
+                  <div className="text-[10px] text-gray-500">{j.address}</div>
+                  <div className="text-[10px] text-gray-400 mt-0.5">{formatDate(j.createdAt)}</div>
                 </div>
-                <div className="text-[10px] text-gray-500">{j.address}</div>
-                <div className="text-[10px] text-gray-400 mt-0.5">{j.stage} · {formatDate(j.createdAt)}</div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>
@@ -322,12 +407,19 @@ export default function ReferralPartners({ navigateTo }) {
   const partners = state.partners ?? []
   const jobs = state.jobs ?? []
 
-  const enriched = useMemo(() => partners.map(p => ({
-    ...p,
-    jobsReferred: jobs.filter(j => j.leadSourcePartnerId === p.id).length,
-    revenue: jobs.filter(j => j.leadSourcePartnerId === p.id).reduce((s, j) => s + (j.revenue ?? 0), 0),
-    isOverdue: daysSince(p.lastContactDate) !== null && daysSince(p.lastContactDate) > 30,
-  })), [partners, jobs])
+  const enriched = useMemo(() => partners.map(p => {
+    const linked = jobs.filter(j => j.leadSourcePartnerId === p.id)
+    const wonRevenue = linked.filter(j => WON_STAGES.has(j.stage)).reduce((s, j) => s + canonicalRev(j), 0)
+    const pipeRevenue = linked.filter(j => PIPELINE_STAGES.has(j.stage)).reduce((s, j) => s + canonicalRev(j), 0)
+    return {
+      ...p,
+      jobsReferred: linked.length,
+      wonRevenue,
+      pipeRevenue,
+      revenue: wonRevenue,
+      isOverdue: daysSince(p.lastContactDate) !== null && daysSince(p.lastContactDate) > 30,
+    }
+  }), [partners, jobs])
 
   const filtered = enriched
     .filter(p => {
@@ -335,7 +427,16 @@ export default function ReferralPartners({ navigateTo }) {
       if (typeFilter !== 'All' && p.partnerType !== typeFilter) return false
       return true
     })
-    .sort((a, b) => sortBy === 'revenue' ? b.revenue - a.revenue : b.jobsReferred - a.jobsReferred)
+    .sort((a, b) => {
+      if (sortBy === 'priority') return (a.priority ?? 3) - (b.priority ?? 3)
+      if (sortBy === 'revenue') return b.revenue - a.revenue
+      if (sortBy === 'contact') {
+        const da = daysSince(a.lastContactDate) ?? Infinity
+        const db = daysSince(b.lastContactDate) ?? Infinity
+        return db - da
+      }
+      return b.jobsReferred - a.jobsReferred
+    })
 
   const overdueCount = enriched.filter(p => p.isOverdue).length
   const totalRevenue = enriched.reduce((s, p) => s + p.revenue, 0)
@@ -363,11 +464,14 @@ export default function ReferralPartners({ navigateTo }) {
 
   return (
     <div className="h-full flex overflow-hidden">
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className={`${selected ? 'hidden md:flex' : 'flex'} flex-1 flex-col overflow-hidden`}>
         {/* Stats bar */}
-        <div className="flex items-center gap-4 px-6 py-3 bg-white border-b border-gray-200 flex-shrink-0">
+        <div className="flex flex-wrap items-center gap-2 px-3 md:px-6 py-3 bg-white border-b border-gray-200 flex-shrink-0">
           <div className="text-sm"><span className="font-bold text-gray-900">{partners.length}</span> <span className="text-gray-500">partners</span></div>
-          <div className="text-sm"><span className="font-bold text-green-700">{formatCurrency(totalRevenue)}</span> <span className="text-gray-500">attributed revenue</span></div>
+          <div className="text-sm"><span className="font-bold text-green-700">{formatCurrency(totalRevenue)}</span> <span className="text-gray-500">won revenue</span></div>
+          {enriched.reduce((s, p) => s + p.pipeRevenue, 0) > 0 && (
+            <div className="text-sm"><span className="font-bold text-blue-600">{formatCurrency(enriched.reduce((s, p) => s + p.pipeRevenue, 0))}</span> <span className="text-gray-500">pipeline</span></div>
+          )}
           {overdueCount > 0 && (
             <div className="flex items-center gap-1 text-sm text-orange-600 font-semibold">
               <AlertCircle size={14} /> {overdueCount} overdue follow-up{overdueCount !== 1 ? 's' : ''}
@@ -383,8 +487,10 @@ export default function ReferralPartners({ navigateTo }) {
             </select>
             <select value={sortBy} onChange={e => setSortBy(e.target.value)}
               className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500">
+              <option value="priority">Sort: Priority</option>
               <option value="revenue">Sort: Revenue</option>
               <option value="jobs">Sort: Jobs</option>
+              <option value="contact">Sort: Last Contact</option>
             </select>
             <button onClick={openAdd} className="flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold px-4 py-1.5 rounded-lg transition-colors">
               <Plus size={14} /> Add Partner
@@ -393,7 +499,7 @@ export default function ReferralPartners({ navigateTo }) {
         </div>
 
         {/* Leaderboard */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-3 md:p-6">
           {filtered.length === 0 && (
             <div className="text-center py-20 text-gray-400">
               <Users size={40} className="mx-auto mb-3 opacity-30" />
@@ -465,6 +571,22 @@ export default function ReferralPartners({ navigateTo }) {
                     <option value="hot">🔥 Hot</option>
                   </select>
                 </div>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-2">Priority <span className="text-gray-400 font-normal">(1 = best, 5 = lowest)</span></label>
+                <div className="flex gap-2">
+                  {[1, 2, 3, 4, 5].map(n => (
+                    <button
+                      key={n}
+                      type="button"
+                      onClick={() => setForm(f => ({ ...f, priority: n }))}
+                      className={`flex-1 py-2 rounded-lg text-sm font-black transition-all ${form.priority === n ? `${PRIORITY_COLORS[n]} text-white shadow-md scale-105` : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+                    >
+                      {n}
+                    </button>
+                  ))}
+                </div>
+                <div className="text-[10px] text-gray-400 mt-1 text-center">{PRIORITY_LABELS[form.priority ?? 3]}</div>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1">Notes</label>

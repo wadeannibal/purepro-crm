@@ -29,9 +29,8 @@ export default function CertificationTracker() {
   const [form, setForm] = useState(BLANK)
   const [editId, setEditId] = useState(null)
 
-  const certs = state.certifications?.length > 0 ? state.certifications : null
-
-  const displayCerts = certs ?? SEED_CERTS
+  const displayCerts = state.certifications ?? []
+  const showSeeds = !state.certifications
 
   const expiring = displayCerts.filter(c => { const d = daysUntil(c.expirationDate); return d !== null && d <= 90 })
   const expired = displayCerts.filter(c => { const d = daysUntil(c.expirationDate); return d !== null && d < 0 })
@@ -56,7 +55,7 @@ export default function CertificationTracker() {
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="max-w-3xl mx-auto p-6 space-y-5">
+      <div className="max-w-3xl mx-auto p-3 md:p-6 space-y-5">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
@@ -87,8 +86,8 @@ export default function CertificationTracker() {
               <h3 className="text-sm font-bold text-blue-900">{editId ? 'Edit Certification' : 'New Certification'}</h3>
               <button onClick={() => { setShowForm(false); setEditId(null) }}><X size={16} className="text-blue-400" /></button>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="col-span-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="col-span-1 sm:col-span-2">
                 <label className="block text-xs font-bold text-blue-800 uppercase tracking-wide mb-1">Certification Name</label>
                 <input value={form.name} onChange={e => f('name', e.target.value)} placeholder="e.g. Water Restoration Technician (WRT)"
                   className="w-full border border-blue-200 bg-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
@@ -118,7 +117,7 @@ export default function CertificationTracker() {
                 <input type="date" value={form.expirationDate} onChange={e => f('expirationDate', e.target.value)}
                   className="w-full border border-blue-200 bg-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
-              <div className="col-span-2">
+              <div className="col-span-1 sm:col-span-2">
                 <label className="block text-xs font-bold text-blue-800 uppercase tracking-wide mb-1">Notes</label>
                 <input value={form.notes} onChange={e => f('notes', e.target.value)} placeholder="Renewal requirements, CECs needed, etc."
                   className="w-full border border-blue-200 bg-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
@@ -134,7 +133,7 @@ export default function CertificationTracker() {
         )}
 
         <div className="space-y-3">
-          {displayCerts.map((c, idx) => {
+          {(showSeeds ? SEED_CERTS : displayCerts).map((c, idx) => {
             const days = daysUntil(c.expirationDate)
             const st = certStatus(days)
             return (
@@ -154,14 +153,14 @@ export default function CertificationTracker() {
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${st.color}`}>{st.label}</span>
-                    <button onClick={() => startEdit(c)} className="p-1.5 text-gray-400 hover:text-gray-700"><Edit2 size={13} /></button>
+                    <button onClick={() => startEdit(c)} disabled={!c.id} className="p-1.5 text-gray-400 hover:text-gray-700 disabled:opacity-30 disabled:cursor-not-allowed"><Edit2 size={13} /></button>
                     {c.id && <button onClick={() => del(c.id)} className="p-1.5 text-gray-400 hover:text-red-600"><Trash2 size={13} /></button>}
                   </div>
                 </div>
               </div>
             )
           })}
-          {displayCerts.length === 0 && (
+          {!showSeeds && displayCerts.length === 0 && (
             <div className="text-center py-12 text-gray-400">
               <BadgeCheck size={36} className="mx-auto mb-3 opacity-30" />
               <p className="text-sm font-medium">No certifications added yet</p>

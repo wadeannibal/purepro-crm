@@ -5,11 +5,15 @@ import { formatCurrency, formatDate } from '../../utils/helpers'
 import { EXPENSE_CATEGORIES } from '../../data/proposalTemplates'
 import { Wallet, Plus, Trash2, BarChart2, ChevronLeft } from 'lucide-react'
 
-const BLANK = { date: new Date().toISOString().slice(0, 10), category: 'Fuel', amount: '', notes: '' }
+const makeBlank = () => {
+  const now = new Date()
+  const pad = n => String(n).padStart(2, '0')
+  return { date: `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`, category: 'Fuel', amount: '', notes: '' }
+}
 
 export default function ExpenseTracker({ selectedJobId, setSelectedJobId, navigateTo }) {
   const { state, dispatch } = useApp()
-  const [form, setForm] = useState(BLANK)
+  const [form, setForm] = useState(makeBlank)
   const [adding, setAdding] = useState(false)
   const [view, setView] = useState('job') // 'job' | 'annual'
 
@@ -29,15 +33,16 @@ export default function ExpenseTracker({ selectedJobId, setSelectedJobId, naviga
   }, {})
 
   const handleAdd = () => {
-    if (!form.amount || !form.date) return
+    const amount = parseFloat(form.amount)
+    if (!form.date || isNaN(amount) || amount <= 0) return
     dispatch({
       type: ACTIONS.ADD_EXPENSE,
       payload: {
         jobId: selectedJobId,
-        expense: { ...form, amount: parseFloat(form.amount) || 0 },
+        expense: { ...form, amount },
       },
     })
-    setForm(BLANK)
+    setForm(makeBlank())
     setAdding(false)
   }
 
@@ -170,7 +175,7 @@ export default function ExpenseTracker({ selectedJobId, setSelectedJobId, naviga
                     </div>
                     <div className="flex gap-2">
                       <button onClick={handleAdd} className="bg-red-600 hover:bg-red-700 text-white text-sm font-semibold px-4 py-2 rounded-lg">Add Expense</button>
-                      <button onClick={() => { setAdding(false); setForm(BLANK) }} className="bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold px-4 py-2 rounded-lg">Cancel</button>
+                      <button onClick={() => { setAdding(false); setForm(makeBlank()) }} className="bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold px-4 py-2 rounded-lg">Cancel</button>
                     </div>
                   </div>
                 )}

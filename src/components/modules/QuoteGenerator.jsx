@@ -48,6 +48,16 @@ export default function QuoteGenerator({ selectedJobId, setSelectedJobId, naviga
 
   const [saving, setSaving] = useState(false)
 
+  const co = useCompanySettings()
+  const [estimateDate, setEstimateDate] = useState(() => {
+    const d = new Date(); const p = n => String(n).padStart(2,'0')
+    return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`
+  })
+  const [validUntilDate, setValidUntilDate] = useState(() => {
+    const d = new Date(Date.now() + 30*86400000); const p = n => String(n).padStart(2,'0')
+    return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`
+  })
+
   const pdfOpts = {
     margin: [0.5, 0.75],
     filename: `Estimate${client?.name ? ' - ' + client.name : ''}.pdf`,
@@ -108,14 +118,10 @@ export default function QuoteGenerator({ selectedJobId, setSelectedJobId, naviga
   const xactRows = isNewFormat ? [] : (estimate.xactimateItems ?? []).map(i => ({ ...i, _total: (i.qty ?? 0) * (i.unitPrice ?? 0) }))
   const flatRows = isNewFormat ? [] : (estimate.flatFeeItems ?? []).map(i => ({ ...i, _total: i.amount ?? 0 }))
 
-  const co = useCompanySettings()
-  const [estimateDate, setEstimateDate] = useState(() => new Date().toISOString().slice(0, 10))
-  const [validUntilDate, setValidUntilDate] = useState(() => new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10))
-
   return (
     <div className="h-full overflow-y-auto bg-gray-100">
       {/* Action bar (hidden on print) */}
-      <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-6 py-3 flex items-center gap-3 print:hidden">
+      <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-3 md:px-6 py-3 flex flex-wrap items-center gap-2 md:gap-3 print:hidden">
         <button onClick={() => navigateTo?.('estimator')} className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 font-semibold px-2 py-1.5 rounded-lg hover:bg-gray-100">
           ← Back to Estimator
         </button>
@@ -125,7 +131,7 @@ export default function QuoteGenerator({ selectedJobId, setSelectedJobId, naviga
             return <option key={j.id} value={j.id}>{j.type} — {c?.name}</option>
           })}
         </select>
-        <div className="flex items-center gap-2 flex-1">
+        <div className="flex flex-wrap items-center gap-2">
           <label className="text-xs text-gray-500 shrink-0">Date</label>
           <input type="date" value={estimateDate} onChange={e => setEstimateDate(e.target.value)} className="border border-gray-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-red-500" />
           <label className="text-xs text-gray-500 shrink-0 ml-2">Valid Until</label>
@@ -140,7 +146,8 @@ export default function QuoteGenerator({ selectedJobId, setSelectedJobId, naviga
       </div>
 
       {/* Quote document */}
-      <div id="quote-print-root" className="max-w-3xl mx-auto my-8 bg-white shadow-lg print:shadow-none print:my-0" style={{ minHeight: '11in' }}>
+      <div className="overflow-x-auto">
+      <div id="quote-print-root" className="max-w-3xl mx-auto my-8 bg-white shadow-lg print:shadow-none print:my-0" style={{ minHeight: '11in', minWidth: '600px' }}>
         <div className="p-10">
           {/* Header */}
           <div className="flex items-start justify-between mb-10">
@@ -331,14 +338,18 @@ export default function QuoteGenerator({ selectedJobId, setSelectedJobId, naviga
             <div className="grid grid-cols-2 gap-12">
               <div>
                 <div className="border-b border-gray-400 mb-1 h-8" />
+                <div className="text-xs text-gray-500">Print Full Name</div>
+                <div className="border-b border-gray-400 mt-4 mb-1 h-8" />
                 <div className="text-xs text-gray-500">Client Signature</div>
-                <div className="border-b border-gray-300 mt-3 mb-1 h-6" />
+                <div className="border-b border-gray-300 mt-4 mb-1 h-6" />
                 <div className="text-xs text-gray-500">Date</div>
               </div>
               <div>
                 <div className="text-xs text-gray-500 mb-2">By signing, you authorize {co.companyName} to perform the work described in this estimate at the stated price. A 50% deposit is required before work begins.</div>
                 <div className="mt-4 border-b border-gray-400 mb-1 h-8" />
                 <div className="text-xs text-gray-500">{co.companyName} Representative</div>
+                <div className="border-b border-gray-300 mt-4 mb-1 h-6" />
+                <div className="text-xs text-gray-500">Date</div>
               </div>
             </div>
           </div>
@@ -348,6 +359,7 @@ export default function QuoteGenerator({ selectedJobId, setSelectedJobId, naviga
             {co.companyName} · Thank you for your trust
           </div>
         </div>
+      </div>
       </div>
     </div>
   )

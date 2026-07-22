@@ -6,21 +6,21 @@ import { Star, Phone, Mail, Crown } from 'lucide-react'
 export default function VIPClients({ navigateTo }) {
   const { state, dispatch } = useApp()
 
-  const vipClients = state.clients.filter(c => c.isVIP)
+  const vipClients = (state.clients ?? []).filter(c => c.isVIP)
   const allRevenue = vipClients.reduce((sum, c) => {
-    return sum + state.jobs.filter(j => j.clientId === c.id).reduce((s, j) => s + (j.revenue ?? 0), 0)
+    return sum + (state.jobs ?? []).filter(j => j.clientId === c.id).reduce((s, j) => s + (j.estimate?.grandTotal ?? j.revenue ?? 0), 0)
   }, 0)
   const activeJobs = vipClients.reduce((sum, c) => {
-    return sum + state.jobs.filter(j => j.clientId === c.id && j.stage !== 'Closed').length
+    return sum + (state.jobs ?? []).filter(j => j.clientId === c.id && j.stage !== 'Closed' && j.stage !== 'Lost').length
   }, 0)
 
   const toggle = (id) => dispatch({ type: ACTIONS.TOGGLE_VIP, payload: { id } })
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-3 md:p-6">
         {/* Stats banner */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           {[
             { label: 'VIP Clients', value: vipClients.length, icon: Crown, color: 'text-amber-500', bg: 'bg-amber-50 border-amber-200' },
             { label: 'Total Revenue', value: formatCurrency(allRevenue), icon: Star, color: 'text-green-600', bg: 'bg-green-50 border-green-200' },
@@ -43,9 +43,9 @@ export default function VIPClients({ navigateTo }) {
         ) : (
           <div className="space-y-4 max-w-3xl">
             {vipClients.map(client => {
-              const clientJobs = state.jobs.filter(j => j.clientId === client.id)
-              const totalRev = clientJobs.reduce((s, j) => s + (j.revenue ?? 0), 0)
-              const openJobs = clientJobs.filter(j => j.stage !== 'Closed')
+              const clientJobs = (state.jobs ?? []).filter(j => j.clientId === client.id)
+              const totalRev = clientJobs.reduce((s, j) => s + (j.estimate?.grandTotal ?? j.revenue ?? 0), 0)
+              const openJobs = clientJobs.filter(j => j.stage !== 'Closed' && j.stage !== 'Lost')
               return (
                 <div key={client.id} className="bg-white border border-amber-200 rounded-2xl p-5 hover:border-amber-300 transition-colors">
                   <div className="flex items-start justify-between gap-4 mb-4">
@@ -101,12 +101,12 @@ export default function VIPClients({ navigateTo }) {
         )}
 
         {/* Non-VIP section */}
-        {state.clients.filter(c => !c.isVIP).length > 0 && (
+        {(state.clients ?? []).filter(c => !c.isVIP).length > 0 && (
           <div className="mt-8 max-w-3xl">
             <div className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">Other Clients — Click ★ to promote to VIP</div>
             <div className="space-y-2">
-              {state.clients.filter(c => !c.isVIP).map(client => {
-                const rev = state.jobs.filter(j => j.clientId === client.id).reduce((s, j) => s + (j.revenue ?? 0), 0)
+              {(state.clients ?? []).filter(c => !c.isVIP).map(client => {
+                const rev = (state.jobs ?? []).filter(j => j.clientId === client.id).reduce((s, j) => s + (j.estimate?.grandTotal ?? j.revenue ?? 0), 0)
                 return (
                   <div key={client.id} className="flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3 hover:border-gray-300 transition-colors">
                     <button onClick={() => toggle(client.id)} className="text-gray-300 hover:text-amber-400 transition-colors p-1">

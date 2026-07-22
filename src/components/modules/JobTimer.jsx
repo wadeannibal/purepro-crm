@@ -13,6 +13,8 @@ function fmt(seconds) {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
 }
 
+const TIMER_KEY = 'purepro_active_timer'
+
 export default function JobTimer({ selectedJobId, setSelectedJobId, navigateTo }) {
   const { state, dispatch } = useApp()
   const [clockInTime, setClockInTime] = useState(null)
@@ -25,6 +27,18 @@ export default function JobTimer({ selectedJobId, setSelectedJobId, navigateTo }
   const timeLogs = job?.timeLogs ?? []
   const totalMins = totalJobHours(timeLogs)
   const totalCost = (totalMins / 60) * rate
+
+  // Restore active clock-in from localStorage on mount or job change
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(TIMER_KEY))
+      if (saved && saved.jobId === selectedJobId && saved.clockInTime) {
+        setClockInTime(saved.clockInTime)
+      } else {
+        setClockInTime(null)
+      }
+    } catch { setClockInTime(null) }
+  }, [selectedJobId])
 
   useEffect(() => {
     if (clockInTime) {
@@ -40,7 +54,9 @@ export default function JobTimer({ selectedJobId, setSelectedJobId, navigateTo }
 
   const clockIn = () => {
     if (!selectedJobId) return
-    setClockInTime(Date.now())
+    const time = Date.now()
+    setClockInTime(time)
+    try { localStorage.setItem(TIMER_KEY, JSON.stringify({ jobId: selectedJobId, clockInTime: time })) } catch {}
   }
 
   const clockOut = () => {
@@ -55,6 +71,7 @@ export default function JobTimer({ selectedJobId, setSelectedJobId, navigateTo }
     })
     setClockInTime(null)
     setNoteText('')
+    try { localStorage.removeItem(TIMER_KEY) } catch {}
   }
 
   const del = (logId) => { if (!window.confirm('Delete this time log entry?')) return; dispatch({ type: ACTIONS.DELETE_TIME_LOG, payload: { jobId: selectedJobId, logId } }) }
@@ -70,7 +87,7 @@ export default function JobTimer({ selectedJobId, setSelectedJobId, navigateTo }
         )}
         <select
           value={selectedJobId ?? ''}
-          onChange={e => { setSelectedJobId(e.target.value || null); setClockInTime(null) }}
+          onChange={e => { setSelectedJobId(e.target.value || null); setClockInTime(null); try { localStorage.removeItem(TIMER_KEY) } catch {} }}
           className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
         >
           <option value="">Select job…</option>

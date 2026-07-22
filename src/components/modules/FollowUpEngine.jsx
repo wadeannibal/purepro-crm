@@ -64,7 +64,7 @@ function FollowUpCard({ job, client, days, dispatch }) {
   }
 
   const markSent = () => {
-    dispatch({ type: ACTIONS.UPDATE_JOB, payload: { ...job, lastContactDate: new Date().toISOString() } })
+    dispatch({ type: ACTIONS.UPDATE_JOB, payload: { id: job.id, lastContactDate: new Date().toISOString() } })
     setSent(true)
   }
 
@@ -156,7 +156,7 @@ export default function FollowUpEngine({ navigateTo }) {
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="max-w-3xl mx-auto p-6 space-y-6">
+      <div className="max-w-3xl mx-auto p-3 md:p-6 space-y-6">
         <div className="flex items-start justify-between">
           <div>
             <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
@@ -174,7 +174,7 @@ export default function FollowUpEngine({ navigateTo }) {
         </div>
 
         {/* Summary */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="bg-white border border-gray-200 rounded-2xl p-4">
             <div className="text-xs text-gray-500 mb-0.5">Unbooked Leads</div>
             <div className="text-xl font-bold text-gray-900">{unbookedLeads.length}</div>
@@ -197,7 +197,7 @@ export default function FollowUpEngine({ navigateTo }) {
             <p>2. Review and customize the message text</p>
             <p>3. Click <strong>Approve &amp; Copy</strong> — message is copied to clipboard</p>
             <p>4. Send manually via your own phone, Gmail, or messaging app</p>
-            <p>5. Update the job's Last Contact Date in Job Records once sent</p>
+            <p>5. The contact date is updated automatically when you click Mark as Sent.</p>
           </div>
         </div>
 

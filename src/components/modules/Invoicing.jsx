@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useApp } from '../../context/AppContext'
 import { ACTIONS } from '../../context/AppReducer'
 import {
@@ -15,10 +15,17 @@ export default function Invoicing({ selectedJobId, setSelectedJobId, navigateTo 
   const [paymentMethod, setPaymentMethod] = useState('Check')
   const [paymentNote, setPaymentNote] = useState('')
   const [addingPayment, setAddingPayment] = useState(false)
+  const [amountVal, setAmountVal] = useState('')
+  const [dueDateVal, setDueDateVal] = useState('')
 
   const job = selectedJobId ? state.jobs.find(j => j.id === selectedJobId) : null
   const client = job ? state.clients.find(c => c.id === job.clientId) : null
   const invoice = job?.invoice ?? null
+
+  useEffect(() => {
+    setAmountVal(invoice?.amountTotal ?? '')
+    setDueDateVal(invoice?.dueDate?.slice(0, 10) ?? '')
+  }, [invoice?.amountTotal, invoice?.dueDate, selectedJobId])
   const estimate = job?.estimate ?? null
   const totals = computeEstimateTotals(estimate)
 
@@ -28,6 +35,8 @@ export default function Invoicing({ selectedJobId, setSelectedJobId, navigateTo 
   const createInvoice = () => {
     if (!job) return
     const amount = totals.grandTotal > 0 ? totals.grandTotal : 0
+    const d30 = new Date(Date.now() + 30 * 86400000)
+    const p = n => String(n).padStart(2, '0')
     dispatch({
       type: ACTIONS.SAVE_INVOICE,
       payload: {
@@ -35,7 +44,7 @@ export default function Invoicing({ selectedJobId, setSelectedJobId, navigateTo 
         invoice: {
           estimateId: estimate?.id ?? null,
           status: 'Draft',
-          dueDate: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
+          dueDate: `${d30.getFullYear()}-${p(d30.getMonth() + 1)}-${p(d30.getDate())}`,
           amountTotal: amount,
           payments: [],
           createdAt: new Date().toISOString(),
@@ -116,9 +125,9 @@ export default function Invoicing({ selectedJobId, setSelectedJobId, navigateTo 
 
     return (
       <div className="h-full overflow-y-auto">
-        <div className="max-w-3xl mx-auto p-6 space-y-5">
+        <div className="max-w-3xl mx-auto p-3 md:p-6 space-y-5">
           {/* Stats */}
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="bg-white border border-gray-200 rounded-2xl p-5">
               <div className="text-xs text-gray-500 mb-1">Total Invoiced</div>
               <div className="text-2xl font-bold text-gray-900">{formatCurrency(totalInvoiced)}</div>
@@ -188,7 +197,7 @@ export default function Invoicing({ selectedJobId, setSelectedJobId, navigateTo 
 
   return (
     <div className="h-full overflow-y-auto">
-      <div id="invoice-print-root" className="max-w-2xl mx-auto p-6 space-y-5">
+      <div id="invoice-print-root" className="max-w-2xl mx-auto p-3 md:p-6 space-y-5">
         {/* Job selector */}
         <div className="flex items-center gap-3 print:hidden">
           <select value={selectedJobId} onChange={e => setSelectedJobId(e.target.value)} className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500">
@@ -241,7 +250,8 @@ export default function Invoicing({ selectedJobId, setSelectedJobId, navigateTo 
                   <label className="block text-xs font-semibold text-gray-600 mb-1">Invoice Amount</label>
                   <input
                     type="number"
-                    defaultValue={invoice.amountTotal}
+                    value={amountVal}
+                    onChange={e => setAmountVal(e.target.value)}
                     onBlur={e => updateAmount(e.target.value)}
                     className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-red-500"
                   />
@@ -250,7 +260,8 @@ export default function Invoicing({ selectedJobId, setSelectedJobId, navigateTo 
                   <label className="block text-xs font-semibold text-gray-600 mb-1">Due Date</label>
                   <input
                     type="date"
-                    defaultValue={invoice.dueDate?.slice(0, 10)}
+                    value={dueDateVal}
+                    onChange={e => setDueDateVal(e.target.value)}
                     onBlur={e => updateDueDate(e.target.value)}
                     className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 ${overdue ? 'border-red-300 text-red-700' : 'border-gray-200'}`}
                   />
@@ -266,7 +277,7 @@ export default function Invoicing({ selectedJobId, setSelectedJobId, navigateTo 
             </div>
 
             {/* Payment summary */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-3 gap-2 md:gap-3">
               <div className="bg-white border border-gray-200 rounded-xl p-4">
                 <div className="text-xs text-gray-500 mb-1">Invoice Total</div>
                 <div className="text-xl font-bold text-gray-900">{formatCurrency(invoice.amountTotal)}</div>
@@ -305,7 +316,7 @@ export default function Invoicing({ selectedJobId, setSelectedJobId, navigateTo 
 
               {addingPayment && (
                 <div className="px-5 py-4 bg-green-50 border-b border-green-100 space-y-3">
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
                       <label className="block text-xs font-semibold text-gray-600 mb-1">Amount</label>
                       <input autoFocus type="number" value={paymentAmount} onChange={e => setPaymentAmount(e.target.value)} placeholder={formatCurrencyExact(balance)} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500" />

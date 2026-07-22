@@ -17,7 +17,7 @@ export default function CommunicationLog({ selectedClientId, setSelectedClientId
 
   const client = selectedClientId ? state.clients.find(c => c.id === selectedClientId) : null
   const comms = client ? [...(client.communications ?? [])].sort((a, b) => new Date(b.date) - new Date(a.date)) : []
-  const stl = client ? speedToLead(client.createdAt, client.communications) : null
+  const stl = client?.createdAt ? speedToLead(client.createdAt, client.communications) : null
 
   const save = () => {
     if (!form.notes.trim() || !selectedClientId) return
@@ -80,7 +80,7 @@ export default function CommunicationLog({ selectedClientId, setSelectedClientId
         )}
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-3 md:p-6">
         {!client && (
           <div className="text-center py-16 text-gray-400">
             <MessageSquare size={40} className="mx-auto mb-3 opacity-20" />
@@ -131,7 +131,7 @@ export default function CommunicationLog({ selectedClientId, setSelectedClientId
       {showModal && (
         <Modal title="Log Communication" onClose={() => setShowModal(false)}>
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {f('Type', 'type', 'text', COMM_TYPES)}
               {f('Duration (min, calls)', 'duration', 'number')}
             </div>

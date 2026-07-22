@@ -45,7 +45,7 @@ function KanbanColumn({ stage, jobs, clients, onDrop, onDragOver, onDragLeave, i
   const total = jobs.reduce((s, j) => s + (j.estimate?.grandTotal ?? j.revenue ?? 0), 0)
   return (
     <div
-      className={`flex-shrink-0 w-52 flex flex-col rounded-xl transition-colors ${isDragOver ? 'bg-red-50' : 'bg-gray-100'}`}
+      className={`w-full md:w-64 flex-shrink-0 flex flex-col rounded-xl transition-colors ${isDragOver ? 'bg-red-50' : 'bg-gray-100'}`}
       onDragOver={onDragOver}
       onDrop={onDrop}
       onDragLeave={onDragLeave}
@@ -90,6 +90,7 @@ export default function JobPipeline({ navigateTo }) {
   const [showArchived, setShowArchived] = useState(false)
   const [lossModal, setLossModal] = useState(null) // { jobId, stage }
   const [lossForm, setLossForm] = useState(BLANK_LOSS)
+  const [saveError, setSaveError] = useState('')
 
   const visibleJobs = state.jobs
     .filter(j => showArchived ? j.archived : !j.archived)
@@ -126,7 +127,8 @@ export default function JobPipeline({ navigateTo }) {
   }
 
   const save = () => {
-    if (!form.clientId || !form.address) return
+    if (!form.clientId || !form.address) { setSaveError('Client and address are required.'); return }
+    setSaveError('')
     dispatch({ type: ACTIONS.ADD_JOB, payload: { ...form, revenue: Number(form.revenue) || 0, leadSourcePartnerId: form.leadSourcePartnerId || null } })
     setForm(BLANK_JOB)
     setShowModal(false)
@@ -157,8 +159,8 @@ export default function JobPipeline({ navigateTo }) {
   return (
     <div className="h-full flex flex-col">
       {/* Toolbar */}
-      <div className="flex items-center gap-3 px-6 py-3 bg-white border-b border-gray-200 flex-shrink-0">
-        <div className="flex gap-1.5">
+      <div className="flex flex-wrap items-center gap-2 px-3 md:px-6 py-3 bg-white border-b border-gray-200 flex-shrink-0">
+        <div className="flex flex-wrap gap-1.5">
           {['All', ...JOB_TYPES].map(t => (
             <button
               key={t}
@@ -186,8 +188,8 @@ export default function JobPipeline({ navigateTo }) {
       </div>
 
       {/* Kanban */}
-      <div className="flex-1 overflow-x-auto overflow-y-hidden">
-        <div className="flex gap-3 p-4 h-full kanban-scroll" style={{ minWidth: 'max-content' }}>
+      <div className="flex-1 overflow-y-auto md:overflow-x-auto md:overflow-y-hidden">
+        <div className="flex flex-col md:flex-row gap-4 p-4 md:h-full">
           {JOB_STAGES.map(stage => (
             <KanbanColumn
               key={stage}
@@ -241,7 +243,7 @@ export default function JobPipeline({ navigateTo }) {
 
       {showModal && (
         <Modal title="New Job" onClose={() => setShowModal(false)}>
-          <div className="space-y-4">
+          <div className="space-y-4 overflow-y-auto max-h-[85vh]">
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1">Client</label>
               <select
@@ -253,13 +255,13 @@ export default function JobPipeline({ navigateTo }) {
                 {state.clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {field('Job Type', 'type', 'text', JOB_TYPES)}
-              {field('Stage', 'stage', 'text', JOB_STAGES)}
+              {field('Stage', 'stage', 'text', JOB_STAGES.filter(s => s !== 'Lost'))}
             </div>
             {field('Revenue ($)', 'revenue', 'number')}
             {field('Job Address', 'address')}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {field('Lead Source', 'leadSource', 'text', ['', ...LEAD_SOURCES])}
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1">Referral Partner (if Referral)</label>
@@ -282,9 +284,12 @@ export default function JobPipeline({ navigateTo }) {
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
               />
             </div>
-            <div className="flex justify-end gap-2 pt-2">
-              <button onClick={() => setShowModal(false)} className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800">Cancel</button>
-              <button onClick={save} className="px-4 py-2 text-sm font-semibold bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors">Create Job</button>
+            <div className="pt-2">
+              {saveError && <p className="text-xs text-red-600 mb-2">{saveError}</p>}
+              <div className="flex justify-end gap-2">
+                <button onClick={() => setShowModal(false)} className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800">Cancel</button>
+                <button onClick={save} className="px-4 py-2 text-sm font-semibold bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors">Create Job</button>
+              </div>
             </div>
           </div>
         </Modal>

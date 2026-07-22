@@ -274,7 +274,7 @@ function RemoteBuilder({ job, onDone }) {
           <input value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Work Authorization Agreement"
             className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500" />
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="text-xs font-semibold text-gray-500 mb-1 block">Signer Name</label>
             <input value={signerName} onChange={e => setSignerName(e.target.value)} placeholder="Sarah Johnson"
@@ -428,15 +428,59 @@ function SignedDocumentModal({ req, onClose }) {
       .catch(() => setLoading(false))
   }, [req.documentData])
 
-  // Build a lookup: fieldId -> signedValue
   const valueMap = Object.fromEntries((req.signedFields ?? []).map(sf => [sf.id, sf.value]))
-
   const isDrawType = t => t === 'Signature' || t === 'Initials'
+
+  const handlePrint = () => {
+    const win = window.open('', '_blank')
+    if (!win) return
+
+    const pagesHtml = pages.map((page, pi) => {
+      const pageFields = (req.fields ?? []).filter(f => f.page === pi)
+      const fieldsHtml = pageFields.map(field => {
+        const val = valueMap[field.id]
+        if (!val) return ''
+        const inner = isDrawType(field.type)
+          ? `<img src="${val}" style="width:100%;height:100%;object-fit:contain;" />`
+          : `<div style="width:100%;height:100%;display:flex;align-items:center;padding:0 3px;overflow:hidden;">
+               <span style="font-family:sans-serif;font-size:11px;color:#111;">${val}</span>
+             </div>`
+        return `<div style="position:absolute;left:${field.x*100}%;top:${field.y*100}%;width:${field.width*100}%;height:${field.height*100}%;">${inner}</div>`
+      }).join('')
+      return `<div style="position:relative;page-break-after:always;break-after:page;margin-bottom:24px;">
+        <img src="${page.dataUrl}" style="width:100%;display:block;" />
+        ${fieldsHtml}
+      </div>`
+    }).join('')
+
+    const audit = `
+      <div style="border-top:2px solid #d1d5db;padding-top:16px;margin-top:8px;font-family:sans-serif;font-size:11px;color:#6b7280;line-height:1.8;">
+        <div style="font-weight:700;font-size:12px;color:#374151;margin-bottom:6px;">Signature Audit Trail</div>
+        <div>Document: <strong>${req.title}</strong></div>
+        ${req.signerName ? `<div>Signer: <strong>${req.signerName}</strong></div>` : ''}
+        ${req.signerEmail ? `<div>Email: ${req.signerEmail}</div>` : ''}
+        <div>Signed: ${new Date(req.signedAt).toLocaleString()}</div>
+        ${req.signerIp ? `<div>IP Address: ${req.signerIp}</div>` : ''}
+      </div>`
+
+    win.document.write(`<!DOCTYPE html><html><head>
+      <title>${req.title}</title>
+      <style>
+        *{box-sizing:border-box;margin:0;padding:0;}
+        @page{margin:0.4in;size:letter;}
+        body{background:white;font-family:sans-serif;}
+        @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}
+      </style>
+    </head><body>${pagesHtml}${audit}</body></html>`)
+    win.document.close()
+    win.focus()
+    setTimeout(() => win.print(), 600)
+  }
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 flex flex-col">
       {/* Toolbar */}
-      <div className="no-print flex items-center justify-between bg-gray-900 px-5 py-3 flex-shrink-0">
+      <div className="flex items-center justify-between bg-gray-900 px-5 py-3 flex-shrink-0">
         <div className="flex items-center gap-3">
           <FileText size={16} className="text-gray-400" />
           <div>
@@ -449,8 +493,9 @@ function SignedDocumentModal({ req, onClose }) {
         </div>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => window.print()}
-            className="flex items-center gap-2 bg-white hover:bg-gray-100 text-gray-900 text-sm font-semibold px-4 py-2 rounded-xl transition-colors"
+            onClick={handlePrint}
+            disabled={loading}
+            className="flex items-center gap-2 bg-white hover:bg-gray-100 disabled:opacity-40 text-gray-900 text-sm font-semibold px-4 py-2 rounded-xl transition-colors"
           >
             <Printer size={14} /> Print / Save PDF
           </button>
@@ -460,18 +505,8 @@ function SignedDocumentModal({ req, onClose }) {
         </div>
       </div>
 
-      {/* Print styles */}
-      <style>{`
-        @media print {
-          .no-print { display: none !important; }
-          body { background: white !important; margin: 0; }
-          .signed-doc-scroll { overflow: visible !important; background: white !important; }
-          .signed-doc-page { break-inside: avoid; box-shadow: none !important; margin-bottom: 0 !important; }
-        }
-      `}</style>
-
-      {/* Pages */}
-      <div className="signed-doc-scroll flex-1 overflow-y-auto bg-gray-700 py-6 px-4">
+      {/* Pages preview */}
+      <div className="flex-1 overflow-y-auto bg-gray-700 py-6 px-4">
         {loading ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
@@ -484,52 +519,37 @@ function SignedDocumentModal({ req, onClose }) {
             {pages.map((page, pi) => {
               const pageFields = (req.fields ?? []).filter(f => f.page === pi)
               return (
-                <div key={pi} className="signed-doc-page relative shadow-2xl rounded-lg overflow-hidden bg-white">
+                <div key={pi} className="relative shadow-2xl rounded-lg overflow-hidden bg-white">
                   <img src={page.dataUrl} alt={`Page ${pi + 1}`} className="w-full block pointer-events-none" draggable={false} />
                   {pageFields.map(field => {
                     const val = valueMap[field.id]
                     if (!val) return null
                     return (
-                      <div
-                        key={field.id}
-                        className="absolute"
-                        style={{
-                          left: `${field.x * 100}%`,
-                          top: `${field.y * 100}%`,
-                          width: `${field.width * 100}%`,
-                          height: `${field.height * 100}%`,
-                        }}
-                      >
-                        {isDrawType(field.type) ? (
-                          <img src={val} alt={field.type} className="w-full h-full object-contain" />
-                        ) : (
-                          <div className="w-full h-full flex items-center px-1 overflow-hidden">
-                            <span className="text-gray-900 text-xs font-medium leading-tight truncate">{val}</span>
-                          </div>
-                        )}
+                      <div key={field.id} className="absolute" style={{
+                        left: `${field.x * 100}%`, top: `${field.y * 100}%`,
+                        width: `${field.width * 100}%`, height: `${field.height * 100}%`,
+                      }}>
+                        {isDrawType(field.type)
+                          ? <img src={val} alt={field.type} className="w-full h-full object-contain" />
+                          : <div className="w-full h-full flex items-center px-1 overflow-hidden">
+                              <span className="text-gray-900 text-xs font-medium leading-tight">{val}</span>
+                            </div>
+                        }
                       </div>
                     )
                   })}
                 </div>
               )
             })}
-            {/* Audit trail footer */}
-            <div className="no-print bg-gray-800 rounded-xl p-4 text-xs text-gray-400 space-y-1">
-              <div className="font-semibold text-gray-300 mb-2">Signature Audit Trail</div>
-              <div>Document: {req.title}</div>
-              {req.signerName && <div>Signer: {req.signerName}</div>}
-              {req.signerEmail && <div>Email: {req.signerEmail}</div>}
-              <div>Signed: {new Date(req.signedAt).toLocaleString()}</div>
-              {req.signerIp && <div>IP Address: {req.signerIp}</div>}
-            </div>
-            {/* Print-only audit trail */}
-            <div className="hidden print:block mt-6 border-t border-gray-300 pt-4 text-xs text-gray-500 space-y-1">
-              <div className="font-semibold text-gray-700 mb-1">Signature Audit Trail</div>
-              <div>Document: {req.title}</div>
-              {req.signerName && <div>Signer: {req.signerName}</div>}
-              {req.signerEmail && <div>Email: {req.signerEmail}</div>}
-              <div>Signed: {new Date(req.signedAt).toLocaleString()}</div>
-              {req.signerIp && <div>IP Address: {req.signerIp}</div>}
+
+            {/* Audit trail — always visible in modal */}
+            <div className="bg-gray-800 rounded-xl p-4 text-xs text-gray-300 space-y-1.5">
+              <div className="font-bold text-white mb-2 text-sm">Signature Audit Trail</div>
+              <div><span className="text-gray-500">Document:</span> {req.title}</div>
+              {req.signerName && <div><span className="text-gray-500">Signer:</span> {req.signerName}</div>}
+              {req.signerEmail && <div><span className="text-gray-500">Email:</span> {req.signerEmail}</div>}
+              <div><span className="text-gray-500">Signed:</span> {new Date(req.signedAt).toLocaleString()}</div>
+              <div><span className="text-gray-500">IP Address:</span> {req.signerIp || 'not captured'}</div>
             </div>
           </div>
         )}
@@ -567,7 +587,7 @@ function RemoteRequestsList({ job, requests, onNew, onRefresh }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-start gap-3 justify-between">
         <div>
           <h3 className="text-sm font-bold text-gray-900">Remote Signing Requests</h3>
           <p className="text-xs text-gray-500 mt-0.5">Send your PDF to anyone — they sign from a link, no account needed</p>
@@ -689,15 +709,14 @@ export default function ESignature({ selectedJobId, setSelectedJobId, navigateTo
   const job = state.jobs.find(j => j.id === selectedJobId) ?? state.jobs[0] ?? null
   const client = job ? state.clients.find(c => c.id === job.clientId) : null
   const inPersonSigs = job?.signatures ?? []
-  const remoteRequests = state.signatureRequests ?? []
+  const [remoteRequests, setRemoteRequests] = useState(() => state.signatureRequests ?? [])
 
   // Handle Supabase refresh of remote requests
   const handleRefresh = (rows) => {
     rows.forEach(r => {
       const existing = remoteRequests.find(x => x.id === r.id)
       if (existing && existing.status !== r.status) {
-        // Status changed — reload the full state
-        window.location.reload()
+        setRemoteRequests(prev => prev.map(x => x.id === r.id ? r : x))
       }
     })
   }
@@ -737,6 +756,7 @@ export default function ESignature({ selectedJobId, setSelectedJobId, navigateTo
   }
 
   const deleteInPerson = (signatureId) => {
+    if (!window.confirm('Delete this signed document? This cannot be undone.')) return
     dispatch({ type: ACTIONS.DELETE_SIGNATURE_REQUEST, payload: { jobId: job.id, signatureId } })
   }
 
@@ -744,7 +764,7 @@ export default function ESignature({ selectedJobId, setSelectedJobId, navigateTo
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="max-w-3xl mx-auto p-6 space-y-5">
+      <div className="max-w-3xl mx-auto p-3 md:p-6 space-y-5">
         {selectedJobId && navigateTo && (
           <button onClick={() => navigateTo('jobs', { jobId: selectedJobId })} className="flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-red-600 transition-colors">
             <ChevronLeft size={14} /> Back to Job
@@ -752,7 +772,7 @@ export default function ESignature({ selectedJobId, setSelectedJobId, navigateTo
         )}
 
         {/* Job selector */}
-        <div className="bg-white border border-gray-200 rounded-2xl p-5">
+        <div className="bg-white border border-gray-200 rounded-2xl p-3 md:p-5">
           <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2 block">Select Job</label>
           {state.jobs.length === 0 ? (
             <p className="text-sm text-gray-400">No jobs found.</p>
@@ -820,8 +840,8 @@ export default function ESignature({ selectedJobId, setSelectedJobId, navigateTo
                   <div className="space-y-3">
                     {inPersonSigs.map(sig => (
                       <div key={sig.id} className="bg-white border border-gray-200 rounded-2xl p-5">
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-center gap-3">
+                        <div className="flex flex-wrap items-start gap-3">
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
                             {sig.status === 'signed' ? <CheckCircle size={18} className="text-green-500" /> : <Clock size={18} className="text-yellow-500" />}
                             <div>
                               <div className="font-semibold text-gray-900">{sig.docType}</div>
@@ -861,7 +881,7 @@ export default function ESignature({ selectedJobId, setSelectedJobId, navigateTo
       {/* In-person create modal */}
       {modal === 'create' && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl">
+          <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-y-auto max-h-[90vh]">
             <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
               <h3 className="text-lg font-bold text-gray-900">New In-Person Document</h3>
               <button onClick={() => setModal(null)} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>

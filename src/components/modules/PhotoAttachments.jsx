@@ -3,7 +3,7 @@ import { useApp } from '../../context/AppContext'
 import { ACTIONS } from '../../context/AppReducer'
 import { PHOTO_TYPES, formatDate } from '../../utils/helpers'
 import { uploadPhoto } from '../../lib/supabase'
-import { Upload, Trash2, SlidersHorizontal, X, Camera, Loader, ChevronLeft } from 'lucide-react'
+import { Upload, Trash2, SlidersHorizontal, X, Camera, Loader, ChevronLeft, Star } from 'lucide-react'
 
 const ROOMS = ['Basement', 'Living Room', 'Bedroom', 'Bathroom', 'Kitchen', 'Hallway', 'Garage', 'Crawlspace', 'Attic', 'Exterior', 'Other']
 
@@ -64,6 +64,7 @@ export default function PhotoAttachments({ selectedJobId, setSelectedJobId, navi
       alert('Upload failed: ' + err.message)
     } finally {
       setUploading(false)
+      if (fileRef.current) fileRef.current.value = ''
     }
   }
 
@@ -135,7 +136,7 @@ export default function PhotoAttachments({ selectedJobId, setSelectedJobId, navi
             Before/After
           </button>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <select value={uploadMeta.room} onChange={e => setUploadMeta(m => ({ ...m, room: e.target.value }))} className="border border-gray-200 rounded-lg px-2 py-1 text-xs focus:outline-none">
               {ROOMS.map(r => <option key={r}>{r}</option>)}
             </select>
@@ -155,7 +156,7 @@ export default function PhotoAttachments({ selectedJobId, setSelectedJobId, navi
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-3 md:p-6">
         {compareMode && canCompare && (
           <div className="mb-6 bg-white rounded-2xl border border-gray-200 p-5">
             <div className="flex items-center justify-between mb-4">
@@ -163,7 +164,7 @@ export default function PhotoAttachments({ selectedJobId, setSelectedJobId, navi
               <button onClick={() => { setCompareSelected([]); setCompareMode(false) }} className="p-1 rounded-lg hover:bg-gray-100 text-gray-400"><X size={16} /></button>
             </div>
             <BeforeAfterSlider before={compareSelected[0]} after={compareSelected[1]} />
-            <div className="flex gap-4 mt-3 text-xs text-gray-500">
+            <div className="flex flex-wrap gap-2 md:gap-4 mt-3 text-xs text-gray-500">
               <div><span className="font-semibold">Before:</span> {compareSelected[0].room} — {compareSelected[0].photoType} — {compareSelected[0].name}</div>
               <div><span className="font-semibold">After:</span> {compareSelected[1].room} — {compareSelected[1].photoType} — {compareSelected[1].name}</div>
             </div>
@@ -186,6 +187,7 @@ export default function PhotoAttachments({ selectedJobId, setSelectedJobId, navi
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {photos.map(photo => {
               const isSelected = compareSelected.find(p => p.id === photo.id)
+              const isShowcase = (state.showcasePhotos ?? {})[photo.id] ?? photo.isShowcase
               return (
                 <div
                   key={photo.id}
@@ -194,6 +196,25 @@ export default function PhotoAttachments({ selectedJobId, setSelectedJobId, navi
                 >
                   <img src={photo.data} alt={photo.name} className="w-full h-40 object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+
+                  {/* Showcase toggle — top-left */}
+                  {!compareMode && (
+                    <button
+                      onClick={e => { e.stopPropagation(); dispatch({ type: ACTIONS.TOGGLE_SHOWCASE, payload: { photoId: photo.id } }) }}
+                      title={isShowcase ? 'Remove from client portal' : 'Show in client portal'}
+                      className={`absolute top-2 left-2 z-10 p-1 rounded-lg transition-all ${isShowcase ? 'bg-green-500/90 text-white' : 'opacity-0 group-hover:opacity-100 bg-black/50 text-white/70 hover:text-yellow-300'}`}
+                    >
+                      <Star size={13} fill={isShowcase ? 'currentColor' : 'none'} />
+                    </button>
+                  )}
+
+                  {/* "In Portal" badge — top-right, always visible when showcased */}
+                  {isShowcase && !compareMode && (
+                    <div className="absolute top-2 right-2 z-10 bg-green-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                      In Portal
+                    </div>
+                  )}
+
                   <div className="absolute bottom-0 left-0 right-0 p-2 translate-y-1 group-hover:translate-y-0 transition-transform">
                     <div className="flex items-center justify-between">
                       <div>

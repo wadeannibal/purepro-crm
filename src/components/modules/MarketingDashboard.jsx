@@ -6,6 +6,7 @@ import { BarChart2, Star, Edit2, Check } from 'lucide-react'
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
 function fmtMoney(n) {
+  if (n == null || isNaN(n)) return '$0'
   if (n >= 1000) return '$' + (n / 1000).toFixed(1) + 'k'
   return '$' + Math.round(n)
 }
@@ -35,7 +36,7 @@ export default function MarketingDashboard({ navigateTo }) {
       map[src].count++
       if (j.stage === 'Closed' || j.stage === 'Invoiced') {
         map[src].won++
-        map[src].revenue += Number(j.estimate?.total || j.amount || 0)
+        map[src].revenue += Number(j.estimate?.grandTotal ?? j.revenue ?? 0)
       }
       if (j.stage === 'Lost') map[src].lost++
     })
@@ -56,7 +57,7 @@ export default function MarketingDashboard({ navigateTo }) {
       const referred = jobs.filter(j => j.leadSourcePartnerId === p.id)
       const revenue = referred
         .filter(j => j.stage === 'Closed' || j.stage === 'Invoiced')
-        .reduce((s, j) => s + Number(j.estimate?.total || j.amount || 0), 0)
+        .reduce((s, j) => s + Number(j.estimate?.grandTotal ?? j.revenue ?? 0), 0)
       const lastContact = p.contactHistory?.slice(-1)[0]?.date ?? p.lastContactDate ?? p.createdAt ?? null
       const daysSince = lastContact ? Math.floor((Date.now() - new Date(lastContact)) / 86400000) : null
       return { ...p, referralCount: referred.length, referralRevenue: revenue, daysSince }
@@ -109,7 +110,7 @@ export default function MarketingDashboard({ navigateTo }) {
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="max-w-4xl mx-auto p-6 space-y-6">
+      <div className="max-w-4xl mx-auto p-3 md:p-6 space-y-6">
         <div>
           <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
             <BarChart2 size={18} className="text-red-500" /> Marketing Dashboard
@@ -118,7 +119,7 @@ export default function MarketingDashboard({ navigateTo }) {
         </div>
 
         {/* Top summary */}
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="bg-white border border-gray-200 rounded-2xl p-4">
             <div className="text-xs text-gray-500 mb-0.5">Total Leads</div>
             <div className="text-2xl font-bold text-gray-900">{jobs.length}</div>
@@ -157,7 +158,7 @@ export default function MarketingDashboard({ navigateTo }) {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {/* Leads by Source */}
           <div className="bg-white border border-gray-200 rounded-2xl p-5">
             <h3 className="text-sm font-bold text-gray-800 mb-4">Leads by Source</h3>
@@ -200,7 +201,7 @@ export default function MarketingDashboard({ navigateTo }) {
         </div>
 
         {/* Win/Loss + Conversion Rate */}
-        <div className="grid grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div className="bg-white border border-gray-200 rounded-2xl p-5">
             <h3 className="text-sm font-bold text-gray-800 mb-4">Conversion Rate by Source</h3>
             {convRate.filter(c => c.count > 0).length === 0 ? (
@@ -285,7 +286,7 @@ export default function MarketingDashboard({ navigateTo }) {
             </button>
           </div>
           {editReview ? (
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {[['sent', 'Requests Sent'], ['received', 'Reviews Received'], ['rating', 'Avg Rating (0-5)'], ['posts', 'IG Posts']].map(([k, label]) => (
                 <div key={k}>
                   <label className="block text-xs text-gray-500 mb-1">{label}</label>
@@ -296,7 +297,7 @@ export default function MarketingDashboard({ navigateTo }) {
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="text-center">
                 <div className="text-2xl font-bold text-gray-900">{rt.sent ?? 0}</div>
                 <div className="text-xs text-gray-400 mt-0.5">Requests Sent</div>

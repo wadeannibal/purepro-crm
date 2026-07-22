@@ -21,7 +21,7 @@ export default function ReferralAsk() {
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="max-w-3xl mx-auto p-6 space-y-6">
+      <div className="max-w-3xl mx-auto p-3 md:p-6 space-y-6">
         {/* Stats */}
         <div className="grid grid-cols-2 gap-4">
           <div className="bg-white border border-gray-200 rounded-2xl p-5">

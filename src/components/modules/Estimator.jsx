@@ -316,7 +316,7 @@ function LibraryPanel({ onAdd, onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex">
       <div className="flex-1 bg-black/40" onClick={onClose} />
-      <div className="w-[440px] bg-white shadow-2xl flex flex-col h-full">
+      <div className="w-full md:w-[440px] bg-white shadow-2xl flex flex-col h-full">
         {/* Header */}
         <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
@@ -642,7 +642,7 @@ Write a clean, professional scope of work. Use 3-4 numbered sections with bullet
     const InputCls = 'w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500'
     return (
       <div className="h-full overflow-y-auto">
-        <div className="max-w-xl mx-auto p-8 space-y-6">
+        <div className="max-w-xl mx-auto p-4 md:p-8 space-y-6">
           <div className="flex gap-2">
             {[{ id: 'new', label: 'New Customer' }, { id: 'existing', label: 'Existing Customer' }].map(m => (
               <button key={m.id} onClick={() => { setLandingMode(m.id); setShowNewForm(false) }}
@@ -759,8 +759,8 @@ Write a clean, professional scope of work. Use 3-4 numbered sections with bullet
         </div>
       )}
 
-      <div className="max-w-5xl mx-auto p-6">
-        <div className="flex gap-6">
+      <div className="max-w-5xl mx-auto p-3 md:p-6">
+        <div className="flex flex-col md:flex-row gap-6">
           {/* Main panel */}
           <div className="flex-1 min-w-0 space-y-4">
 
@@ -813,6 +813,8 @@ Write a clean, professional scope of work. Use 3-4 numbered sections with bullet
                             <button
                               key={t.id}
                               onClick={() => {
+                                const hasContent = lineItems.length > 0 || local.scopeNotes || local.termsNotes
+                                if (hasContent && !window.confirm(`Apply "${t.name}"? This will replace your current line items and notes.`)) return
                                 update({ lineItems: t.lineItems ?? [], scopeNotes: t.scopeNotes ?? '', termsNotes: t.termsNotes ?? '' })
                                 setShowTemplatePicker(false)
                               }}
@@ -859,7 +861,7 @@ Write a clean, professional scope of work. Use 3-4 numbered sections with bullet
             {local.status === 'Approved' && (
               <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3 flex items-center justify-between">
                 <span className="text-sm text-green-800 font-semibold">Estimate approved — {formatCurrencyExact(computeEstimateTotals(local).grandTotal)}</span>
-                <button onClick={() => navigateTo?.('invoicing')} className="flex items-center gap-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg shrink-0 ml-3">
+                <button onClick={() => navigateTo?.('invoicing', { jobId: selectedJobId })} className="flex items-center gap-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg shrink-0 ml-3">
                   Convert to Invoice <ChevronRight size={13} />
                 </button>
               </div>
@@ -867,8 +869,9 @@ Write a clean, professional scope of work. Use 3-4 numbered sections with bullet
 
             {/* LINE ITEMS PANEL */}
             <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+              <div className="overflow-x-auto -mx-0">
               {lineItems.length > 0 && (
-                <div className="px-4 py-2.5 border-b border-gray-100 bg-gray-50 flex items-center gap-2">
+                <div className="px-4 py-2.5 border-b border-gray-100 bg-gray-50 flex items-center gap-2" style={{ minWidth: '580px' }}>
                   <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider" style={{ minWidth: '68px' }}>Category</span>
                   <span className="flex-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Description</span>
                   <span className="w-14 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right">Qty</span>
@@ -879,7 +882,7 @@ Write a clean, professional scope of work. Use 3-4 numbered sections with bullet
                 </div>
               )}
 
-              <div className="px-4 pt-2 pb-1">
+              <div className="px-4 pt-2 pb-1" style={{ minWidth: '580px' }}>
                 {lineItems.length === 0 && (
                   <div className="text-center py-12 text-gray-400">
                     <FileText size={36} className="mx-auto mb-3 opacity-15" />
@@ -904,6 +907,7 @@ Write a clean, professional scope of work. Use 3-4 numbered sections with bullet
                 ))}
               </div>
 
+              </div>
               <div className="px-4 pb-4 pt-2">
                 <button
                   onClick={() => setShowLibrary(true)}
@@ -994,7 +998,7 @@ Write a clean, professional scope of work. Use 3-4 numbered sections with bullet
               {(local.photos ?? []).length === 0 ? (
                 <p className="text-xs text-gray-400 text-center py-3">No photos attached — optional</p>
               ) : (
-                <div className="grid grid-cols-4 gap-2">
+                <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
                   {(local.photos ?? []).map((photo, i) => (
                     <div key={i} className="relative group/photo aspect-square">
                       <img src={photo.data} alt={photo.name} className="w-full h-full object-cover rounded-lg border border-gray-200" />
@@ -1022,7 +1026,7 @@ Write a clean, professional scope of work. Use 3-4 numbered sections with bullet
           </div>
 
           {/* Totals sidebar */}
-          <div className="w-64 flex-shrink-0">
+          <div className="w-full md:w-64 md:flex-shrink-0">
             <TotalsPanel
               estimate={local}
               onMarginChange={v => update({ overheadMarginPct: v })}

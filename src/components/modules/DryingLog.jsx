@@ -3,16 +3,16 @@ import { useApp } from '../../context/AppContext'
 import { ACTIONS } from '../../context/AppReducer'
 import { Plus, Trash2, Wind, ChevronLeft } from 'lucide-react'
 
-const BLANK = {
+const makeBlank = () => ({
   date: new Date().toISOString().slice(0, 10),
   temp: '', rh: '', gpp: '',
   dehumReading: '', airMovers: '',
   notes: '',
-}
+})
 
 export default function DryingLog({ selectedJobId, setSelectedJobId, navigateTo }) {
   const { state, dispatch } = useApp()
-  const [form, setForm] = useState(BLANK)
+  const [form, setForm] = useState(makeBlank)
   const [showForm, setShowForm] = useState(false)
 
   const waterJobs = state.jobs
@@ -23,12 +23,13 @@ export default function DryingLog({ selectedJobId, setSelectedJobId, navigateTo 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
   const add = () => {
+    if (!selectedJobId) return
     if (!job || !form.date) return
     dispatch({
       type: ACTIONS.ADD_DRYING_ENTRY,
       payload: { jobId: job.id, entry: { ...form } },
     })
-    setForm(BLANK)
+    setForm(makeBlank())
     setShowForm(false)
   }
 
@@ -41,21 +42,21 @@ export default function DryingLog({ selectedJobId, setSelectedJobId, navigateTo 
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="max-w-4xl mx-auto p-6 space-y-6">
+      <div className="max-w-4xl mx-auto p-3 md:p-6 space-y-6">
         {selectedJobId && navigateTo && (
           <button onClick={() => navigateTo('jobs', { jobId: selectedJobId })} className="flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-red-600 transition-colors">
             <ChevronLeft size={14} /> Back to Job
           </button>
         )}
         {/* Job selector */}
-        <div className="bg-white border border-gray-200 rounded-2xl p-5">
+        <div className="bg-white border border-gray-200 rounded-2xl p-3 md:p-5">
           <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2 block">Job</label>
           {waterJobs.length === 0 ? (
             <p className="text-sm text-gray-400">No jobs found.</p>
           ) : (
             <select
               value={job?.id ?? ''}
-              onChange={e => setSelectedJobId(e.target.value)}
+              onChange={e => { setSelectedJobId(e.target.value); setForm(makeBlank()); setShowForm(false) }}
               className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               {waterJobs.map(j => {
@@ -68,7 +69,7 @@ export default function DryingLog({ selectedJobId, setSelectedJobId, navigateTo 
 
         {job && (
           <>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center gap-2 justify-between">
               <div>
                 <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                   <Wind size={18} className="text-blue-500" /> Drying Log
@@ -86,7 +87,7 @@ export default function DryingLog({ selectedJobId, setSelectedJobId, navigateTo 
 
             {/* Stats row */}
             {entries.length > 0 && (
-              <div className="grid grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
                 <div className="bg-white border border-gray-200 rounded-2xl p-4">
                   <div className="text-xs text-gray-500 mb-1">Days Logged</div>
                   <div className="text-2xl font-bold text-gray-900">{entries.length}</div>
@@ -114,9 +115,9 @@ export default function DryingLog({ selectedJobId, setSelectedJobId, navigateTo 
 
             {/* Add form */}
             {showForm && (
-              <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5">
+              <div className="bg-blue-50 border border-blue-200 rounded-2xl p-3 md:p-5">
                 <h3 className="text-sm font-bold text-blue-900 mb-4">Daily Drying Entry</h3>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                   <div>
                     <label className="text-xs font-bold text-blue-800 uppercase tracking-wide mb-1.5 block">Date</label>
                     <input type="date" value={form.date} onChange={e => set('date', e.target.value)}
@@ -147,7 +148,7 @@ export default function DryingLog({ selectedJobId, setSelectedJobId, navigateTo 
                     <input type="number" placeholder="e.g. 4" value={form.airMovers} onChange={e => set('airMovers', e.target.value)}
                       className="w-full border border-blue-200 bg-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                   </div>
-                  <div className="col-span-3">
+                  <div className="col-span-1 sm:col-span-2 md:col-span-3">
                     <label className="text-xs font-bold text-blue-800 uppercase tracking-wide mb-1.5 block">Notes</label>
                     <input type="text" placeholder="Optional field notes" value={form.notes} onChange={e => set('notes', e.target.value)}
                       className="w-full border border-blue-200 bg-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />

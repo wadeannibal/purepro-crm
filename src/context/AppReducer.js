@@ -10,6 +10,7 @@ export const ACTIONS = {
   UPDATE_JOB: 'UPDATE_JOB',
   DELETE_JOB: 'DELETE_JOB',
   ADD_JOB_NOTE: 'ADD_JOB_NOTE',
+  DELETE_JOB_NOTE: 'DELETE_JOB_NOTE',
   UPDATE_CHECKLIST_ITEM: 'UPDATE_CHECKLIST_ITEM',
   UPDATE_OSHA_ITEM: 'UPDATE_OSHA_ITEM',
   ADD_PHOTO: 'ADD_PHOTO',
@@ -185,8 +186,10 @@ export function reducer(state, action) {
     case ACTIONS.UPDATE_CLIENT:
       return { ...state, clients: state.clients.map(c => c.id === payload.id ? { ...c, ...payload } : c) }
 
-    case ACTIONS.DELETE_CLIENT:
-      return { ...state, clients: state.clients.filter(c => c.id !== payload.id), jobs: state.jobs.filter(j => j.clientId !== payload.id) }
+    case ACTIONS.DELETE_CLIENT: {
+      const deletedJobIds = new Set(state.jobs.filter(j => j.clientId === payload.id).map(j => j.id))
+      return { ...state, clients: state.clients.filter(c => c.id !== payload.id), jobs: state.jobs.filter(j => j.clientId !== payload.id), events: (state.events ?? []).filter(e => !deletedJobIds.has(e.jobId)) }
+    }
 
     case ACTIONS.TOGGLE_VIP:
       return { ...state, clients: state.clients.map(c => c.id === payload.id ? { ...c, isVIP: !c.isVIP } : c) }
@@ -197,7 +200,7 @@ export function reducer(state, action) {
         ...state,
         clients: state.clients.map(c =>
           c.id === payload.clientId
-            ? { ...c, communications: [...c.communications, { id: uid(), date: now(), ...payload.comm }] }
+            ? { ...c, communications: [...(c.communications ?? []), { id: uid(), date: now(), ...payload.comm }] }
             : c
         ),
       }
@@ -207,7 +210,7 @@ export function reducer(state, action) {
         ...state,
         clients: state.clients.map(c =>
           c.id === payload.clientId
-            ? { ...c, communications: c.communications.filter(x => x.id !== payload.commId) }
+            ? { ...c, communications: (c.communications ?? []).filter(x => x.id !== payload.commId) }
             : c
         ),
       }
@@ -240,14 +243,23 @@ export function reducer(state, action) {
       return { ...state, jobs: updateJob(state.jobs, payload.id, j => ({ ...j, ...payload })) }
 
     case ACTIONS.DELETE_JOB:
-      return { ...state, jobs: state.jobs.filter(j => j.id !== payload.id) }
+      return { ...state, jobs: state.jobs.filter(j => j.id !== payload.id), events: (state.events ?? []).filter(e => e.jobId !== payload.id) }
 
     case ACTIONS.ADD_JOB_NOTE:
       return {
         ...state,
         jobs: updateJob(state.jobs, payload.jobId, j => ({
           ...j,
-          notes: [...j.notes, { id: payload._id ?? uid(), text: payload.text, createdAt: payload._createdAt ?? now() }],
+          notes: [...(j.notes ?? []), { id: payload._id ?? uid(), text: payload.text, createdAt: payload._createdAt ?? now() }],
+        })),
+      }
+
+    case ACTIONS.DELETE_JOB_NOTE:
+      return {
+        ...state,
+        jobs: updateJob(state.jobs, payload.jobId, j => ({
+          ...j,
+          notes: (j.notes ?? []).filter(n => n.id !== payload.noteId),
         })),
       }
 
@@ -278,14 +290,17 @@ export function reducer(state, action) {
         })),
       }
 
-    case ACTIONS.DELETE_PHOTO:
+    case ACTIONS.DELETE_PHOTO: {
+      const { [payload.photoId]: _removed, ...remainingShowcase } = state.showcasePhotos ?? {}
       return {
         ...state,
         jobs: updateJob(state.jobs, payload.jobId, j => ({
           ...j,
           photos: j.photos.filter(p => p.id !== payload.photoId),
         })),
+        showcasePhotos: remainingShowcase,
       }
+    }
 
     case ACTIONS.ADD_DOCUMENT:
       return {

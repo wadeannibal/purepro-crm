@@ -20,7 +20,7 @@ export default function EquipmentTracker() {
   const [editing, setEditing] = useState(null)
   const [form, setForm] = useState(BLANK)
 
-  const equipment = state.equipment.filter(e => filter === 'all' || e.status === filter)
+  const equipment = (state.equipment ?? []).filter(e => filter === 'all' || e.status === filter)
 
   const openAdd = () => { setForm(BLANK); setEditing(null); setShowModal(true) }
   const openEdit = (eq) => { setForm({ ...eq, jobId: eq.jobId ?? '', placedDate: eq.placedDate ?? '', pickupDate: eq.pickupDate ?? '' }); setEditing(eq.id); setShowModal(true) }
@@ -64,17 +64,17 @@ export default function EquipmentTracker() {
   )
 
   const counts = {
-    all: state.equipment.length,
-    available: state.equipment.filter(e => e.status === 'available').length,
-    deployed: state.equipment.filter(e => e.status === 'deployed').length,
-    maintenance: state.equipment.filter(e => e.status === 'maintenance').length,
+    all: (state.equipment ?? []).length,
+    available: (state.equipment ?? []).filter(e => e.status === 'available').length,
+    deployed: (state.equipment ?? []).filter(e => e.status === 'deployed').length,
+    maintenance: (state.equipment ?? []).filter(e => e.status === 'maintenance').length,
   }
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
       {/* Toolbar */}
-      <div className="flex items-center gap-3 px-6 py-3 bg-white border-b border-gray-200 flex-shrink-0">
-        <div className="flex gap-1.5">
+      <div className="flex items-center gap-3 px-3 md:px-6 py-3 bg-white border-b border-gray-200 flex-shrink-0">
+        <div className="flex flex-wrap gap-1.5">
           {[['all', 'All'], ['available', 'Available'], ['deployed', 'Deployed'], ['maintenance', 'Maintenance']].map(([val, label]) => (
             <button
               key={val}
@@ -90,7 +90,7 @@ export default function EquipmentTracker() {
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-3 md:p-6">
         {equipment.length === 0 ? (
           <div className="text-center py-16 text-gray-400">
             <Package size={40} className="mx-auto mb-3 opacity-20" />
@@ -110,7 +110,7 @@ export default function EquipmentTracker() {
                   </div>
                 </div>
                 <div className="font-semibold text-gray-900 text-sm mb-0.5">{eq.name}</div>
-                <div className="text-xs text-gray-500 mb-2">{eq.type} · {eq.serialNumber}</div>
+                <div className="text-xs text-gray-500 mb-2">{eq.type}{eq.serialNumber ? ` · ${eq.serialNumber}` : ''}</div>
                 <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${STATUS_COLORS[eq.status] ?? 'bg-gray-100 text-gray-600'}`}>
                   {eq.status.charAt(0).toUpperCase() + eq.status.slice(1)}
                 </span>
@@ -131,7 +131,7 @@ export default function EquipmentTracker() {
         <Modal title={editing ? 'Edit Equipment' : 'Add Equipment'} onClose={() => setShowModal(false)}>
           <div className="space-y-4">
             {f('Equipment Name', 'name')}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {f('Type', 'type', 'text', EQUIPMENT_TYPES)}
               {f('Status', 'status', 'text', ['available', 'deployed', 'maintenance'])}
             </div>
@@ -147,7 +147,7 @@ export default function EquipmentTracker() {
               </select>
             </div>
             {form.jobId && (
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {f('Placed Date', 'placedDate', 'date')}
                 {f('Pickup Date', 'pickupDate', 'date')}
               </div>

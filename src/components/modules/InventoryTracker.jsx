@@ -27,7 +27,9 @@ export default function InventoryTracker() {
   const [editId, setEditId] = useState(null)
   const [filterCat, setFilterCat] = useState('all')
 
-  const items = state.inventory?.length > 0 ? state.inventory : SEED
+  const realItems = state.inventory ?? []
+  const showSeeds = !state.inventory
+  const items = showSeeds ? SEED : realItems
 
   const filtered = useMemo(() =>
     filterCat === 'all' ? items : items.filter(i => i.category === filterCat),
@@ -65,7 +67,7 @@ export default function InventoryTracker() {
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="max-w-4xl mx-auto p-6 space-y-5">
+      <div className="max-w-4xl mx-auto p-3 md:p-6 space-y-5">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
@@ -80,7 +82,7 @@ export default function InventoryTracker() {
         </div>
 
         {/* Summary tiles */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="bg-white border border-gray-200 rounded-2xl p-4">
             <div className="text-xs text-gray-500 mb-0.5">Total Items</div>
             <div className="text-2xl font-bold text-gray-900">{items.length}</div>
@@ -111,8 +113,8 @@ export default function InventoryTracker() {
               <h3 className="text-sm font-bold text-blue-900">{editId ? 'Edit Item' : 'New Item'}</h3>
               <button onClick={() => { setShowForm(false); setEditId(null) }}><X size={16} className="text-blue-400" /></button>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="col-span-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="col-span-1 sm:col-span-2">
                 <label className="block text-xs font-bold text-blue-800 uppercase tracking-wide mb-1">Item Name</label>
                 <input value={form.name} onChange={e => f('name', e.target.value)} placeholder="e.g. Concrobium Mold Control (1gal)"
                   className="w-full border border-blue-200 bg-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
@@ -172,6 +174,7 @@ export default function InventoryTracker() {
 
         {/* Items table */}
         <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+          <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
@@ -219,7 +222,7 @@ export default function InventoryTracker() {
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center gap-1 justify-end">
-                        <button onClick={() => startEdit(item)} className="p-1.5 text-gray-400 hover:text-gray-700"><Edit2 size={12} /></button>
+                        <button onClick={() => startEdit(item)} disabled={!item.id} className="p-1.5 text-gray-400 hover:text-gray-700 disabled:opacity-30 disabled:cursor-not-allowed"><Edit2 size={12} /></button>
                         {item.id && <button onClick={() => del(item.id)} className="p-1.5 text-gray-400 hover:text-red-600"><Trash2 size={12} /></button>}
                       </div>
                     </td>
@@ -231,6 +234,7 @@ export default function InventoryTracker() {
               )}
             </tbody>
           </table>
+          </div>
         </div>
       </div>
     </div>

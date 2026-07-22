@@ -192,7 +192,7 @@ export default function App() {
       case 'warranty':
         return <WarrantyTracking selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} navigateTo={navigateTo} />
       case 'checkin':
-        return <AnnualCheckIn />
+        return <AnnualCheckIn selectedJobId={selectedJobId} setSelectedJobId={setSelectedJobId} navigateTo={navigateTo} />
       // Phase 5
       case 'operations':
         return <OperationsDashboard navigateTo={navigateTo} />

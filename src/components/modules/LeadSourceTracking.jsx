@@ -4,7 +4,7 @@ import { LEAD_SOURCES, formatCurrency, stageColor } from '../../utils/helpers'
 import { PieChart, TrendingUp, ArrowRight } from 'lucide-react'
 
 const BOOKED_STAGES = ['Approved', 'Remediation', 'Post-Test', 'Invoiced', 'Closed']
-const ACTIVE_STAGES = ['Lead', 'Inspection', 'Estimate Sent', 'Approved', 'Remediation', 'Post-Test', 'Invoiced', 'Closed']
+const ACTIVE_STAGES = ['Lead', 'Inspection', 'Estimate Sent', 'Approved', 'Remediation', 'Post-Test', 'Invoiced', 'Closed', 'Lost']
 
 const SOURCE_COLORS = {
   'Google Search': 'bg-blue-100 text-blue-800',
@@ -39,7 +39,7 @@ export default function LeadSourceTracking({ navigateTo }) {
       map[src].jobs.push(j)
       if (BOOKED_STAGES.includes(j.stage)) {
         map[src].booked++
-        map[src].revenue += j.revenue ?? 0
+        map[src].revenue += j.estimate?.grandTotal ?? j.revenue ?? 0
       }
     })
 
@@ -55,7 +55,7 @@ export default function LeadSourceTracking({ navigateTo }) {
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="max-w-4xl mx-auto p-6 space-y-6">
+      <div className="max-w-4xl mx-auto p-3 md:p-6 space-y-6">
         <div>
           <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
             <PieChart size={18} className="text-red-500" /> Lead Source Tracking
@@ -64,7 +64,7 @@ export default function LeadSourceTracking({ navigateTo }) {
         </div>
 
         {/* Summary stats */}
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
             { label: 'Total Leads', value: totalLeads },
             { label: 'Booked', value: totalBooked, color: 'text-green-700' },
@@ -125,7 +125,7 @@ export default function LeadSourceTracking({ navigateTo }) {
                             className="flex items-center gap-1.5 text-[11px] bg-gray-50 border border-gray-100 rounded-lg px-2 py-1 hover:border-red-200 hover:bg-red-50 transition-colors">
                             <span className={`text-[9px] font-bold px-1 py-0.5 rounded ${stageColor(j.stage)}`}>{j.stage}</span>
                             <span className="text-gray-700">{client?.name ?? 'Unknown'}</span>
-                            <span className="text-green-700 font-semibold">{formatCurrency(j.revenue)}</span>
+                            <span className="text-green-700 font-semibold">{formatCurrency(j.estimate?.grandTotal ?? j.revenue)}</span>
                           </button>
                         )
                       })}

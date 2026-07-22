@@ -52,25 +52,26 @@ export default function PLSnapshot() {
     return { label, m, invoiced, collected, jobCosts, grossProfit, netProfit }
   })
 
+  const ytdMonthCount = selectedYear < now.getFullYear() ? 12 : now.getMonth() + 1
   const ytd = {
-    invoiced: months.slice(0, now.getMonth() + 1).reduce((s, m) => s + m.invoiced, 0),
-    collected: months.slice(0, now.getMonth() + 1).reduce((s, m) => s + m.collected, 0),
-    jobCosts: months.slice(0, now.getMonth() + 1).reduce((s, m) => s + m.jobCosts, 0),
-    grossProfit: months.slice(0, now.getMonth() + 1).reduce((s, m) => s + m.grossProfit, 0),
-    netProfit: months.slice(0, now.getMonth() + 1).reduce((s, m) => s + m.netProfit, 0),
+    invoiced: months.slice(0, ytdMonthCount).reduce((s, m) => s + m.invoiced, 0),
+    collected: months.slice(0, ytdMonthCount).reduce((s, m) => s + m.collected, 0),
+    jobCosts: months.slice(0, ytdMonthCount).reduce((s, m) => s + m.jobCosts, 0),
+    grossProfit: months.slice(0, ytdMonthCount).reduce((s, m) => s + m.grossProfit, 0),
+    netProfit: months.slice(0, ytdMonthCount).reduce((s, m) => s + m.netProfit, 0),
   }
 
   const maxCollected = Math.max(...months.map(m => m.collected), 1)
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="max-w-4xl mx-auto p-6 space-y-6">
+      <div className="max-w-4xl mx-auto p-3 md:p-6 space-y-6">
         {/* Year + overhead controls */}
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-4">
           <select value={selectedYear} onChange={e => setSelectedYear(Number(e.target.value))} className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500">
             {[now.getFullYear(), now.getFullYear() - 1].map(y => <option key={y} value={y}>{y}</option>)}
           </select>
-          {!state.overheadItems?.length > 0 && (
+          {!(state.overheadItems?.length > 0) && (
             <div className="flex items-center gap-2">
               <label className="text-xs font-semibold text-gray-600">Monthly Overhead $</label>
               <input type="number" value={overhead} onChange={e => setOverhead(e.target.value)} placeholder="e.g. 3500" className="w-32 border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500" />
@@ -98,7 +99,7 @@ export default function PLSnapshot() {
           <div className="bg-white border border-gray-200 rounded-2xl p-5">
             <div className="text-xs text-gray-500 mb-1">YTD Net Profit</div>
             <div className={`text-2xl font-bold ${ytd.netProfit >= 0 ? 'text-green-700' : 'text-red-700'}`}>{formatCurrency(ytd.netProfit)}</div>
-            {monthlyOverhead > 0 && <div className="text-xs text-gray-400 mt-1">after {formatCurrency(monthlyOverhead * (now.getMonth() + 1))} overhead</div>}
+            {monthlyOverhead > 0 && <div className="text-xs text-gray-400 mt-1">after {formatCurrency(monthlyOverhead * ytdMonthCount)} overhead</div>}
           </div>
         </div>
 
@@ -127,7 +128,8 @@ export default function PLSnapshot() {
 
         {/* Monthly table */}
         <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto -mx-0">
+          <table className="w-full text-sm" style={{ minWidth: '500px' }}>
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">Month</th>
@@ -160,11 +162,12 @@ export default function PLSnapshot() {
                 <td className="px-4 py-3 text-right text-gray-900">{formatCurrency(ytd.invoiced)}</td>
                 <td className="px-4 py-3 text-right text-gray-900">{formatCurrency(ytd.collected)}</td>
                 <td className="px-4 py-3 text-right text-red-700">−{formatCurrency(ytd.jobCosts)}</td>
-                <td className="px-4 py-3 text-right text-gray-600">−{formatCurrency(monthlyOverhead * (now.getMonth() + 1))}</td>
+                <td className="px-4 py-3 text-right text-gray-600">−{formatCurrency(monthlyOverhead * ytdMonthCount)}</td>
                 <td className={`px-4 py-3 text-right ${ytd.netProfit >= 0 ? 'text-green-700' : 'text-red-700'}`}>{formatCurrency(ytd.netProfit)}</td>
               </tr>
             </tbody>
           </table>
+          </div>
         </div>
 
         <div className="text-xs text-gray-400 bg-gray-50 rounded-xl p-3">

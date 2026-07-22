@@ -9,10 +9,10 @@ export default function Modal({ title, onClose, children, wide }) {
   }, [onClose])
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center md:p-4" onClick={onClose}>
       <div className="absolute inset-0 bg-black/50" />
       <div
-        className={`relative bg-white rounded-xl shadow-2xl w-full ${wide ? 'max-w-2xl' : 'max-w-lg'} max-h-[90vh] flex flex-col`}
+        className={`relative bg-white rounded-t-2xl md:rounded-xl shadow-2xl w-full ${wide ? 'md:max-w-2xl' : 'md:max-w-lg'} max-h-[92vh] md:max-h-[90vh] flex flex-col`}
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">

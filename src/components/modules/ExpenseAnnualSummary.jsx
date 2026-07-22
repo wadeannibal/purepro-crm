@@ -28,7 +28,7 @@ export default function ExpenseAnnualSummary({ navigateTo }) {
   [allExpenses, year])
 
   const mileageExpenses = yearExpenses.filter(e =>
-    (e.category ?? '').toLowerCase().includes('mileage') || (e.description ?? '').toLowerCase().includes('mileage') || (e.type ?? '').toLowerCase().includes('mileage')
+    (e.category ?? '').toLowerCase().includes('mileage')
   )
   const nonMileage = yearExpenses.filter(e => !mileageExpenses.includes(e))
 
@@ -85,7 +85,7 @@ export default function ExpenseAnnualSummary({ navigateTo }) {
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="max-w-3xl mx-auto p-6 space-y-6">
+      <div className="max-w-3xl mx-auto p-3 md:p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
@@ -124,7 +124,7 @@ export default function ExpenseAnnualSummary({ navigateTo }) {
         ) : (
           <>
             {/* Summary tiles */}
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="bg-white border border-gray-200 rounded-2xl p-4">
                 <div className="text-xs text-gray-500 mb-0.5">Total Expenses ({year})</div>
                 <div className="text-xl font-bold text-gray-900">{fmtMoney(grandTotal)}</div>
@@ -174,7 +174,7 @@ export default function ExpenseAnnualSummary({ navigateTo }) {
                     <div key={cat} className="flex items-center gap-3">
                       <div className="w-32 flex-shrink-0 text-xs text-gray-600 font-medium capitalize truncate">{cat}</div>
                       <div className="flex-1 bg-gray-100 rounded-full h-2">
-                        <div className="bg-red-500 h-2 rounded-full" style={{ width: `${Math.round((amt / totalOther) * 100)}%` }} />
+                        <div className="bg-red-500 h-2 rounded-full" style={{ width: `${totalOther > 0 ? Math.round((amt / totalOther) * 100) : 0}%` }} />
                       </div>
                       <div className="text-xs font-bold text-gray-900 w-20 text-right">{fmtMoney(amt)}</div>
                     </div>
@@ -200,7 +200,8 @@ export default function ExpenseAnnualSummary({ navigateTo }) {
 
             {/* Monthly detail table */}
             <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
-              <table className="w-full text-sm">
+              <div className="overflow-x-auto -mx-0">
+              <table className="w-full text-sm" style={{ minWidth: '420px' }}>
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
                     <th className="text-left text-xs font-bold text-gray-500 uppercase tracking-wide px-4 py-3">Month</th>
@@ -233,6 +234,7 @@ export default function ExpenseAnnualSummary({ navigateTo }) {
                   </tr>
                 </tbody>
               </table>
+              </div>
             </div>
           </>
         )}

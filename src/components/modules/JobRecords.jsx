@@ -2,10 +2,10 @@ import { useState } from 'react'
 import { useApp } from '../../context/AppContext'
 import { ACTIONS } from '../../context/AppReducer'
 import {
-  JOB_STAGES, JOB_TYPES, formatCurrency, formatDate, formatDateTime,
+  JOB_STAGES, JOB_TYPES, LEAD_SOURCES, formatCurrency, formatDate, formatDateTime,
   jobTypeColor, stageColor, getChecklistForJobType, OSHA_CHECKLIST
 } from '../../utils/helpers'
-import { Search, ChevronRight, Send, Camera, Folder, Clock, Shield, ShieldCheck, Trash2, X, ExternalLink } from 'lucide-react'
+import { Search, ChevronLeft, ChevronRight, Send, Camera, Folder, Clock, Shield, ShieldCheck, Trash2, X, ExternalLink, Archive, ArchiveRestore } from 'lucide-react'
 import Modal from '../shared/Modal'
 
 const TABS = ['Details', 'Notes', 'Photos', 'Checklist', 'OSHA']
@@ -19,13 +19,17 @@ export default function JobRecords({ selectedJobId, setSelectedJobId, navigateTo
   const [showEditModal, setShowEditModal] = useState(false)
   const [editForm, setEditForm] = useState({})
   const [lightbox, setLightbox] = useState(null)
+  const [showArchived, setShowArchived] = useState(false)
+
+  const archivedCount = state.jobs.filter(j => j.archived).length
 
   const jobs = state.jobs.filter(j => {
+    if (showArchived ? !j.archived : j.archived) return false
     const q = search.toLowerCase()
     if (typeFilter !== 'All' && j.type !== typeFilter) return false
     if (q) {
       const client = state.clients.find(c => c.id === j.clientId)
-      if (!j.address.toLowerCase().includes(q) && !(client?.name ?? '').toLowerCase().includes(q)) return false
+      if (!(j.address ?? '').toLowerCase().includes(q) && !(client?.name ?? '').toLowerCase().includes(q)) return false
     }
     return true
   })
@@ -47,6 +51,13 @@ export default function JobRecords({ selectedJobId, setSelectedJobId, navigateTo
     setSelectedJobId(null)
   }
 
+  const toggleArchive = () => {
+    if (!job) return
+    if (!window.confirm(job.archived ? 'Restore this job?' : 'Archive this job? It will be hidden from the main list.')) return
+    dispatch({ type: ACTIONS.ARCHIVE_JOB, payload: { id: job.id, archived: !job.archived } })
+    setSelectedJobId(null)
+  }
+
   const openEdit = () => {
     setEditForm({ ...job })
     setShowEditModal(true)
@@ -59,17 +70,24 @@ export default function JobRecords({ selectedJobId, setSelectedJobId, navigateTo
   return (
     <div className="h-full flex overflow-hidden">
       {/* Job list */}
-      <div className="w-72 flex-shrink-0 flex flex-col border-r border-gray-200 bg-white">
+      <div className={`${selectedJobId ? 'hidden md:flex' : 'flex'} w-full md:w-72 flex-col flex-shrink-0 border-r border-gray-200 bg-white overflow-hidden`}>
         <div className="p-3 border-b border-gray-200 space-y-2">
           <div className="relative">
             <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search jobs…" className="w-full pl-7 pr-3 py-1.5 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-red-500" />
           </div>
-          <div className="flex gap-1">
+          <div className="flex gap-1 flex-wrap">
             {['All', ...JOB_TYPES].map(t => (
               <button key={t} onClick={() => setTypeFilter(t)} className={`px-2 py-0.5 text-[11px] font-semibold rounded-full transition-colors ${typeFilter === t ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>{t}</button>
             ))}
           </div>
+          <button
+            onClick={() => { setShowArchived(a => !a); setSelectedJobId(null) }}
+            className={`w-full flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-semibold rounded-lg transition-colors ${showArchived ? 'bg-gray-700 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+          >
+            <Archive size={11} />
+            {showArchived ? 'Hide Archived' : `Archived Jobs${archivedCount > 0 ? ` (${archivedCount})` : ''}`}
+          </button>
         </div>
         <div className="flex-1 overflow-y-auto">
           {jobs.length === 0 && <p className="text-xs text-gray-400 text-center py-8">No jobs found</p>}
@@ -88,28 +106,33 @@ export default function JobRecords({ selectedJobId, setSelectedJobId, navigateTo
                 </div>
                 <div className="text-xs font-semibold text-gray-900 truncate">{c?.name ?? 'Unknown'}</div>
                 <div className="text-[11px] text-gray-500 truncate">{j.address}</div>
-                <div className="text-[11px] text-green-700 font-semibold mt-0.5">{formatCurrency(j.revenue)}</div>
+                <div className="text-[11px] text-green-700 font-semibold mt-0.5">{formatCurrency(j.estimate?.grandTotal ?? j.revenue ?? 0)}</div>
               </button>
             )
           })}
         </div>
       </div>
 
-      {/* Detail */}
-      {!job ? (
-        <div className="flex-1 flex items-center justify-center text-gray-400">
+      {!job && (
+        <div className="hidden md:flex flex-1 items-center justify-center text-gray-400">
           <div className="text-center">
             <ChevronRight size={40} className="mx-auto mb-2 opacity-20" />
             <p className="font-medium text-sm">Select a job to view details</p>
           </div>
         </div>
-      ) : (
+      )}
+      {job && (
         <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="md:hidden flex items-center gap-2 px-4 py-3 border-b border-gray-200 flex-shrink-0">
+            <button onClick={() => setSelectedJobId(null)} className="flex items-center gap-1 text-red-600 font-semibold text-sm">
+              <ChevronLeft size={16} /> Back
+            </button>
+          </div>
           {/* Job header */}
-          <div className="bg-white border-b border-gray-200 px-6 py-4 flex-shrink-0">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <div className="flex items-center gap-2 mb-1.5">
+          <div className="bg-white border-b border-gray-200 px-3 md:px-6 py-4 flex-shrink-0">
+            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-2 md:gap-4">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                   <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${jobTypeColor(job.type)}`}>{job.type}</span>
                   <ChevronRight size={14} className="text-gray-400" />
                   <select
@@ -123,11 +146,14 @@ export default function JobRecords({ selectedJobId, setSelectedJobId, navigateTo
                 <h2 className="text-base font-bold text-gray-900">{client?.name ?? 'Unknown Client'}</h2>
                 <p className="text-sm text-gray-500">{job.address}</p>
               </div>
-              <div className="text-right flex-shrink-0 flex flex-col items-end gap-1">
-                <div className="text-xl font-black text-green-700">{formatCurrency(job.revenue)}</div>
-                <div className="flex items-center gap-3">
-                  <button onClick={openEdit} className="text-xs text-gray-400 hover:text-red-600 underline">Edit Job</button>
-                  <button onClick={deleteJob} className="flex items-center gap-1 text-xs text-red-400 hover:text-red-600 hover:bg-red-50 px-2 py-0.5 rounded-lg transition-colors">
+              <div className="flex md:flex-col items-center md:items-end justify-between md:justify-start gap-2 flex-shrink-0">
+                <div className="text-xl font-black text-green-700">{formatCurrency(job.estimate?.grandTotal ?? job.revenue ?? 0)}</div>
+                <div className="flex items-center gap-2 flex-wrap justify-end">
+                  <button onClick={openEdit} className="text-xs text-gray-400 hover:text-red-600 underline">Edit</button>
+                  <button onClick={toggleArchive} className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-700 hover:bg-gray-100 px-2 py-1 rounded-lg transition-colors">
+                    {job.archived ? <><ArchiveRestore size={11} /> Unarchive</> : <><Archive size={11} /> Archive</>}
+                  </button>
+                  <button onClick={deleteJob} className="flex items-center gap-1 text-xs text-red-400 hover:text-red-600 hover:bg-red-50 px-2 py-1 rounded-lg transition-colors">
                     <Trash2 size={11} /> Delete
                   </button>
                 </div>
@@ -135,16 +161,25 @@ export default function JobRecords({ selectedJobId, setSelectedJobId, navigateTo
             </div>
 
             {/* Stage progress */}
-            <div className="mt-3 flex gap-0.5">
-              {JOB_STAGES.map((s, i) => {
-                const stageIdx = JOB_STAGES.indexOf(job.stage)
-                const filled = i <= stageIdx
-                return <div key={s} className={`h-1 flex-1 rounded-full transition-colors ${filled ? 'bg-red-500' : 'bg-gray-200'}`} title={s} />
-              })}
+            <div className="mt-3">
+              {job.stage === 'Lost' ? (
+                <div className="flex items-center gap-2">
+                  <span className="px-3 py-1 bg-red-100 text-red-700 text-sm font-semibold rounded-full">Lost</span>
+                  {job.lostReason && <span className="text-xs text-gray-500">{job.lostReason}</span>}
+                </div>
+              ) : (
+                <div className="flex gap-0.5">
+                  {JOB_STAGES.map((s, i) => {
+                    const stageIdx = JOB_STAGES.indexOf(job.stage)
+                    const filled = i <= stageIdx
+                    return <div key={s} className={`h-1 flex-1 rounded-full transition-colors ${filled ? 'bg-red-500' : 'bg-gray-200'}`} title={s} />
+                  })}
+                </div>
+              )}
             </div>
 
             {/* Quick nav buttons */}
-            <div className="flex gap-2 mt-3">
+            <div className="flex flex-wrap gap-2 mt-3">
               {[
                 { label: 'Photos', icon: Camera, view: 'photos' },
                 { label: 'Docs', icon: Folder, view: 'documents' },
@@ -164,26 +199,28 @@ export default function JobRecords({ selectedJobId, setSelectedJobId, navigateTo
           </div>
 
           {/* Tabs */}
-          <div className="flex gap-1 px-6 py-2 bg-white border-b border-gray-200 flex-shrink-0">
-            {TABS.map(t => (
-              <button
-                key={t}
-                onClick={() => setTab(t)}
-                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${tab === t ? 'bg-red-600 text-white' : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100'}`}
-              >
-                {t}
-                {t === 'Checklist' && checklist.length > 0 && (
-                  <span className="ml-1 opacity-70">{completedItems}/{checklist.length}</span>
-                )}
-                {t === 'Photos' && (job?.photos?.length ?? 0) > 0 && (
-                  <span className="ml-1 opacity-70">{job.photos.length}</span>
-                )}
-              </button>
-            ))}
+          <div className="overflow-x-auto flex-shrink-0 bg-white border-b border-gray-200">
+            <div className="flex gap-1 px-6 py-2 min-w-max md:min-w-0">
+              {TABS.map(t => (
+                <button
+                  key={t}
+                  onClick={() => setTab(t)}
+                  className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${tab === t ? 'bg-red-600 text-white' : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100'}`}
+                >
+                  {t}
+                  {t === 'Checklist' && checklist.length > 0 && (
+                    <span className="ml-1 opacity-70">{completedItems}/{checklist.length}</span>
+                  )}
+                  {t === 'Photos' && (job?.photos?.length ?? 0) > 0 && (
+                    <span className="ml-1 opacity-70">{job.photos.length}</span>
+                  )}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Tab content */}
-          <div className="flex-1 overflow-y-auto p-6">
+          <div className="flex-1 overflow-y-auto p-3 md:p-6">
 
             {tab === 'Details' && (
               <div className="space-y-6 max-w-2xl">
@@ -194,7 +231,7 @@ export default function JobRecords({ selectedJobId, setSelectedJobId, navigateTo
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div><span className="text-xs text-gray-500 block mb-0.5">Created</span><span className="font-medium text-gray-800">{formatDate(job.createdAt)}</span></div>
                   <div><span className="text-xs text-gray-500 block mb-0.5">Last Updated</span><span className="font-medium text-gray-800">{formatDate(job.updatedAt)}</span></div>
-                  <div><span className="text-xs text-gray-500 block mb-0.5">Revenue</span><span className="font-medium text-green-700">{formatCurrency(job.revenue)}</span></div>
+                  <div><span className="text-xs text-gray-500 block mb-0.5">Revenue</span><span className="font-medium text-green-700">{formatCurrency(job.estimate?.grandTotal ?? job.revenue ?? 0)}</span></div>
                   <div><span className="text-xs text-gray-500 block mb-0.5">Client Type</span><span className="font-medium text-gray-800">{client?.type ?? '—'}</span></div>
                 </div>
                 {client && (
@@ -224,13 +261,21 @@ export default function JobRecords({ selectedJobId, setSelectedJobId, navigateTo
                   </button>
                 </div>
                 <div className="space-y-3">
-                  {[...job.notes].reverse().map(note => (
-                    <div key={note.id} className="bg-white rounded-xl border border-gray-200 p-4">
-                      <p className="text-sm text-gray-800 leading-relaxed">{note.text}</p>
+                  {[...(job.notes ?? [])].reverse().map(note => (
+                    <div key={note.id} className="bg-white rounded-xl border border-gray-200 p-4 group">
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="text-sm text-gray-800 leading-relaxed flex-1">{note.text}</p>
+                        <button
+                          onClick={() => { if (window.confirm('Delete this note?')) dispatch({ type: ACTIONS.DELETE_JOB_NOTE, payload: { jobId: job.id, noteId: note.id } }) }}
+                          className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-50 text-gray-300 hover:text-red-500 transition-all flex-shrink-0"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
                       <div className="text-xs text-gray-400 mt-2">{formatDateTime(note.createdAt)}</div>
                     </div>
                   ))}
-                  {job.notes.length === 0 && <p className="text-sm text-gray-400 text-center py-8">No notes yet. Add the first one above.</p>}
+                  {(job.notes ?? []).length === 0 && <p className="text-sm text-gray-400 text-center py-8">No notes yet. Add the first one above.</p>}
                 </div>
               </div>
             )}
@@ -263,7 +308,7 @@ export default function JobRecords({ selectedJobId, setSelectedJobId, navigateTo
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {[...job.photos].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).map(photo => (
+                    {[...job.photos].sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? '')).map(photo => (
                       <div
                         key={photo.id}
                         className="group relative aspect-square rounded-xl overflow-hidden bg-gray-100 cursor-pointer"
@@ -281,9 +326,9 @@ export default function JobRecords({ selectedJobId, setSelectedJobId, navigateTo
                             </p>
                           </div>
                         )}
-                        {photo.isShowcase && (
-                          <div className="absolute top-1.5 right-1.5 bg-yellow-400 text-yellow-900 text-[9px] font-bold px-1.5 py-0.5 rounded-full">
-                            Showcase
+                        {((state.showcasePhotos ?? {})[photo.id] ?? photo.isShowcase) && (
+                          <div className="absolute top-1.5 right-1.5 bg-green-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">
+                            In Portal
                           </div>
                         )}
                       </div>
@@ -397,11 +442,27 @@ export default function JobRecords({ selectedJobId, setSelectedJobId, navigateTo
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1">Revenue ($)</label>
-              <input type="number" value={editForm.revenue} onChange={e => setEditForm(f => ({ ...f, revenue: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500" />
+              <input type="number" value={editForm.revenue ?? ''} onChange={e => setEditForm(f => ({ ...f, revenue: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500" />
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1">Address</label>
               <input type="text" value={editForm.address} onChange={e => setEditForm(f => ({ ...f, address: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500" />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1">Lead Source</label>
+                <select value={editForm.leadSource ?? ''} onChange={e => setEditForm(f => ({ ...f, leadSource: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500">
+                  <option value="">— Not Tagged —</option>
+                  {LEAD_SOURCES.map(s => <option key={s}>{s}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1">Referral Partner</label>
+                <select value={editForm.leadSourcePartnerId ?? ''} onChange={e => setEditForm(f => ({ ...f, leadSourcePartnerId: e.target.value || null }))} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500">
+                  <option value="">— None —</option>
+                  {(state.partners ?? []).map(p => <option key={p.id} value={p.id}>{p.name} ({p.partnerType})</option>)}
+                </select>
+              </div>
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1">Description</label>

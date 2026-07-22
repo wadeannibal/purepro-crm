@@ -60,10 +60,12 @@ function computeActuals(state, monthDate) {
   // Estimates Sent
   const estimatesSent = jobs.filter(j => inMonth(j.estimate?.sentAt)).length
 
-  // Revenue (from paid invoices or closed job values)
-  const revenue = jobs
-    .filter(j => inMonth(j.invoice?.paidAt ?? j.invoice?.updatedAt) && j.invoice?.status === 'Paid')
-    .reduce((s, j) => s + Number(j.invoice?.total ?? j.estimate?.total ?? 0), 0)
+  // Revenue (from payment dates on invoices)
+  const revenue = (jobs ?? []).reduce((sum, j) => {
+    return sum + (j.invoice?.payments ?? [])
+      .filter(p => inMonth(p.date))
+      .reduce((s, p) => s + (p.amount ?? 0), 0)
+  }, 0)
 
   // Win Rate
   const wonInMonth = jobs.filter(j =>
@@ -154,7 +156,7 @@ export default function KPIGoalTracker() {
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="max-w-3xl mx-auto p-6 space-y-5">
+      <div className="max-w-3xl mx-auto p-3 md:p-6 space-y-5">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
@@ -253,7 +255,7 @@ export default function KPIGoalTracker() {
         {/* Year-to-date */}
         <div className="bg-gray-900 text-white rounded-2xl p-5">
           <h3 className="text-sm font-bold mb-4">Year-to-Date — {now.getFullYear()}</h3>
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {KPIS.filter(k => k.auto && k.format !== 'pct').map(kpi => (
               <div key={kpi.key}>
                 <div className="text-[11px] text-gray-400 mb-0.5">{kpi.label}</div>
@@ -276,14 +278,14 @@ export default function KPIGoalTracker() {
             </button>
             {showHistory && (
               <div className="mt-3 space-y-2">
-                {historyKeys.reverse().map(key => {
+                {[...historyKeys].reverse().map(key => {
                   const [y, mo] = key.split('-').map(Number)
                   const label = new Date(y, mo - 1, 1).toLocaleString('en-US', { month: 'long', year: 'numeric' })
                   const saved = state.kpiGoals[key]
                   return (
                     <div key={key} className="bg-white border border-gray-200 rounded-2xl px-5 py-3">
                       <div className="text-sm font-bold text-gray-800 mb-2">{label}</div>
-                      <div className="grid grid-cols-4 gap-3">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                         {KPIS.slice(0, 4).map(kpi => (
                           <div key={kpi.key}>
                             <div className="text-[10px] text-gray-400">{kpi.label}</div>

@@ -16,8 +16,8 @@ export default function WinLossTracker({ navigateTo }) {
   const lost = leads.filter(j => j.stage === 'Lost')
   const pending = leads.filter(j => ['Lead', 'Inspection', 'Estimate Sent'].includes(j.stage))
 
-  const winRate = leads.length > 0 ? Math.round((won.length / leads.length) * 100) : 0
-  const wonRevenue = won.reduce((s, j) => s + (j.revenue ?? 0), 0)
+  const winRate = won.length + lost.length > 0 ? Math.round((won.length / (won.length + lost.length)) * 100) : 0
+  const wonRevenue = won.reduce((s, j) => s + (j.estimate?.grandTotal ?? j.revenue ?? 0), 0)
 
   const lossByReason = useMemo(() => {
     const map = {}
@@ -39,7 +39,7 @@ export default function WinLossTracker({ navigateTo }) {
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="max-w-4xl mx-auto p-6 space-y-6">
+      <div className="max-w-4xl mx-auto p-3 md:p-6 space-y-6">
         <div>
           <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
             <Target size={18} className="text-red-500" /> Win / Loss Tracker
@@ -148,13 +148,13 @@ export default function WinLossTracker({ navigateTo }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {leads.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).map(j => {
+                  {[...leads].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).map(j => {
                     const client = clients.find(c => c.id === j.clientId)
                     return (
-                      <tr key={j.id} className="border-b border-gray-50 hover:bg-gray-50 cursor-pointer" onClick={() => navigateTo('jobs', { jobId: j.id })}>
+                      <tr key={j.id} className="border-b border-gray-50 hover:bg-gray-50 cursor-pointer" onClick={() => navigateTo?.('jobs', { jobId: j.id })}>
                         <td className="px-4 py-3 font-medium text-gray-900">{client?.name ?? '—'}</td>
                         <td className="px-4 py-3 text-gray-600">{j.type}</td>
-                        <td className="px-4 py-3 text-green-700 font-semibold">{formatCurrency(j.revenue)}</td>
+                        <td className="px-4 py-3 text-green-700 font-semibold">{formatCurrency(j.estimate?.grandTotal ?? j.revenue)}</td>
                         <td className="px-4 py-3">
                           <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${stageColor(j.stage)}`}>{j.stage}</span>
                         </td>

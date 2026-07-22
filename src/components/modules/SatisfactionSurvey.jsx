@@ -199,7 +199,7 @@ export default function SatisfactionSurvey() {
   const { state } = useApp()
 
   const closedJobs = state.jobs.filter(j => j.stage === 'Closed')
-  const toSend = closedJobs.filter(j => !j.survey?.markedSentAt)
+  const toSend = closedJobs.filter(j => !j.survey?.markedSentAt && !j.survey?.completedAt)
   const responses = closedJobs.filter(j => j.survey?.completedAt)
   const avgStars = responses.length
     ? (responses.reduce((s, j) => s + (j.survey.stars ?? 0), 0) / responses.length).toFixed(1)
@@ -207,9 +207,9 @@ export default function SatisfactionSurvey() {
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="max-w-3xl mx-auto p-6 space-y-6">
+      <div className="max-w-3xl mx-auto p-3 md:p-6 space-y-6">
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="bg-white border border-gray-200 rounded-2xl p-5">
             <div className="text-xs text-gray-500 mb-1">To Send</div>
             <div className="text-3xl font-bold text-gray-900">{toSend.length}</div>

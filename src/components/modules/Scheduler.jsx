@@ -82,6 +82,7 @@ export default function Scheduler({ navigateTo }) {
 
   const save = () => {
     if (!form.date || !form.eventType) return
+    if (form.startTime && form.endTime && form.endTime <= form.startTime) { alert('End time must be after start time.'); return }
     if (modal === 'add') {
       dispatch({ type: ACTIONS.ADD_EVENT, payload: { id: uid(), ...form } })
     } else {
@@ -101,9 +102,9 @@ export default function Scheduler({ navigateTo }) {
   return (
     <div className="h-full flex flex-col overflow-hidden">
       <div className="flex-1 overflow-y-auto">
-        <div className="p-6">
+        <div className="p-3 md:p-6">
           {/* Toolbar */}
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-4 md:mb-6">
             <div className="flex items-center gap-2">
               <button onClick={prevMonth} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
                 <ChevronLeft size={18} className="text-gray-600" />
@@ -119,7 +120,13 @@ export default function Scheduler({ navigateTo }) {
               </button>
             </div>
             <button
-              onClick={() => openAdd(today.getDate())}
+              onClick={() => {
+                const now = new Date()
+                const y = now.getFullYear(), mo = now.getMonth(), d = now.getDate()
+                const dateStr = `${y}-${String(mo+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`
+                setForm({ ...BLANK_FORM, date: dateStr })
+                setModal('add')
+              }}
               className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors"
             >
               <Plus size={15} /> Add Event
@@ -187,7 +194,7 @@ export default function Scheduler({ navigateTo }) {
           </div>
 
           {/* Legend */}
-          <div className="flex items-center gap-5 mt-4">
+          <div className="flex flex-wrap items-center gap-3 md:gap-5 mt-4">
             <span className="text-xs text-gray-400 font-medium">Job type:</span>
             {Object.entries(JOB_COLORS).map(([type, { dot }]) => (
               <div key={type} className="flex items-center gap-1.5 text-xs text-gray-500">
@@ -208,8 +215,8 @@ export default function Scheduler({ navigateTo }) {
               <div className="space-y-2">
                 {events
                   .filter(e => {
-                    const d = new Date(e.date)
-                    return d.getFullYear() === year && d.getMonth() === month
+                    const d = new Date(e.date + 'T00:00')
+                    return d.getFullYear() === year && d.getMonth() === month && d >= new Date(new Date().toDateString())
                   })
                   .sort((a, b) => a.date.localeCompare(b.date) || (a.startTime ?? '').localeCompare(b.startTime ?? ''))
                   .map(event => {
@@ -253,7 +260,7 @@ export default function Scheduler({ navigateTo }) {
       {/* Modal */}
       {modal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl">
+          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-y-auto max-h-[90vh]">
             <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
               <h3 className="text-lg font-bold text-gray-900">
                 {modal === 'add' ? 'New Event' : 'Edit Event'}

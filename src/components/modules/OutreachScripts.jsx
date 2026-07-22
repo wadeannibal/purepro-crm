@@ -146,6 +146,9 @@ export default function OutreachScripts() {
   const [editingId, setEditingId] = useState(null)
 
   useEffect(() => {
+    // INIT_SCRIPTS is a no-op if scripts already exist in state (reducer guard: if (state.scripts) return state).
+    // Built-in scripts embed the company name from settings at first initialization.
+    // To update script content after changing company settings, edit each script manually.
     dispatch({ type: ACTIONS.INIT_SCRIPTS, payload: getDefaultScripts() })
   }, [])
 
@@ -173,7 +176,7 @@ export default function OutreachScripts() {
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="max-w-3xl mx-auto p-6 space-y-5">
+      <div className="max-w-3xl mx-auto p-3 md:p-6 space-y-5">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>

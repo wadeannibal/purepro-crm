@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useApp } from '../../context/AppContext'
 import { ACTIONS } from '../../context/AppReducer'
 import { Star, Copy, Check, CheckCircle, ExternalLink } from 'lucide-react'
@@ -10,8 +10,7 @@ function ReviewCard({ job, client, dispatch }) {
   const [copied, setCopied] = useState(false)
   const firstName = client?.name?.split(' ')[0] ?? 'there'
 
-  const { companyName } = getCompanySettings()
-  const [script, setScript] = useState(
+  const makeScript = (companyName) =>
     `Hi ${firstName}, it was great working with you on your recent ${job.type.toLowerCase()} project at ${job.address}!
 
 If you have a moment, we'd really appreciate it if you could leave us a Google review. It helps other homeowners find us when they need help most, and it means a lot to our small team.
@@ -21,7 +20,14 @@ ${GOOGLE_LINK_PLACEHOLDER}
 
 Thank you so much for trusting ${companyName}!
 — ${companyName}`
-  )
+
+  const [script, setScript] = useState(() => makeScript(getCompanySettings().companyName))
+
+  useEffect(() => {
+    const handler = () => setScript(makeScript(getCompanySettings().companyName))
+    window.addEventListener('company-settings-updated', handler)
+    return () => window.removeEventListener('company-settings-updated', handler)
+  }, [])
 
   const copyScript = async () => {
     try { await navigator.clipboard.writeText(script) } catch {
@@ -97,7 +103,7 @@ export default function GoogleReviewRequest() {
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="max-w-3xl mx-auto p-6 space-y-6">
+      <div className="max-w-3xl mx-auto p-3 md:p-6 space-y-6">
         {/* Info banner */}
         <div className="bg-yellow-50 border border-yellow-200 rounded-2xl px-5 py-4 flex items-start gap-3">
           <Star size={18} className="text-yellow-500 flex-shrink-0 mt-0.5" />

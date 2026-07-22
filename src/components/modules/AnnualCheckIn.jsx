@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useApp } from '../../context/AppContext'
 import { ACTIONS } from '../../context/AppReducer'
 import { RefreshCw, Copy, Check, CheckCircle, Clock } from 'lucide-react'
@@ -18,8 +18,7 @@ function CheckInCard({ job, client, dispatch }) {
   const firstName = client?.name?.split(' ')[0] ?? 'there'
   const over = daysOverdue(job)
 
-  const { companyName } = getCompanySettings()
-  const [script, setScript] = useState(
+  const makeScript = (companyName) =>
     `Hi ${firstName}, it's been about a year since ${companyName} completed your ${job.type.toLowerCase()} project at ${job.address}. We just wanted to check in and make sure everything is still looking great!
 
 If you've noticed anything unusual — moisture, odors, or any concerns at all — please don't hesitate to reach out. Many issues are easiest and most affordable to address when caught early.
@@ -28,7 +27,14 @@ We also wanted to let you know we're still here for anything you need. If you ha
 
 Thanks again for trusting us with your home!
 — ${companyName}`
-  )
+
+  const [script, setScript] = useState(() => makeScript(getCompanySettings().companyName))
+
+  useEffect(() => {
+    const handler = () => setScript(makeScript(getCompanySettings().companyName))
+    window.addEventListener('company-settings-updated', handler)
+    return () => window.removeEventListener('company-settings-updated', handler)
+  }, [])
 
   const copyScript = async () => {
     try { await navigator.clipboard.writeText(script) } catch {
@@ -117,9 +123,9 @@ export default function AnnualCheckIn() {
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="max-w-3xl mx-auto p-6 space-y-6">
+      <div className="max-w-3xl mx-auto p-3 md:p-6 space-y-6">
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="bg-white border border-gray-200 rounded-2xl p-5">
             <div className="text-xs text-gray-500 mb-1">Due Now</div>
             <div className="text-3xl font-bold text-red-600">{duePending.length}</div>

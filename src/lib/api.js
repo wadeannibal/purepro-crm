@@ -89,7 +89,8 @@ export async function loadFromSupabase() {
     materialItems: e.material_items ?? [],
     laborItems: e.labor_items ?? [],
     xactimateItems: e.xactimate_items ?? [],
-    overheadMarginPct: e.overhead_margin_pct ?? 20,
+    flatFeeItems: e.flat_fee_items ?? [],
+    overheadMarginPct: e.overhead_margin_pct ?? 25,
     taxPct: e.tax_pct ?? 0,
     grandTotal: e.grand_total ?? 0,
     followUpCount: e.follow_up_count ?? 0,
@@ -233,7 +234,10 @@ export async function loadFromSupabase() {
 
     // Phase 4 — partners
     partners: (partnerRows ?? []).map(p => ({
-      id: p.id, name: p.name, company: p.company ?? '', type: p.type ?? '',
+      id: p.id, name: p.name, company: p.company ?? '',
+      partnerType: p.type ?? '',
+      temperature: p.temperature ?? 'cold',
+      priority: p.priority ?? 3,
       phone: p.phone ?? '', email: p.email ?? '', notes: p.notes ?? '',
       lastContactDate: p.last_contact_date,
       contactHistory: p.contact_history ?? [],
@@ -425,7 +429,25 @@ export async function syncAction(action, preState) {
         break
       case ACTIONS.DELETE_CLIENT: {
         const linkedJobIds = (preState.jobs ?? []).filter(j => j.clientId === payload.id).map(j => j.id)
-        if (linkedJobIds.length > 0) await supabase.from('jobs').delete().in('id', linkedJobIds)
+        if (linkedJobIds.length > 0) {
+          await Promise.all([
+            supabase.from('job_notes').delete().in('job_id', linkedJobIds),
+            supabase.from('job_photos').delete().in('job_id', linkedJobIds),
+            supabase.from('job_documents').delete().in('job_id', linkedJobIds),
+            supabase.from('job_waivers').delete().in('job_id', linkedJobIds),
+            supabase.from('job_time_logs').delete().in('job_id', linkedJobIds),
+            supabase.from('job_estimates').delete().in('job_id', linkedJobIds),
+            supabase.from('job_invoices').delete().in('job_id', linkedJobIds),
+            supabase.from('job_insurance').delete().in('job_id', linkedJobIds),
+            supabase.from('job_subcontractors').delete().in('job_id', linkedJobIds),
+            supabase.from('job_expenses').delete().in('job_id', linkedJobIds),
+            supabase.from('events').delete().in('job_id', linkedJobIds),
+            supabase.from('signature_requests').delete().in('job_id', linkedJobIds),
+            supabase.from('equipment').update({ job_id: null }).in('job_id', linkedJobIds),
+          ])
+          await supabase.from('jobs').delete().in('id', linkedJobIds)
+        }
+        await supabase.from('communications').delete().eq('client_id', payload.id)
         await supabase.from('clients').delete().eq('id', payload.id)
         break
       }
@@ -460,8 +482,8 @@ export async function syncAction(action, preState) {
         break
       case ACTIONS.UPDATE_JOB:
         await supabase.from('jobs').update({
-          ...(payload.type && { type: payload.type }),
-          ...(payload.stage && { stage: payload.stage }),
+          ...(payload.type !== undefined && { type: payload.type }),
+          ...(payload.stage !== undefined && { stage: payload.stage }),
           ...(payload.revenue !== undefined && { revenue: payload.revenue }),
           ...(payload.address !== undefined && { address: payload.address }),
           ...(payload.description !== undefined && { description: payload.description }),
@@ -475,12 +497,32 @@ export async function syncAction(action, preState) {
           updated_at: ts(),
         }).eq('id', payload.id)
         break
-      case ACTIONS.DELETE_JOB:
-        await supabase.from('jobs').delete().eq('id', payload.id)
+      case ACTIONS.DELETE_JOB: {
+        const jobId = payload.id
+        await Promise.all([
+          supabase.from('job_notes').delete().eq('job_id', jobId),
+          supabase.from('job_photos').delete().eq('job_id', jobId),
+          supabase.from('job_documents').delete().eq('job_id', jobId),
+          supabase.from('job_waivers').delete().eq('job_id', jobId),
+          supabase.from('job_time_logs').delete().eq('job_id', jobId),
+          supabase.from('job_estimates').delete().eq('job_id', jobId),
+          supabase.from('job_invoices').delete().eq('job_id', jobId),
+          supabase.from('job_insurance').delete().eq('job_id', jobId),
+          supabase.from('job_subcontractors').delete().eq('job_id', jobId),
+          supabase.from('job_expenses').delete().eq('job_id', jobId),
+          supabase.from('events').delete().eq('job_id', jobId),
+          supabase.from('signature_requests').delete().eq('job_id', jobId),
+          supabase.from('equipment').update({ job_id: null }).eq('job_id', jobId),
+        ])
+        await supabase.from('jobs').delete().eq('id', jobId)
         break
+      }
 
       case ACTIONS.ADD_JOB_NOTE:
         await supabase.from('job_notes').insert({ id: payload._id, job_id: payload.jobId, text: payload.text, created_at: payload._createdAt })
+        break
+      case ACTIONS.DELETE_JOB_NOTE:
+        await supabase.from('job_notes').delete().eq('id', payload.noteId)
         break
 
       case ACTIONS.UPDATE_CHECKLIST_ITEM: {
@@ -546,10 +588,11 @@ export async function syncAction(action, preState) {
           sqft_items: est.sqftItems ?? [], equipment_items: est.equipmentItems ?? [],
           lab_items: est.labItems ?? [], material_items: est.materialItems ?? [],
           labor_items: est.laborItems ?? [], xactimate_items: est.xactimateItems ?? [],
-          overhead_margin_pct: est.overheadMarginPct ?? 20, tax_pct: est.taxPct ?? 0,
+          flat_fee_items: est.flatFeeItems ?? [],
+          overhead_margin_pct: est.overheadMarginPct ?? 25, tax_pct: est.taxPct ?? 0,
           grand_total: est.grandTotal ?? 0,
           follow_up_count: est.followUpCount ?? 0, last_follow_up_at: est.lastFollowUpAt || null,
-          updated_at: ts(),
+          created_at: est.createdAt || ts(), updated_at: ts(),
         })
         await supabase.from('jobs').update({ revenue: est.grandTotal ?? 0, updated_at: ts() }).eq('id', payload.jobId)
         break
@@ -592,7 +635,7 @@ export async function syncAction(action, preState) {
         await supabase.from('job_invoices').upsert({
           id: inv.id, job_id: payload.jobId, estimate_id: inv.estimateId || null,
           status: inv.status, due_date: inv.dueDate || null,
-          amount_total: inv.amountTotal ?? 0, payments: inv.payments ?? [], updated_at: ts(),
+          amount_total: inv.amountTotal ?? 0, payments: inv.payments ?? [], created_at: inv.createdAt || ts(), updated_at: ts(),
         })
         break
       }
@@ -631,7 +674,7 @@ export async function syncAction(action, preState) {
 
       // ── Phase 2: Subcontractors ───────────────────────────────────────────
       case ACTIONS.ADD_SUBCONTRACTOR:
-        await supabase.from('job_subcontractors').insert({ id: payload.sub.id, job_id: payload.jobId, name: payload.sub.name, trade: payload.sub.trade || null, quoted_amount: payload.sub.quotedAmount || 0, actual_amount: payload.sub.actualAmount || 0, payment_status: payload.sub.paymentStatus || 'unpaid', notes: payload.sub.notes || null })
+        await supabase.from('job_subcontractors').insert({ id: payload.sub.id, job_id: payload.jobId, name: payload.sub.name, trade: payload.sub.trade || null, quoted_amount: payload.sub.quotedAmount || 0, actual_amount: payload.sub.actualAmount || 0, payment_status: payload.sub.paymentStatus || 'unpaid', notes: payload.sub.notes || null, created_at: payload.sub.createdAt ?? ts() })
         break
       case ACTIONS.UPDATE_SUBCONTRACTOR:
         await supabase.from('job_subcontractors').update({ name: payload.sub.name, trade: payload.sub.trade || null, quoted_amount: payload.sub.quotedAmount || 0, actual_amount: payload.sub.actualAmount || 0, payment_status: payload.sub.paymentStatus || 'unpaid', notes: payload.sub.notes || null }).eq('id', payload.sub.id)
@@ -642,7 +685,7 @@ export async function syncAction(action, preState) {
 
       // ── Phase 2: Expenses ─────────────────────────────────────────────────
       case ACTIONS.ADD_EXPENSE:
-        await supabase.from('job_expenses').insert({ id: payload.expense.id, job_id: payload.jobId, date: payload.expense.date, category: payload.expense.category, amount: payload.expense.amount, notes: payload.expense.notes || null })
+        await supabase.from('job_expenses').insert({ id: payload.expense.id, job_id: payload.jobId, date: payload.expense.date, category: payload.expense.category, amount: payload.expense.amount, notes: payload.expense.notes || null, created_at: payload.expense.createdAt ?? ts() })
         break
       case ACTIONS.UPDATE_EXPENSE:
         await supabase.from('job_expenses').update({ date: payload.expense.date, category: payload.expense.category, amount: payload.expense.amount, notes: payload.expense.notes || null }).eq('id', payload.expense.id)
@@ -653,7 +696,7 @@ export async function syncAction(action, preState) {
 
       // ── Phase 2: Overhead ─────────────────────────────────────────────────
       case ACTIONS.ADD_OVERHEAD_ITEM:
-        await supabase.from('overhead_items').insert({ id: payload.id, name: payload.name, amount: payload.amount })
+        await supabase.from('overhead_items').insert({ id: payload.id, name: payload.name, amount: payload.amount, created_at: payload.createdAt ?? ts() })
         break
       case ACTIONS.UPDATE_OVERHEAD_ITEM:
         await supabase.from('overhead_items').update({ name: payload.name, amount: payload.amount }).eq('id', payload.id)
@@ -677,7 +720,8 @@ export async function syncAction(action, preState) {
         await supabase.from('proposal_templates').upsert({
           id: payload.id, name: payload.name, job_type: payload.jobType,
           description: payload.description ?? '', scope_notes: payload.scopeNotes ?? '',
-          terms_notes: payload.termsNotes ?? '', line_items: payload.lineItems ?? [], updated_at: ts(),
+          terms_notes: payload.termsNotes ?? '', line_items: payload.lineItems ?? [],
+          created_at: payload.createdAt ?? ts(), updated_at: ts(),
         })
         break
       case ACTIONS.DELETE_TEMPLATE:
@@ -836,13 +880,16 @@ export async function syncAction(action, preState) {
       case ACTIONS.ADD_PARTNER:
         await supabase.from('partners').insert({
           id: payload.id, name: payload.name, company: payload.company ?? '',
-          type: payload.type ?? '', phone: payload.phone ?? null, email: payload.email ?? null,
+          type: payload.partnerType ?? '', temperature: payload.temperature ?? 'cold',
+          priority: payload.priority ?? 3,
+          phone: payload.phone ?? null, email: payload.email ?? null,
           notes: payload.notes ?? null, contact_history: [], deals: [], created_at: payload.createdAt ?? ts(),
         })
         break
       case ACTIONS.UPDATE_PARTNER:
         await supabase.from('partners').update({
-          name: payload.name, company: payload.company ?? '', type: payload.type ?? '',
+          name: payload.name, company: payload.company ?? '', type: payload.partnerType ?? '',
+          temperature: payload.temperature ?? 'cold', priority: payload.priority ?? 3,
           phone: payload.phone ?? null, email: payload.email ?? null, notes: payload.notes ?? null,
         }).eq('id', payload.id)
         break

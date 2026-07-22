@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { useApp } from '../../context/AppContext'
 import { Home, AlertCircle, CalendarDays, TrendingUp, Users, Clock, Zap, Package, BadgeCheck, ChevronRight } from 'lucide-react'
 
-const JOB_STAGES = ['Lead', 'Inspection', 'Estimate Sent', 'Booked', 'Active', 'Complete', 'Invoiced', 'Closed', 'Lost']
+const JOB_STAGES = ['Lead', 'Inspection', 'Estimate Sent', 'Approved', 'Remediation', 'Post-Test', 'Invoiced', 'Closed', 'Lost']
 
 function fmtMoney(n) {
   if (!n) return '$0'
@@ -102,7 +102,7 @@ export default function OperationsDashboard({ navigateTo }) {
         type: 'invoice',
         priority: 3,
         label: `${overdueInvoices.length} invoice${overdueInvoices.length !== 1 ? 's' : ''} past due`,
-        detail: fmtMoney(overdueInvoices.reduce((s, j) => s + Number(j.invoice?.total ?? 0), 0)) + ' outstanding',
+        detail: fmtMoney(overdueInvoices.reduce((s, j) => s + Number(j.invoice?.amountTotal ?? 0), 0)) + ' outstanding',
         action: 'invoicing',
         urgency: 'high',
       })
@@ -178,7 +178,7 @@ export default function OperationsDashboard({ navigateTo }) {
   const monthlyRevenue = useMemo(() => {
     return jobs
       .filter(j => j.invoice?.status === 'Paid' && inMonth(j.invoice?.paidAt ?? j.invoice?.updatedAt))
-      .reduce((s, j) => s + Number(j.invoice?.total ?? j.estimate?.total ?? 0), 0)
+      .reduce((s, j) => s + Number(j.invoice?.amountTotal ?? j.estimate?.grandTotal ?? j.revenue ?? 0), 0)
   }, [jobs])
 
   // Also count closed jobs this month
@@ -216,7 +216,7 @@ export default function OperationsDashboard({ navigateTo }) {
       if (j.estimate?.sentAt && new Date(j.estimate.sentAt) > cutoff)
         items.push({ date: j.estimate.sentAt, label: `Estimate sent — ${name}`, icon: 'estimate', view: 'estimator' })
       if (j.invoice?.paidAt && new Date(j.invoice.paidAt) > cutoff)
-        items.push({ date: j.invoice.paidAt, label: `Invoice paid — ${name} (${fmtMoney(j.invoice.total)})`, icon: 'paid', view: 'invoicing' })
+        items.push({ date: j.invoice.paidAt, label: `Invoice paid — ${name} (${fmtMoney(j.invoice.amountTotal)})`, icon: 'paid', view: 'invoicing' })
       if (j.survey?.completedAt && new Date(j.survey.completedAt) > cutoff)
         items.push({ date: j.survey.completedAt, label: `Survey completed — ${name} (${j.survey.stars ?? '?'}★)`, icon: 'survey', view: 'survey' })
     })
@@ -230,7 +230,7 @@ export default function OperationsDashboard({ navigateTo }) {
 
     events.forEach(e => {
       if (e.createdAt && new Date(e.createdAt) > cutoff)
-        items.push({ date: e.createdAt, label: `Appointment scheduled — ${e.title ?? 'Appointment'}`, icon: 'appt', view: 'scheduler' })
+        items.push({ date: e.createdAt, label: `Appointment scheduled — ${e.eventType ?? 'Appointment'}`, icon: 'appt', view: 'scheduler' })
     })
 
     return items.sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 10)
@@ -243,7 +243,7 @@ export default function OperationsDashboard({ navigateTo }) {
 
   // ── Low stock items ───────────────────────────────────────
   const lowStockItems = useMemo(() =>
-    inventory.filter(i => Number(i.qty) <= Number(i.threshold)),
+    inventory.filter(i => i.threshold != null && Number(i.qty) <= Number(i.threshold)),
   [inventory])
 
   // ── Speed to Lead (avg days from lead to first contact) ──
@@ -270,12 +270,12 @@ export default function OperationsDashboard({ navigateTo }) {
       const daysAway = daysUntil(j.invoice.dueDate)
       if (daysAway === null || daysAway < 0 || daysAway > 55) return
       const wk = Math.floor(daysAway / 7)
-      weeks[wk].invoiced += Number(j.invoice.total ?? 0)
+      weeks[wk].invoiced += Number(j.invoice.amountTotal ?? 0)
     })
 
-    // Pipeline: booked/active jobs evenly spread over next 4 weeks
-    const pipelineJobs = jobs.filter(j => ['Booked', 'Active', 'Complete'].includes(j.stage))
-    const pipelineTotal = pipelineJobs.reduce((s, j) => s + Number(j.estimate?.total ?? j.amount ?? 0), 0)
+    // Pipeline: in-progress jobs evenly spread over next 4 weeks
+    const pipelineJobs = jobs.filter(j => ['Approved', 'Remediation', 'Post-Test'].includes(j.stage))
+    const pipelineTotal = pipelineJobs.reduce((s, j) => s + Number(j.estimate?.grandTotal ?? j.revenue ?? 0), 0)
     const perWeek = pipelineTotal / 4
     for (let i = 0; i < 4; i++) weeks[i].pipeline += perWeek
 
@@ -288,10 +288,10 @@ export default function OperationsDashboard({ navigateTo }) {
 
   return (
     <div className="h-full overflow-y-auto bg-gray-50">
-      <div className="max-w-5xl mx-auto p-5 space-y-5">
+      <div className="max-w-5xl mx-auto p-3 md:p-5 space-y-5">
 
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
               <Home size={18} className="text-red-500" /> Operations Dashboard
@@ -316,9 +316,9 @@ export default function OperationsDashboard({ navigateTo }) {
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {/* LEFT COLUMN */}
-          <div className="col-span-2 space-y-5">
+          <div className="md:col-span-2 space-y-5">
 
             {/* Top 3 Priorities */}
             <div className="bg-white border border-gray-200 rounded-2xl p-5">
@@ -350,16 +350,16 @@ export default function OperationsDashboard({ navigateTo }) {
                 <h3 className="text-sm font-bold text-gray-800">Active Jobs by Stage</h3>
                 <button onClick={() => navigateTo?.('pipeline')} className="text-xs text-red-600 font-semibold hover:underline">View Pipeline</button>
               </div>
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                 {activeStages.map(stage => {
                   const count = stageMap[stage] ?? 0
                   const colors = {
                     Lead: 'bg-blue-50 text-blue-700',
                     Inspection: 'bg-indigo-50 text-indigo-700',
                     'Estimate Sent': 'bg-yellow-50 text-yellow-800',
-                    Booked: 'bg-orange-50 text-orange-700',
-                    Active: 'bg-red-50 text-red-700',
-                    Complete: 'bg-teal-50 text-teal-700',
+                    Approved: 'bg-orange-50 text-orange-700',
+                    Remediation: 'bg-red-50 text-red-700',
+                    'Post-Test': 'bg-teal-50 text-teal-700',
                     Invoiced: 'bg-purple-50 text-purple-700',
                   }
                   return (

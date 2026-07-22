@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useApp } from '../../context/AppContext'
 import { ACTIONS } from '../../context/AppReducer'
 import { BellRing, Copy, Check, CheckCircle, Clock, AlertCircle, CalendarPlus } from 'lucide-react'
@@ -46,6 +46,9 @@ function EventCard({ event, job, client, type }) {
   const [editConfirm, setEditConfirm] = useState(buildConfirmation(event, job, client))
   const [editRemind, setEditRemind] = useState(buildReminder(event, job, client))
 
+  useEffect(() => { setEditConfirm(buildConfirmation(event, job, client)) }, [event.id, event.eventType, event.startTime, event.date, event.endTime])
+  useEffect(() => { setEditRemind(buildReminder(event, job, client)) }, [event.id, event.eventType, event.startTime, event.date, event.endTime])
+
   const copy = async (text, which) => {
     try { await navigator.clipboard.writeText(text) } catch {
       const el = document.createElement('textarea')
@@ -59,7 +62,7 @@ function EventCard({ event, job, client, type }) {
   const markConfirm = () => dispatch({ type: ACTIONS.MARK_CONFIRMATION_SENT, payload: { eventId: event.id } })
   const markRemind = () => dispatch({ type: ACTIONS.MARK_REMINDER_SENT, payload: { eventId: event.id } })
 
-  const daysUntil = Math.ceil((new Date(event.date) - new Date().setHours(0,0,0,0)) / 86400000)
+  const daysUntil = Math.ceil((new Date(event.date + 'T00:00') - new Date().setHours(0,0,0,0)) / 86400000)
 
   const calendarUrl = (() => {
     const d = event.date.replace(/-/g, '')
@@ -67,8 +70,14 @@ function EventCard({ event, job, client, type }) {
     if (event.startTime) {
       const [h, m] = event.startTime.split(':')
       const start = `${d}T${h}${m}00`
-      const endH = String((parseInt(h) + 1) % 24).padStart(2, '0')
-      const end = `${d}T${endH}${m}00`
+      let end
+      if (event.endTime) {
+        const [eh, em] = event.endTime.split(':')
+        end = `${d}T${eh}${em}00`
+      } else {
+        const endH = String((parseInt(h) + 1) % 24).padStart(2, '0')
+        end = `${d}T${endH}${m}00`
+      }
       dates = `${start}/${end}`
     } else {
       const next = new Date(event.date + 'T12:00')
@@ -83,9 +92,9 @@ function EventCard({ event, job, client, type }) {
   return (
     <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-        <div>
-          <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-start gap-2 px-3 md:px-5 py-3 md:py-4 border-b border-gray-100">
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="font-semibold text-gray-900">{event.eventType}</span>
             {client && <span className="text-gray-500">—</span>}
             {client && <span className="text-gray-700">{client.name}</span>}
@@ -113,7 +122,7 @@ function EventCard({ event, job, client, type }) {
         </div>
       </div>
 
-      <div className="p-5 space-y-5">
+      <div className="p-3 md:p-5 space-y-4 md:space-y-5">
         {/* Confirmation message */}
         <div>
           <div className="flex items-center justify-between mb-2">
@@ -213,11 +222,11 @@ export default function AppointmentConfirmations({ navigateTo }) {
     .sort((a, b) => a.date.localeCompare(b.date))
 
   const needsAction = upcoming.filter(e => !e.confirmationSent || (
-    Math.ceil((new Date(e.date) - today) / 86400000) <= 1 && !e.reminderSent
+    Math.ceil((new Date(e.date + 'T00:00') - today) / 86400000) <= 1 && !e.reminderSent
   ))
 
   const allDone = upcoming.filter(e =>
-    e.confirmationSent && (Math.ceil((new Date(e.date) - today) / 86400000) > 1 || e.reminderSent)
+    e.confirmationSent && (Math.ceil((new Date(e.date + 'T00:00') - today) / 86400000) > 1 || e.reminderSent)
   )
 
   const getJobClient = (event) => {
@@ -228,9 +237,9 @@ export default function AppointmentConfirmations({ navigateTo }) {
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="max-w-3xl mx-auto p-6 space-y-6">
+      <div className="max-w-3xl mx-auto p-3 md:p-6 space-y-6">
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
           <div className="bg-white border border-gray-200 rounded-2xl p-5">
             <div className="text-xs text-gray-500 mb-1">Upcoming</div>
             <div className="text-3xl font-bold text-gray-900">{upcoming.length}</div>
@@ -283,7 +292,7 @@ export default function AppointmentConfirmations({ navigateTo }) {
                   {allDone.map(event => {
                     const { job, client } = getJobClient(event)
                     return (
-                      <div key={event.id} className="bg-white border border-gray-200 rounded-xl px-5 py-3 flex items-center gap-3 opacity-70">
+                      <div key={event.id} className="bg-white border border-gray-200 rounded-xl px-3 md:px-5 py-3 flex flex-wrap items-center gap-2 md:gap-3 opacity-70">
                         <CheckCircle size={16} className="text-green-500 flex-shrink-0" />
                         <div className="flex-1 min-w-0">
                           <span className="text-sm font-medium text-gray-700">{event.eventType}</span>

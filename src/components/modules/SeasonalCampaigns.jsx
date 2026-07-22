@@ -92,7 +92,7 @@ function TacticCard({ tactic, colors }) {
           </button>
           <button onClick={() => setMarked(true)}
             className="flex items-center gap-1.5 bg-gray-900 hover:bg-gray-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors">
-            <CheckCircle size={12} /> Mark as Sent
+            <CheckCircle size={12} /> Mark as Sent (this session)
           </button>
         </div>
       </div>
@@ -107,7 +107,7 @@ export default function SeasonalCampaigns() {
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="max-w-3xl mx-auto p-6 space-y-5">
+      <div className="max-w-3xl mx-auto p-3 md:p-6 space-y-5">
         <div>
           <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
             <CalendarRange size={18} className="text-red-500" /> Seasonal Campaigns
@@ -116,7 +116,7 @@ export default function SeasonalCampaigns() {
         </div>
 
         {/* Season tabs */}
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {CAMPAIGNS.map(c => {
             const col = SEASON_COLORS[c.color]
             return (

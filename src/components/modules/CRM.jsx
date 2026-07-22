@@ -3,7 +3,7 @@ import { useApp } from '../../context/AppContext'
 import { ACTIONS } from '../../context/AppReducer'
 import { CLIENT_TYPES, formatDate, formatCurrency, clientTypeColor, jobTypeColor, stageColor } from '../../utils/helpers'
 import Modal from '../shared/Modal'
-import { Plus, Search, Star, Phone, Mail, MapPin, Briefcase, X, Edit2, Trash2 } from 'lucide-react'
+import { Plus, Search, Star, Phone, Mail, MapPin, Briefcase, X, Edit2, Trash2, ChevronLeft } from 'lucide-react'
 
 const BLANK = { name: '', type: 'Homeowner', email: '', phone: '', address: '', notes: '', isVIP: false }
 
@@ -47,7 +47,12 @@ function ClientCard({ client, jobs, onClick, onToggleVIP }) {
 function ClientDetail({ client, jobs, onClose, onEdit, onDelete, navigateTo }) {
   const clientJobs = jobs.filter(j => j.clientId === client.id)
   return (
-    <div className="bg-white border-l border-gray-200 w-80 flex-shrink-0 flex flex-col h-full">
+    <div className="bg-white border-l border-gray-200 w-full md:w-80 flex-shrink-0 flex flex-col h-full">
+      <div className="md:hidden flex items-center gap-2 px-5 py-3 border-b border-gray-100 flex-shrink-0">
+        <button onClick={onClose} className="flex items-center gap-1 text-red-600 font-semibold text-sm">
+          <ChevronLeft size={16} /> Back
+        </button>
+      </div>
       <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
         <div>
           <div className="flex items-center gap-1.5">
@@ -146,7 +151,9 @@ export default function CRM({ navigateTo }) {
       dispatch({ type: ACTIONS.UPDATE_CLIENT, payload: { ...form, id: editing } })
       setSelected(editing)
     } else {
-      dispatch({ type: ACTIONS.ADD_CLIENT, payload: form })
+      const newId = crypto.randomUUID()
+      dispatch({ type: ACTIONS.ADD_CLIENT, payload: { ...form, id: newId } })
+      setSelected(newId)
     }
     setShowModal(false)
   }
@@ -178,9 +185,9 @@ export default function CRM({ navigateTo }) {
   return (
     <div className="h-full flex overflow-hidden">
       {/* Main list */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className={`${selected ? 'hidden md:flex' : 'flex'} flex-1 flex-col overflow-hidden`}>
         {/* Toolbar */}
-        <div className="flex flex-wrap items-center gap-2.5 px-6 py-3 bg-white border-b border-gray-200 flex-shrink-0">
+        <div className="flex flex-wrap items-center gap-2.5 px-3 md:px-6 py-3 bg-white border-b border-gray-200 flex-shrink-0">
           <div className="relative flex-1 min-w-48">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
@@ -206,7 +213,7 @@ export default function CRM({ navigateTo }) {
         </div>
 
         {/* Grid */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-3 md:p-6">
           {filtered.length === 0 && (
             <div className="text-center py-16 text-gray-400">
               <Briefcase size={40} className="mx-auto mb-3 opacity-30" />

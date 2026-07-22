@@ -16,8 +16,8 @@ export default function BeforeAfterShowcase({ navigateTo }) {
   const jobsWithPairs = useMemo(() => {
     return (state.jobs ?? []).flatMap(job => {
       const photos = job.photos ?? []
-      const befores = photos.filter(p => p.type === 'before' || p.photoType?.toLowerCase() === 'before' || p.name?.toLowerCase().includes('before'))
-      const afters = photos.filter(p => p.type === 'after' || p.photoType?.toLowerCase() === 'after' || p.name?.toLowerCase().includes('after'))
+      const befores = photos.filter(p => p.photoType?.toLowerCase() === 'before')
+      const afters = photos.filter(p => p.photoType?.toLowerCase() === 'after')
       if (befores.length === 0 || afters.length === 0) return []
       const client = (state.clients ?? []).find(c => c.id === job.clientId)
       return [{ job, client, befores, afters }]
@@ -25,11 +25,11 @@ export default function BeforeAfterShowcase({ navigateTo }) {
   }, [state.jobs, state.clients])
 
   const filtered = showOnlyShowcase
-    ? jobsWithPairs.filter(j => showcasePhotos[j.job.id])
+    ? jobsWithPairs.filter(j => j.befores[0] && showcasePhotos[j.befores[0].id])
     : jobsWithPairs
 
-  const toggle = (jobId) => {
-    dispatch({ type: ACTIONS.TOGGLE_SHOWCASE, payload: { photoId: jobId } })
+  const toggle = (photo) => {
+    dispatch({ type: ACTIONS.TOGGLE_SHOWCASE, payload: { photoId: photo.id } })
   }
 
   const generateShowcaseText = (job, client) => {
@@ -65,7 +65,7 @@ To see more before/after results or to request a free assessment, contact ${comp
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="max-w-4xl mx-auto p-6 space-y-5">
+      <div className="max-w-4xl mx-auto p-3 md:p-6 space-y-5">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
@@ -108,7 +108,7 @@ To see more before/after results or to request a free assessment, contact ${comp
         ) : (
           <div className="space-y-4">
             {filtered.map(({ job, client, befores, afters }) => {
-              const isShowcase = !!showcasePhotos[job.id]
+              const isShowcase = !!(befores[0] && showcasePhotos[befores[0].id])
               const isCopied = copiedId === job.id
               const isSent = sentId === job.id
               return (
@@ -125,7 +125,7 @@ To see more before/after results or to request a free assessment, contact ${comp
                     <div className="flex items-center gap-2">
                       {isShowcase && <span className="text-[11px] font-bold bg-red-100 text-red-700 px-2.5 py-1 rounded-full">Showcase Ready</span>}
                       <button
-                        onClick={() => toggle(job.id)}
+                        onClick={() => toggle(befores[0])}
                         className={`p-2 rounded-xl border transition-colors ${isShowcase ? 'border-red-200 bg-red-50 text-red-500' : 'border-gray-200 text-gray-300 hover:text-yellow-500'}`}
                         title={isShowcase ? 'Remove from Showcase' : 'Mark as Showcase Ready'}>
                         {isShowcase ? <Star size={15} fill="currentColor" /> : <StarOff size={15} />}

@@ -89,15 +89,15 @@ export default function SubcontractorManagement({ selectedJobId, setSelectedJobI
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="max-w-3xl mx-auto p-6 space-y-5">
+      <div className="max-w-3xl mx-auto p-3 md:p-6 space-y-5">
         {/* Toolbar */}
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2">
           {selectedJobId && navigateTo && (
             <button onClick={() => navigateTo('jobs', { jobId: selectedJobId })} className="flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-red-600 transition-colors mr-1 flex-shrink-0">
               <ChevronLeft size={14} /> Back to Job
             </button>
           )}
-          <select value={selectedJobId} onChange={e => setSelectedJobId(e.target.value)} className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500">
+          <select value={selectedJobId} onChange={e => { setSelectedJobId(e.target.value); setEditId(null); setEditRow(null); setAdding(false) }} className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500">
             {state.jobs.map(j => {
               const c = state.clients.find(x => x.id === j.clientId)
               return <option key={j.id} value={j.id}>{j.type} — {c?.name}</option>
@@ -110,7 +110,7 @@ export default function SubcontractorManagement({ selectedJobId, setSelectedJobI
 
         {/* Totals */}
         {subs.length > 0 && (
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             <div className="bg-white border border-gray-200 rounded-xl p-4">
               <div className="text-xs text-gray-500 mb-1">Subcontractors</div>
               <div className="text-2xl font-bold text-gray-900">{subs.length}</div>
@@ -130,7 +130,7 @@ export default function SubcontractorManagement({ selectedJobId, setSelectedJobI
         {adding && (
           <div className="bg-white border border-red-200 rounded-2xl p-5 space-y-4">
             <h3 className="text-sm font-bold text-gray-900">New Subcontractor</h3>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1">Name *</label>
                 <input autoFocus value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Company or person name" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500" />
@@ -183,7 +183,7 @@ export default function SubcontractorManagement({ selectedJobId, setSelectedJobI
               <div key={sub.id} className="bg-white border border-gray-200 rounded-xl p-4">
                 {editId === sub.id ? (
                   <div className="space-y-3">
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <input value={editRow.name} onChange={e => setEditRow(r => ({ ...r, name: e.target.value }))} className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500" placeholder="Name" />
                       <select value={editRow.trade} onChange={e => setEditRow(r => ({ ...r, trade: e.target.value }))} className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500">
                         <option value="">Trade…</option>
@@ -204,7 +204,7 @@ export default function SubcontractorManagement({ selectedJobId, setSelectedJobI
                     </div>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="font-semibold text-gray-900 text-sm">{sub.name}</span>
@@ -213,7 +213,7 @@ export default function SubcontractorManagement({ selectedJobId, setSelectedJobI
                       </div>
                       {sub.notes && <p className="text-xs text-gray-500 truncate">{sub.notes}</p>}
                     </div>
-                    <div className="text-right flex-shrink-0">
+                    <div className="sm:text-right flex-shrink-0">
                       <div className="text-xs text-gray-400">Quoted / Actual</div>
                       <div className="text-sm font-semibold text-gray-900">
                         {formatCurrency(sub.quotedAmount)} / <span className={sub.actualAmount > sub.quotedAmount ? 'text-red-600' : 'text-green-700'}>{formatCurrency(sub.actualAmount)}</span>

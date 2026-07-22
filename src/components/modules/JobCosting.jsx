@@ -28,7 +28,7 @@ export default function JobCosting({ selectedJobId, setSelectedJobId, navigateTo
   const job = selectedJobId ? state.jobs.find(j => j.id === selectedJobId) : null
   const client = job ? state.clients.find(c => c.id === job.clientId) : null
 
-  if (!selectedJobId) {
+  if (!selectedJobId || !job) {
     return (
       <div className="h-full flex items-center justify-center text-gray-400">
         <div className="text-center">
@@ -60,7 +60,7 @@ export default function JobCosting({ selectedJobId, setSelectedJobId, navigateTo
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="max-w-3xl mx-auto p-6 space-y-6">
+      <div className="max-w-3xl mx-auto p-3 md:p-6 space-y-6">
         {selectedJobId && navigateTo && (
           <button onClick={() => navigateTo('jobs', { jobId: selectedJobId })} className="flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-red-600 transition-colors">
             <ChevronLeft size={14} /> Back to Job
@@ -104,7 +104,8 @@ export default function JobCosting({ selectedJobId, setSelectedJobId, navigateTo
               <div className="px-5 py-4 border-b border-gray-100">
                 <h2 className="text-sm font-bold text-gray-900">Cost Breakdown — Estimated vs Actual</h2>
               </div>
-              <table className="w-full">
+              <div className="overflow-x-auto -mx-0">
+              <table className="w-full" style={{ minWidth: '480px' }}>
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">Category</th>
@@ -146,6 +147,7 @@ export default function JobCosting({ selectedJobId, setSelectedJobId, navigateTo
                   </tr>
                 </tbody>
               </table>
+              </div>
             </div>
 
             {/* Data sources note */}

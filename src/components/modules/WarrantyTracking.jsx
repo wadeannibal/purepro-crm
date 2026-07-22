@@ -65,7 +65,7 @@ export default function WarrantyTracking({ selectedJobId, setSelectedJobId, navi
   const { state, dispatch } = useApp()
   const [view, setView] = useState('dashboard')
   const [claimForm, setClaimForm] = useState('')
-  const [warranty, setWarranty] = useState({ period: '1 Year', customMonths: '', startDate: new Date().toISOString().slice(0, 10) })
+  const [warranty, setWarranty] = useState(() => { const d = new Date(); const p = n => String(n).padStart(2, '0'); return { period: '1 Year', customMonths: '', startDate: `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}` } })
   const [showAdd, setShowAdd] = useState(false)
 
   const job = state.jobs.find(j => j.id === selectedJobId) ?? null
@@ -104,7 +104,7 @@ export default function WarrantyTracking({ selectedJobId, setSelectedJobId, navi
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="max-w-4xl mx-auto p-6 space-y-6">
+      <div className="max-w-4xl mx-auto p-3 md:p-6 space-y-6">
         {selectedJobId && navigateTo && (
           <button onClick={() => navigateTo('jobs', { jobId: selectedJobId })} className="flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-red-600 transition-colors">
             <ChevronLeft size={14} /> Back to Job
@@ -125,7 +125,7 @@ export default function WarrantyTracking({ selectedJobId, setSelectedJobId, navi
         {view === 'dashboard' ? (
           <>
             {/* Stats */}
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="bg-white border border-gray-200 rounded-2xl p-5">
                 <div className="text-xs text-gray-500 mb-1">Active Warranties</div>
                 <div className="text-3xl font-bold text-green-600">{activeWarranties.length}</div>
@@ -227,7 +227,7 @@ export default function WarrantyTracking({ selectedJobId, setSelectedJobId, navi
 
                   {showAdd && (
                     <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-4 space-y-3">
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                           <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Warranty Period</label>
                           <select value={warranty.period} onChange={e => setWarranty(w => ({ ...w, period: e.target.value }))}
@@ -263,7 +263,7 @@ export default function WarrantyTracking({ selectedJobId, setSelectedJobId, navi
 
                   {job.warranty ? (
                     <div>
-                      <div className="grid grid-cols-3 gap-4 mb-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
                         <div>
                           <div className="text-xs text-gray-400">Period</div>
                           <div className="font-semibold text-gray-900 mt-0.5">{job.warranty.label}</div>
@@ -284,7 +284,7 @@ export default function WarrantyTracking({ selectedJobId, setSelectedJobId, navi
                           </div>
                         </div>
                       </div>
-                      <button onClick={() => setShowAdd(true)} className="text-xs text-gray-400 hover:text-gray-600 underline">
+                      <button onClick={() => { setWarranty({ period: job.warranty.period ?? job.warranty.label, startDate: job.warranty.startDate, customMonths: '' }); setShowAdd(true) }} className="text-xs text-gray-400 hover:text-gray-600 underline">
                         Update warranty
                       </button>
                     </div>

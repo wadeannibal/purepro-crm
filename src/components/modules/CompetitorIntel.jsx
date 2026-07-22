@@ -72,7 +72,7 @@ function CompetitorCard({ comp, onEdit, onDelete }) {
       {open && (
         <div className="border-t border-gray-100">
           <div className="p-5 space-y-4">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {FIELDS.filter(f => comp[f.key]).map(({ key, label }) => (
                 <div key={key}>
                   <div className="text-[10px] font-bold text-gray-400 uppercase mb-0.5">{label}</div>
@@ -82,7 +82,7 @@ function CompetitorCard({ comp, onEdit, onDelete }) {
             </div>
 
             {(comp.strengths || comp.weaknesses) && (
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {comp.strengths && (
                   <div>
                     <div className="text-[10px] font-bold text-green-600 uppercase mb-1">Their Strengths</div>
@@ -133,7 +133,7 @@ function CompetitorForm({ initial, onSave, onCancel }) {
   const [form, setForm] = useState(initial ?? BLANK)
   return (
     <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5 space-y-3">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {[
           { key: 'name', label: 'Competitor Name', full: true },
           { key: 'website', label: 'Website' },
@@ -175,7 +175,9 @@ export default function CompetitorIntel() {
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState(null)
 
-  const competitors = state.competitors?.length > 0 ? state.competitors : DEFAULT_COMPETITORS
+  const realCompetitors = state.competitors ?? []
+  const showSeeds = !state.competitors
+  const competitors = showSeeds ? DEFAULT_COMPETITORS : realCompetitors
 
   const handleSave = (form) => {
     if (!form.name) return
@@ -197,7 +199,7 @@ export default function CompetitorIntel() {
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="max-w-3xl mx-auto p-6 space-y-5">
+      <div className="max-w-3xl mx-auto p-3 md:p-6 space-y-5">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
@@ -228,6 +230,12 @@ export default function CompetitorIntel() {
               onDelete={() => { if (window.confirm(`Delete ${c.name}?`)) dispatch({ type: ACTIONS.DELETE_COMPETITOR, payload: { id: c.id } }) }}
             />
           ))}
+          {!showSeeds && competitors.length === 0 && (
+            <div className="text-center py-12 text-gray-400">
+              <Swords size={36} className="mx-auto mb-3 opacity-30" />
+              <p className="text-sm font-medium">No competitors added yet</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

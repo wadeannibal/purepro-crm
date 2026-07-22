@@ -49,6 +49,7 @@ export default function Settings() {
   }
 
   const save = () => {
+    if (!form.companyName?.trim()) { alert('Company name is required.'); return }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(form))
     window.dispatchEvent(new Event('company-settings-updated'))
     supabase.from('company_settings').upsert({
@@ -69,7 +70,7 @@ export default function Settings() {
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="max-w-2xl mx-auto p-6 space-y-6">
+      <div className="max-w-2xl mx-auto p-3 md:p-6 space-y-6">
         {/* Header */}
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-gray-900 rounded-xl flex items-center justify-center flex-shrink-0">
@@ -82,7 +83,7 @@ export default function Settings() {
         </div>
 
         {/* Logo */}
-        <div className="bg-white border border-gray-200 rounded-2xl p-6 space-y-4">
+        <div className="bg-white border border-gray-200 rounded-2xl p-3 md:p-6 space-y-4">
           <div className="flex items-center gap-2 mb-1">
             <span className="text-xs font-bold text-gray-400 uppercase tracking-wide">Company Logo</span>
           </div>
@@ -115,7 +116,7 @@ export default function Settings() {
         </div>
 
         {/* Form */}
-        <div className="bg-white border border-gray-200 rounded-2xl p-6 space-y-5">
+        <div className="bg-white border border-gray-200 rounded-2xl p-3 md:p-6 space-y-5">
           <div className="flex items-center gap-2 mb-1">
             <Building2 size={15} className="text-gray-400" />
             <span className="text-xs font-bold text-gray-400 uppercase tracking-wide">Company Information</span>
@@ -145,7 +146,7 @@ export default function Settings() {
               <p className="text-xs text-gray-400 mt-1">Used in outreach scripts, follow-ups, and AI content sign-offs.</p>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="text-xs font-bold text-gray-600 uppercase tracking-wide mb-1.5 block">Phone</label>
                 <input
@@ -168,7 +169,7 @@ export default function Settings() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="text-xs font-bold text-gray-600 uppercase tracking-wide mb-1.5 block">City / Service Area</label>
                 <input
@@ -216,7 +217,7 @@ export default function Settings() {
         </div>
 
         {/* Sign out */}
-        <div className="bg-white border border-gray-200 rounded-2xl p-6 flex items-center justify-between">
+        <div className="bg-white border border-gray-200 rounded-2xl p-3 md:p-6 flex items-center justify-between">
           <div>
             <div className="text-sm font-semibold text-gray-900">Sign Out</div>
             <div className="text-xs text-gray-400 mt-0.5">You'll be returned to the login screen</div>

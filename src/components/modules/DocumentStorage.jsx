@@ -19,13 +19,12 @@ export default function DocumentStorage({ selectedJobId, setSelectedJobId, navig
   const { state, dispatch } = useApp()
   const fileRef = useRef()
   const [uploading, setUploading] = useState(false)
+  const [docType, setDocType] = useState('Other')
 
   const job = selectedJobId ? state.jobs.find(j => j.id === selectedJobId) : null
   const docs = job?.documents ?? []
 
   const handleFiles = async (files) => {
-    const input = document.getElementById('doc-type-select')
-    const docType = input?.value ?? 'Other'
     setUploading(true)
     try {
       for (const file of Array.from(files)) {
@@ -39,6 +38,7 @@ export default function DocumentStorage({ selectedJobId, setSelectedJobId, navig
       alert('Upload failed: ' + err.message)
     } finally {
       setUploading(false)
+      if (fileRef.current) fileRef.current.value = ''
     }
   }
 
@@ -46,7 +46,9 @@ export default function DocumentStorage({ selectedJobId, setSelectedJobId, navig
     const a = document.createElement('a')
     a.href = doc.data
     a.download = doc.name
+    document.body.appendChild(a)
     a.click()
+    document.body.removeChild(a)
   }
 
   if (!selectedJobId) {
@@ -89,8 +91,8 @@ export default function DocumentStorage({ selectedJobId, setSelectedJobId, navig
 
         <div className="flex items-center gap-2 ml-auto">
           <select
-            id="doc-type-select"
-            defaultValue="Other"
+            value={docType}
+            onChange={e => setDocType(e.target.value)}
             className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
           >
             {DOC_TYPES.map(t => <option key={t}>{t}</option>)}
@@ -107,7 +109,7 @@ export default function DocumentStorage({ selectedJobId, setSelectedJobId, navig
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-3 md:p-6">
         {docs.length === 0 ? (
           <div className="text-center py-16 text-gray-400">
             <Folder size={40} className="mx-auto mb-3 opacity-20" />
@@ -130,7 +132,7 @@ export default function DocumentStorage({ selectedJobId, setSelectedJobId, navig
                     <span className="text-[11px] text-gray-400">{formatDate(doc.createdAt)}</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                   <button onClick={() => download(doc)} className="p-1.5 rounded-lg hover:bg-blue-50 text-gray-400 hover:text-blue-600 transition-colors"><Download size={15} /></button>
                   <button
                     onClick={() => { if (!window.confirm('Delete this document?')) return; dispatch({ type: ACTIONS.DELETE_DOCUMENT, payload: { jobId: selectedJobId, docId: doc.id } }) }}

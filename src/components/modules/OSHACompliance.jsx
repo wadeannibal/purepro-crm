@@ -42,7 +42,7 @@ export default function OSHACompliance({ selectedJobId, setSelectedJobId, naviga
       </div>
 
       <div className="flex-1 overflow-y-auto p-6">
-        {!selectedJobId ? (
+        {!selectedJobId || !job ? (
           <div className="text-center py-16 text-gray-400">
             <ShieldCheck size={40} className="mx-auto mb-3 opacity-20" />
             <p className="font-medium text-sm">Select a job to manage OSHA compliance</p>

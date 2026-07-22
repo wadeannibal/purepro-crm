@@ -79,7 +79,8 @@ export const formatCurrency = (n) =>
 
 export const formatDate = (iso) => {
   if (!iso) return '—'
-  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  const s = typeof iso === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(iso) ? iso + 'T12:00:00' : iso
+  return new Date(s).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
 export const formatDateTime = (iso) => {
@@ -160,7 +161,7 @@ export const computeEstimateTotals = (estimate) => {
   }
   const discountAmt = subtotal * ((estimate.discountPct ?? 0) / 100)
   const afterDiscount = subtotal - discountAmt
-  const margin = afterDiscount * ((estimate.overheadMarginPct ?? 0) / 100)
+  const margin = afterDiscount * ((estimate.overheadMarginPct ?? 25) / 100)
   const afterMargin = afterDiscount + margin
   const tax = afterMargin * ((estimate.taxPct ?? 0) / 100)
   const grandTotal = afterMargin + tax
@@ -222,8 +223,9 @@ export const LOSS_REASONS = [
 ]
 
 export const PARTNER_TYPES = [
-  'Plumber', 'Water Mitigation Crew', 'Real Estate Agent', 'Insurance Adjuster',
+  'Plumber', 'Water Mitigation Crew', 'Restoration Company', 'Real Estate Agent', 'Insurance Adjuster',
   'Public Adjuster', 'Property Manager', 'Functional Medicine / CIRS Doctor',
+  'IEP / Mold Testing', 'Asbestos Inspector', 'Other',
 ]
 
 export const STAGE_CLOSE_DAYS = {
