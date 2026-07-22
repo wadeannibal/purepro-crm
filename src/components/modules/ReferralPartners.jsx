@@ -2,9 +2,9 @@ import { useState, useMemo } from 'react'
 import { useApp } from '../../context/AppContext'
 import { ACTIONS } from '../../context/AppReducer'
 import { PARTNER_TYPES, formatCurrency, formatDate } from '../../utils/helpers'
-import { Plus, Phone, Mail, Star, Clock, TrendingUp, Users, ChevronLeft, ChevronRight, X, Edit2, Trash2, MessageSquare, UserCheck, AlertCircle, CheckCircle2 } from 'lucide-react'
+import { Plus, Phone, Mail, Star, Clock, TrendingUp, Users, ChevronLeft, ChevronRight, X, Edit2, Trash2, MessageSquare, UserCheck, AlertCircle, CheckCircle2, Globe } from 'lucide-react'
 
-const BLANK_PARTNER = { name: '', company: '', phone: '', email: '', partnerType: 'Plumber', temperature: 'cold', notes: '', priority: 3 }
+const BLANK_PARTNER = { name: '', company: '', phone: '', email: '', website: '', partnerType: 'Plumber', temperature: 'cold', notes: '', priority: 3 }
 
 const PRIORITY_COLORS = ['', 'bg-green-500', 'bg-lime-400', 'bg-yellow-400', 'bg-orange-400', 'bg-red-500']
 const PRIORITY_LABELS = ['', 'P1 – Top', 'P2 – High', 'P3 – Mid', 'P4 – Low', 'P5 – Lowest']
@@ -196,6 +196,14 @@ function PartnerDetail({ partner, jobs, onClose, onEdit, onDelete, dispatch }) {
       <div className="px-5 py-3 border-b border-gray-100 space-y-1.5">
         {partner.phone && <div className="flex items-center gap-2 text-xs text-gray-600"><Phone size={12} />{partner.phone}</div>}
         {partner.email && <div className="flex items-center gap-2 text-xs text-gray-600"><Mail size={12} />{partner.email}</div>}
+        {partner.website && (
+          <div className="flex items-center gap-2 text-xs text-blue-600">
+            <Globe size={12} />
+            <a href={partner.website.startsWith('http') ? partner.website : `https://${partner.website}`} target="_blank" rel="noopener noreferrer" className="hover:underline truncate" onClick={e => e.stopPropagation()}>
+              {partner.website}
+            </a>
+          </div>
+        )}
         {partner.notes && <p className="text-xs text-gray-500 mt-2 italic">{partner.notes}</p>}
       </div>
 
@@ -547,7 +555,7 @@ export default function ReferralPartners({ navigateTo }) {
               <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-700"><X size={18} /></button>
             </div>
             <div className="space-y-3">
-              {[['Full Name', 'name'], ['Company / Practice', 'company'], ['Phone', 'phone', 'tel'], ['Email', 'email', 'email']].map(([label, key, type]) => (
+              {[['Full Name', 'name'], ['Company / Practice', 'company'], ['Phone', 'phone', 'tel'], ['Email', 'email', 'email'], ['Website', 'website', 'url']].map(([label, key, type]) => (
                 <div key={key}>
                   <label className="block text-xs font-semibold text-gray-600 mb-1">{label}</label>
                   <input type={type ?? 'text'} value={form[key]} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}

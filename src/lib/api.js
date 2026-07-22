@@ -238,7 +238,7 @@ export async function loadFromSupabase() {
       partnerType: p.type ?? '',
       temperature: p.temperature ?? 'cold',
       priority: p.priority ?? 3,
-      phone: p.phone ?? '', email: p.email ?? '', notes: p.notes ?? '',
+      phone: p.phone ?? '', email: p.email ?? '', website: p.website ?? '', notes: p.notes ?? '',
       lastContactDate: p.last_contact_date,
       contactHistory: p.contact_history ?? [],
       deals: p.deals ?? [],
@@ -882,7 +882,7 @@ export async function syncAction(action, preState) {
           id: payload.id, name: payload.name, company: payload.company ?? '',
           type: payload.partnerType ?? '', temperature: payload.temperature ?? 'cold',
           priority: payload.priority ?? 3,
-          phone: payload.phone ?? null, email: payload.email ?? null,
+          phone: payload.phone ?? null, email: payload.email ?? null, website: payload.website ?? null,
           notes: payload.notes ?? null, contact_history: [], deals: [], created_at: payload.createdAt ?? ts(),
         })
         break
@@ -890,7 +890,7 @@ export async function syncAction(action, preState) {
         await supabase.from('partners').update({
           name: payload.name, company: payload.company ?? '', type: payload.partnerType ?? '',
           temperature: payload.temperature ?? 'cold', priority: payload.priority ?? 3,
-          phone: payload.phone ?? null, email: payload.email ?? null, notes: payload.notes ?? null,
+          phone: payload.phone ?? null, email: payload.email ?? null, website: payload.website ?? null, notes: payload.notes ?? null,
         }).eq('id', payload.id)
         break
       case ACTIONS.DELETE_PARTNER:
