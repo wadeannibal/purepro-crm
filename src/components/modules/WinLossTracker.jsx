@@ -18,6 +18,7 @@ export default function WinLossTracker({ navigateTo }) {
 
   const winRate = won.length + lost.length > 0 ? Math.round((won.length / (won.length + lost.length)) * 100) : 0
   const wonRevenue = won.reduce((s, j) => s + (j.estimate?.grandTotal ?? j.revenue ?? 0), 0)
+  const lostRevenue = lost.reduce((s, j) => s + (j.estimate?.grandTotal ?? j.revenue ?? 0), 0)
 
   const lossByReason = useMemo(() => {
     const map = {}
@@ -61,6 +62,7 @@ export default function WinLossTracker({ navigateTo }) {
           <div className="bg-white border border-gray-200 rounded-2xl p-5">
             <div className="text-xs text-gray-500 mb-1">Lost</div>
             <div className="text-2xl font-bold text-red-600">{lost.length}</div>
+            {lostRevenue > 0 && <div className="text-xs text-red-400 mt-0.5">{formatCurrency(lostRevenue)}</div>}
           </div>
           <div className="bg-white border border-gray-200 rounded-2xl p-5">
             <div className="text-xs text-gray-500 mb-1">Win Rate</div>

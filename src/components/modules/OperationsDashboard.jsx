@@ -442,7 +442,7 @@ export default function OperationsDashboard({ navigateTo }) {
               <div className="flex justify-between items-center">
                 <span className="text-xs text-gray-500">Leads in Pipeline</span>
                 <button onClick={() => navigateTo?.('pipeline')} className="text-sm font-bold text-blue-600 hover:underline">
-                  {jobs.filter(j => !['Closed', 'Lost'].includes(j.stage)).length}
+                  {jobs.filter(j => !['Closed', 'Invoiced', 'Lost'].includes(j.stage)).length}
                 </button>
               </div>
               <div className="flex justify-between items-center">

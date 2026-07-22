@@ -89,8 +89,8 @@ export default function Header({ currentView, selectedJobId, navigateTo, onMenuC
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
-  const activeJobs = state.jobs.filter(j => j.stage !== 'Closed')
-  const totalPipeline = activeJobs.reduce((sum, j) => sum + (j.revenue ?? 0), 0)
+  const activeJobs = state.jobs.filter(j => !['Closed', 'Invoiced', 'Lost'].includes(j.stage))
+  const totalPipeline = activeJobs.reduce((sum, j) => sum + (j.estimate?.grandTotal ?? j.revenue ?? 0), 0)
   const selectedJob = selectedJobId ? state.jobs.find(j => j.id === selectedJobId) : null
   const selectedClient = selectedJob ? state.clients.find(c => c.id === selectedJob.clientId) : null
 
