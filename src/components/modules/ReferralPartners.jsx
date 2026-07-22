@@ -100,8 +100,8 @@ function PartnerCard({ partner, jobs, onClick, isOverdue }) {
         }`}>
           {days === null ? 'Never contacted' :
            days === 0 ? 'Contacted today' :
-           days === 1 ? 'Contacted yesterday' :
-           `Last contact: ${days}d ago`}
+           days === 1 ? `Yesterday · ${formatDate(partner.lastContactDate)}` :
+           `${days}d ago · ${formatDate(partner.lastContactDate)}`}
         </span>
       </div>
     </div>
