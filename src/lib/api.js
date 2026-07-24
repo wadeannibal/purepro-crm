@@ -580,7 +580,7 @@ export async function syncAction(action, preState) {
       // ── Phase 2: Estimates ────────────────────────────────────────────────
       case ACTIONS.SAVE_ESTIMATE: {
         const est = payload.estimate
-        await supabase.from('job_estimates').upsert({
+        const { error: estErr } = await supabase.from('job_estimates').upsert({
           id: est.id, job_id: payload.jobId, status: est.status,
           sent_at: est.sentAt || null, template_id: est.templateId || null,
           scope_notes: est.scopeNotes || '', terms_notes: est.termsNotes || '',
@@ -594,6 +594,7 @@ export async function syncAction(action, preState) {
           follow_up_count: est.followUpCount ?? 0, last_follow_up_at: est.lastFollowUpAt || null,
           created_at: est.createdAt || ts(), updated_at: ts(),
         })
+        if (estErr) throw estErr
         await supabase.from('jobs').update({ revenue: est.grandTotal ?? 0, updated_at: ts() }).eq('id', payload.jobId)
         break
       }
@@ -1109,5 +1110,6 @@ export async function syncAction(action, preState) {
     }
   } catch (err) {
     console.error('Supabase sync error:', action.type, err.message)
+    throw err
   }
 }
