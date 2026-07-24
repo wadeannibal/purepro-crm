@@ -455,21 +455,31 @@ export default function ReferralPartners({ navigateTo }) {
 
   const partnerDupes = useMemo(() => {
     if (!showModal) return []
-    const name = (form.name ?? '').toLowerCase().trim()
-    const phone = (form.phone ?? '').replace(/\D/g, '')
-    const email = (form.email ?? '').toLowerCase().trim()
+    const normSite = s => (s ?? '').toLowerCase().trim().replace(/^https?:\/\//,'').replace(/^www\./,'').replace(/\/$/,'')
+    const name    = (form.name ?? '').toLowerCase().trim()
+    const company = (form.company ?? '').toLowerCase().trim()
+    const phone   = (form.phone ?? '').replace(/\D/g, '')
+    const email   = (form.email ?? '').toLowerCase().trim()
+    const website = normSite(form.website)
+    const address = (form.address ?? '').toLowerCase().trim()
     const results = []
     for (const p of partners) {
       if (p.id === editingId) continue
       const reasons = []
-      const pName = (p.name ?? '').toLowerCase().trim()
+      const pName    = (p.name ?? '').toLowerCase().trim()
+      const pCompany = (p.company ?? '').toLowerCase().trim()
+      const pSite    = normSite(p.website)
+      const pAddr    = (p.address ?? '').toLowerCase().trim()
       if (name.length >= 4 && (pName === name || pName.includes(name) || name.includes(pName))) reasons.push('name')
+      if (company.length >= 4 && (pCompany === company || pCompany.includes(company) || company.includes(pCompany))) reasons.push('company')
       if (phone.length >= 7 && phone === (p.phone ?? '').replace(/\D/g, '')) reasons.push('phone')
       if (email.length >= 5 && email === (p.email ?? '').toLowerCase().trim()) reasons.push('email')
+      if (website.length >= 5 && website === pSite) reasons.push('website')
+      if (address.length >= 5 && (pAddr === address || pAddr.includes(address) || address.includes(pAddr))) reasons.push('address')
       if (reasons.length) results.push({ record: p, reasons })
     }
     return results
-  }, [form.name, form.phone, form.email, partners, showModal, editingId])
+  }, [form.name, form.company, form.phone, form.email, form.website, form.address, partners, showModal, editingId])
 
   const save = () => {
     if (!form.name) return
