@@ -1,8 +1,8 @@
 import { useState, useMemo } from 'react'
 import { useApp } from '../../context/AppContext'
 import { ACTIONS } from '../../context/AppReducer'
-import { PARTNER_TYPES, formatCurrency, formatDate } from '../../utils/helpers'
-import { Plus, Phone, Mail, Star, Clock, TrendingUp, Users, ChevronLeft, ChevronRight, X, Edit2, Trash2, MessageSquare, UserCheck, AlertCircle, AlertTriangle, CheckCircle2, Globe, MapPin } from 'lucide-react'
+import { PARTNER_TYPES, formatCurrency, formatDate, exportCSV } from '../../utils/helpers'
+import { Plus, Phone, Mail, Star, Clock, TrendingUp, Users, ChevronLeft, ChevronRight, X, Edit2, Trash2, MessageSquare, UserCheck, AlertCircle, AlertTriangle, CheckCircle2, Globe, MapPin, Download } from 'lucide-react'
 
 const BLANK_PARTNER = { name: '', company: '', phone: '', email: '', website: '', address: '', partnerType: 'Plumber', temperature: 'cold', notes: '', priority: 3 }
 
@@ -450,6 +450,12 @@ export default function ReferralPartners({ navigateTo }) {
   const overdueCount = enriched.filter(p => p.isOverdue).length
   const totalRevenue = enriched.reduce((s, p) => s + p.revenue, 0)
 
+  const exportPartners = () => exportCSV(
+    'referral-partners.csv',
+    ['Name', 'Company', 'Partner Type', 'Phone', 'Email', 'Website', 'Address', 'Temperature', 'Priority', 'Last Contact', 'Notes'],
+    filtered.map(p => [p.name, p.company, p.partnerType, p.phone, p.email, p.website, p.address, p.temperature, p.priority, p.lastContactDate ? formatDate(p.lastContactDate) : 'Never', p.notes])
+  )
+
   const openAdd = () => { setForm(BLANK_PARTNER); setEditingId(null); setShowModal(true) }
   const openEdit = (p) => { setForm({ ...p }); setEditingId(p.id); setShowModal(true) }
 
@@ -529,6 +535,9 @@ export default function ReferralPartners({ navigateTo }) {
               <option value="jobs">Sort: Jobs</option>
               <option value="contact">Sort: Last Contact</option>
             </select>
+            <button onClick={exportPartners} title="Export to CSV" className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+              <Download size={13} /> Export
+            </button>
             <button onClick={openAdd} className="flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold px-4 py-1.5 rounded-lg transition-colors">
               <Plus size={14} /> Add Partner
             </button>

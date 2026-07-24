@@ -1,9 +1,9 @@
 import { useState, useMemo } from 'react'
 import { useApp } from '../../context/AppContext'
 import { ACTIONS } from '../../context/AppReducer'
-import { CLIENT_TYPES, formatDate, formatCurrency, clientTypeColor, jobTypeColor, stageColor } from '../../utils/helpers'
+import { CLIENT_TYPES, formatDate, formatCurrency, clientTypeColor, jobTypeColor, stageColor, exportCSV } from '../../utils/helpers'
 import Modal from '../shared/Modal'
-import { Plus, Search, Star, Phone, Mail, MapPin, Briefcase, X, Edit2, Trash2, ChevronLeft, AlertTriangle } from 'lucide-react'
+import { Plus, Search, Star, Phone, Mail, MapPin, Briefcase, X, Edit2, Trash2, ChevronLeft, AlertTriangle, Download } from 'lucide-react'
 
 const BLANK = { name: '', type: 'Homeowner', email: '', phone: '', address: '', notes: '', isVIP: false }
 
@@ -142,6 +142,12 @@ export default function CRM({ navigateTo }) {
     return true
   })
 
+  const exportClients = () => exportCSV(
+    'clients.csv',
+    ['Name', 'Type', 'Phone', 'Email', 'Address', 'VIP', 'Notes'],
+    filtered.map(c => [c.name, c.type, c.phone, c.email, c.address, c.isVIP ? 'Yes' : '', c.notes])
+  )
+
   const openAdd = () => { setForm(BLANK); setEditing(null); setShowModal(true) }
   const openEdit = (c) => { setForm({ ...c }); setEditing(c.id); setShowModal(true) }
 
@@ -228,9 +234,14 @@ export default function CRM({ navigateTo }) {
           <button onClick={() => setVipFilter(v => !v)} className={`flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-full transition-colors ${vipFilter ? 'bg-amber-400 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
             <Star size={11} /> VIP
           </button>
-          <button onClick={openAdd} className="flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold px-3 py-1.5 rounded-lg transition-colors ml-auto">
-            <Plus size={14} /> Add Client
-          </button>
+          <div className="ml-auto flex items-center gap-2">
+            <button onClick={exportClients} title="Export to CSV" className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+              <Download size={13} /> Export
+            </button>
+            <button onClick={openAdd} className="flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold px-3 py-1.5 rounded-lg transition-colors">
+              <Plus size={14} /> Add Client
+            </button>
+          </div>
         </div>
 
         {/* Grid */}

@@ -228,6 +228,21 @@ export const PARTNER_TYPES = [
   'IEP / Mold Testing', 'Asbestos Inspector', 'Other',
 ]
 
+export const exportCSV = (filename, headers, rows) => {
+  const esc = v => {
+    const s = String(v ?? '')
+    return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g, '""')}"` : s
+  }
+  const csv = [headers, ...rows].map(r => r.map(esc).join(',')).join('\n')
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
 export const STAGE_CLOSE_DAYS = {
   Lead: 30, Inspection: 21, 'Estimate Sent': 14, Approved: 7,
   Remediation: 14, 'Post-Test': 7, Invoiced: 14,

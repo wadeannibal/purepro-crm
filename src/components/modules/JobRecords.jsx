@@ -3,9 +3,9 @@ import { useApp } from '../../context/AppContext'
 import { ACTIONS } from '../../context/AppReducer'
 import {
   JOB_STAGES, JOB_TYPES, LEAD_SOURCES, LOSS_REASONS, formatCurrency, formatDate, formatDateTime,
-  jobTypeColor, stageColor, getChecklistForJobType, OSHA_CHECKLIST
+  jobTypeColor, stageColor, getChecklistForJobType, OSHA_CHECKLIST, exportCSV
 } from '../../utils/helpers'
-import { Search, ChevronLeft, ChevronRight, Send, Camera, Folder, Clock, Shield, ShieldCheck, Trash2, X, ExternalLink, Archive, ArchiveRestore, FileText } from 'lucide-react'
+import { Search, ChevronLeft, ChevronRight, Send, Camera, Folder, Clock, Shield, ShieldCheck, Trash2, X, ExternalLink, Archive, ArchiveRestore, FileText, Download } from 'lucide-react'
 import Modal from '../shared/Modal'
 
 const TABS = ['Details', 'Notes', 'Photos', 'Checklist', 'OSHA']
@@ -40,6 +40,16 @@ export default function JobRecords({ selectedJobId, setSelectedJobId, navigateTo
   const client = job ? state.clients.find(c => c.id === job.clientId) : null
   const checklist = job ? getChecklistForJobType(job.type) : []
   const completedItems = checklist.filter(item => job?.checklist?.[item]).length
+
+  const exportJobs = () => exportCSV(
+    'jobs.csv',
+    ['Client', 'Job Type', 'Stage', 'Address', 'Revenue', 'Lead Source', 'Referral Partner', 'Loss Reason', 'Competitor', 'Description'],
+    jobs.map(j => {
+      const c = state.clients.find(cl => cl.id === j.clientId)
+      const p = (state.partners ?? []).find(pt => pt.id === j.leadSourcePartnerId)
+      return [c?.name, j.type, j.stage, j.address, j.estimate?.grandTotal ?? j.revenue ?? 0, j.leadSource, p?.name, j.lostReason, j.lostCompetitor, j.description]
+    })
+  )
 
   const addNote = () => {
     if (!noteText.trim() || !job) return
@@ -83,13 +93,18 @@ export default function JobRecords({ selectedJobId, setSelectedJobId, navigateTo
               <button key={t} onClick={() => setTypeFilter(t)} className={`px-2 py-0.5 text-[11px] font-semibold rounded-full transition-colors ${typeFilter === t ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>{t}</button>
             ))}
           </div>
-          <button
-            onClick={() => { setShowArchived(a => !a); setSelectedJobId(null) }}
-            className={`w-full flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-semibold rounded-lg transition-colors ${showArchived ? 'bg-gray-700 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
-          >
-            <Archive size={11} />
-            {showArchived ? 'Hide Archived' : `Archived Jobs${archivedCount > 0 ? ` (${archivedCount})` : ''}`}
-          </button>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => { setShowArchived(a => !a); setSelectedJobId(null) }}
+              className={`flex-1 flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-semibold rounded-lg transition-colors ${showArchived ? 'bg-gray-700 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+            >
+              <Archive size={11} />
+              {showArchived ? 'Hide Archived' : `Archived Jobs${archivedCount > 0 ? ` (${archivedCount})` : ''}`}
+            </button>
+            <button onClick={exportJobs} title="Export to CSV" className="flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors whitespace-nowrap">
+              <Download size={11} /> Export
+            </button>
+          </div>
         </div>
         <div className="flex-1 overflow-y-auto">
           {jobs.length === 0 && <p className="text-xs text-gray-400 text-center py-8">No jobs found</p>}
