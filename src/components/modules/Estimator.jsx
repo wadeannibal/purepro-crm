@@ -213,7 +213,7 @@ function LineItemRow({ item, isFirst, isLast, onUpdate, onDelete, onMoveUp, onMo
     <div
       className={`group flex items-center gap-2 py-2 border-b border-gray-100 last:border-0 transition-colors ${isDragOver ? 'bg-red-50 border-t-2 border-t-red-400' : ''}`}
       draggable
-      onDragStart={e => { e.dataTransfer.effectAllowed = 'move'; onDragStart() }}
+      onDragStart={e => { if (e.target.tagName === 'INPUT') { e.preventDefault(); return } e.dataTransfer.effectAllowed = 'move'; onDragStart() }}
       onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; setIsDragOver(true) }}
       onDragLeave={() => setIsDragOver(false)}
       onDrop={e => { e.preventDefault(); setIsDragOver(false); onDrop() }}
