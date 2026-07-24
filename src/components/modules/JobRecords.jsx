@@ -5,7 +5,7 @@ import {
   JOB_STAGES, JOB_TYPES, LEAD_SOURCES, LOSS_REASONS, formatCurrency, formatDate, formatDateTime,
   jobTypeColor, stageColor, getChecklistForJobType, OSHA_CHECKLIST
 } from '../../utils/helpers'
-import { Search, ChevronLeft, ChevronRight, Send, Camera, Folder, Clock, Shield, ShieldCheck, Trash2, X, ExternalLink, Archive, ArchiveRestore } from 'lucide-react'
+import { Search, ChevronLeft, ChevronRight, Send, Camera, Folder, Clock, Shield, ShieldCheck, Trash2, X, ExternalLink, Archive, ArchiveRestore, FileText } from 'lucide-react'
 import Modal from '../shared/Modal'
 
 const TABS = ['Details', 'Notes', 'Photos', 'Checklist', 'OSHA']
@@ -187,6 +187,7 @@ export default function JobRecords({ selectedJobId, setSelectedJobId, navigateTo
             {/* Quick nav buttons */}
             <div className="flex flex-wrap gap-2 mt-3">
               {[
+                { label: 'Estimate', icon: FileText, view: 'estimator' },
                 { label: 'Photos', icon: Camera, view: 'photos' },
                 { label: 'Docs', icon: Folder, view: 'documents' },
                 { label: 'Timer', icon: Clock, view: 'timer' },

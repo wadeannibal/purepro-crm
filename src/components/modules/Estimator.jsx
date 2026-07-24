@@ -766,9 +766,16 @@ Write a clean, professional scope of work. Use 3-4 numbered sections with bullet
 
             {/* Job header */}
             <div className="flex items-center gap-3 flex-wrap">
-              <div className="flex items-center gap-2">
-                <User size={14} className="text-gray-400" />
-                <span className="font-semibold text-gray-900 text-sm">{client?.name}</span>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <User size={14} className="text-gray-400 flex-shrink-0" />
+                <select
+                  value={job.clientId}
+                  onChange={e => dispatch({ type: ACTIONS.UPDATE_JOB, payload: { id: selectedJobId, clientId: e.target.value } })}
+                  className="text-sm font-semibold text-gray-900 bg-transparent border border-transparent hover:border-gray-300 focus:border-red-400 rounded-lg px-1.5 py-0.5 cursor-pointer focus:outline-none focus:ring-1 focus:ring-red-400 transition-colors"
+                  title="Change customer"
+                >
+                  {state.clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
                 <span className="text-xs text-gray-500">— {job.type}</span>
                 {job.address && <span className="text-xs text-gray-400 hidden md:inline">· {job.address}</span>}
               </div>
