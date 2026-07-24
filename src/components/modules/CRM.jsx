@@ -147,21 +147,24 @@ export default function CRM({ navigateTo }) {
 
   const clientDupes = useMemo(() => {
     if (!showModal) return []
-    const name = (form.name ?? '').toLowerCase().trim()
-    const phone = (form.phone ?? '').replace(/\D/g, '')
-    const email = (form.email ?? '').toLowerCase().trim()
+    const name    = (form.name ?? '').toLowerCase().trim()
+    const phone   = (form.phone ?? '').replace(/\D/g, '')
+    const email   = (form.email ?? '').toLowerCase().trim()
+    const address = (form.address ?? '').toLowerCase().trim()
     const results = []
     for (const c of state.clients) {
       if (c.id === editing) continue
       const reasons = []
       const cName = (c.name ?? '').toLowerCase().trim()
+      const cAddr = (c.address ?? '').toLowerCase().trim()
       if (name.length >= 4 && (cName === name || cName.includes(name) || name.includes(cName))) reasons.push('name')
       if (phone.length >= 7 && phone === (c.phone ?? '').replace(/\D/g, '')) reasons.push('phone')
       if (email.length >= 5 && email === (c.email ?? '').toLowerCase().trim()) reasons.push('email')
+      if (address.length >= 5 && (cAddr === address || cAddr.includes(address) || address.includes(cAddr))) reasons.push('address')
       if (reasons.length) results.push({ record: c, reasons })
     }
     return results
-  }, [form.name, form.phone, form.email, state.clients, showModal, editing])
+  }, [form.name, form.phone, form.email, form.address, state.clients, showModal, editing])
 
   const save = () => {
     if (!form.name) return
@@ -284,14 +287,20 @@ export default function CRM({ navigateTo }) {
               <span className="text-sm font-medium text-gray-700">Mark as VIP Client</span>
             </label>
             {clientDupes.length > 0 && (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 space-y-1.5">
+              <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 space-y-2">
                 <div className="flex items-center gap-1.5 text-xs font-bold text-yellow-800">
                   <AlertTriangle size={12} /> Possible duplicate{clientDupes.length > 1 ? 's' : ''} found
                 </div>
                 {clientDupes.map(({ record, reasons }) => (
-                  <div key={record.id} className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-yellow-900">{record.name}</span>
-                    <span className="text-[10px] font-semibold text-yellow-600 uppercase tracking-wide">{reasons.join(' · ')}</span>
+                  <div key={record.id} className="bg-white border border-yellow-100 rounded-lg p-2.5 space-y-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-bold text-yellow-900">{record.name}</span>
+                      <span className="text-[10px] font-semibold text-yellow-600 uppercase tracking-wide flex-shrink-0">{reasons.join(' · ')}</span>
+                    </div>
+                    {record.type && <div className="text-[10px] text-gray-400">{record.type}</div>}
+                    {record.phone && <div className="flex items-center gap-1.5 text-[11px] text-gray-600"><Phone size={10} className="flex-shrink-0" />{record.phone}</div>}
+                    {record.email && <div className="flex items-center gap-1.5 text-[11px] text-gray-600"><Mail size={10} className="flex-shrink-0" /><span className="truncate">{record.email}</span></div>}
+                    {record.address && <div className="flex items-center gap-1.5 text-[11px] text-gray-600"><MapPin size={10} className="flex-shrink-0" /><span className="leading-tight">{record.address}</span></div>}
                   </div>
                 ))}
                 <p className="text-[10px] text-yellow-500">You can still save — this is just a heads up.</p>
