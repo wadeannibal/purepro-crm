@@ -498,8 +498,13 @@ export default function Estimator({ selectedJobId, setSelectedJobId, navigateTo 
   const client = job ? state.clients.find(c => c.id === job.clientId) : null
 
   useEffect(() => {
-    if (job) setLocal({ ...BLANK_ESTIMATE, ...(job.estimate ?? {}) })
-    else setLocal(null)
+    if (job) {
+      const base = { ...BLANK_ESTIMATE, ...(job.estimate ?? {}) }
+      if (!base.id) base.id = uid()
+      setLocal(base)
+    } else {
+      setLocal(null)
+    }
   }, [selectedJobId, job?.estimate?.updatedAt])
 
   const update = useCallback((patch) => {
@@ -508,11 +513,12 @@ export default function Estimator({ selectedJobId, setSelectedJobId, navigateTo 
   }, [])
 
   const save = useCallback(() => {
-    if (!local || !selectedJobId) return
+    if (!local || !selectedJobId || savingRef.current) return
+    savingRef.current = true
     const totals = computeEstimateTotals(local)
     dispatch({ type: ACTIONS.SAVE_ESTIMATE, payload: { jobId: selectedJobId, estimate: { ...local, grandTotal: totals.grandTotal, updatedAt: new Date().toISOString() } } })
     setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
+    setTimeout(() => { setSaved(false); savingRef.current = false }, 2000)
   }, [local, selectedJobId, dispatch])
 
   const addItem = useCallback((item) => {
@@ -542,6 +548,7 @@ export default function Estimator({ selectedJobId, setSelectedJobId, navigateTo 
   }, [])
 
   const dragIndex = useRef(null)
+  const savingRef = useRef(false)
 
   const reorderItems = useCallback((fromIndex, toIndex) => {
     if (fromIndex === null || fromIndex === toIndex) return
