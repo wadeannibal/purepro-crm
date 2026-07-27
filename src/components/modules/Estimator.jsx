@@ -601,19 +601,40 @@ export default function Estimator({ selectedJobId, setSelectedJobId, navigateTo 
     setSaved(false)
   }, [])
 
+  const compressImage = useCallback((file) => new Promise((resolve) => {
+    const MAX = 1000
+    const QUALITY = 0.70
+    const img = new Image()
+    const url = URL.createObjectURL(file)
+    img.onload = () => {
+      URL.revokeObjectURL(url)
+      let { width, height } = img
+      if (width > MAX || height > MAX) {
+        if (width >= height) { height = Math.round(height * MAX / width); width = MAX }
+        else { width = Math.round(width * MAX / height); height = MAX }
+      }
+      const canvas = document.createElement('canvas')
+      canvas.width = width
+      canvas.height = height
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height)
+      resolve(canvas.toDataURL('image/jpeg', QUALITY))
+    }
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(null) }
+    img.src = url
+  }), [])
+
   const handleAddPhotos = useCallback((e) => {
     const files = Array.from(e.target.files ?? [])
     if (!files.length) return
     files.forEach(file => {
-      const reader = new FileReader()
-      reader.onload = (ev) => {
-        setLocal(est => ({ ...est, photos: [...(est.photos ?? []), { id: uid(), name: file.name, label: '', data: ev.target.result }] }))
+      compressImage(file).then(data => {
+        if (!data) return
+        setLocal(est => ({ ...est, photos: [...(est.photos ?? []), { id: uid(), name: file.name, label: '', data }] }))
         setSaved(false)
-      }
-      reader.readAsDataURL(file)
+      })
     })
     e.target.value = ''
-  }, [])
+  }, [compressImage])
 
   const removePhoto = useCallback((id) => {
     setLocal(e => ({ ...e, photos: (e.photos ?? []).filter(p => p.id !== id) }))
