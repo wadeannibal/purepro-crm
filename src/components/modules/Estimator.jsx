@@ -7,8 +7,9 @@ import {
 } from '../../utils/helpers'
 import { STANDARD_TERMS } from '../../data/proposalTemplates'
 import {
-  Plus, Trash2, Send, CheckCircle, XCircle, FileText, ChevronRight, User,
+  Plus, Trash2, Send, CheckCircle, XCircle, FileText, ChevronRight,
   ChevronUp, ChevronDown, Search, X, Star, BookOpen, Sparkles, Loader2, GripVertical, ImagePlus,
+  Phone, Mail, MapPin, Edit2,
 } from 'lucide-react'
 
 // ── Category definitions ─────────────────────────────────────────────────────
@@ -492,6 +493,12 @@ export default function Estimator({ selectedJobId, setSelectedJobId, navigateTo 
   const [existingForm, setExistingForm] = useState(BLANK_EXISTING)
   const [scopeAI, setScopeAI] = useState({ open: false, context: '', loading: false })
   const [showTemplatePicker, setShowTemplatePicker] = useState(false)
+  const [showJobEdit, setShowJobEdit] = useState(false)
+  const [jobDraft, setJobDraft] = useState({ clientId: '', address: '', type: '' })
+  const [clientSearch, setClientSearch] = useState('')
+  const [showClientDropdown, setShowClientDropdown] = useState(false)
+  const [showNewClientInEdit, setShowNewClientInEdit] = useState(false)
+  const [newClientInEdit, setNewClientInEdit] = useState({ name: '', phone: '', email: '' })
 
 
   const job = selectedJobId ? state.jobs.find(j => j.id === selectedJobId) : null
@@ -520,6 +527,37 @@ export default function Estimator({ selectedJobId, setSelectedJobId, navigateTo 
     setSaved(true)
     setTimeout(() => { setSaved(false); savingRef.current = false }, 2000)
   }, [local, selectedJobId, dispatch])
+
+  const openJobEdit = useCallback(() => {
+    setJobDraft({ clientId: job.clientId, address: job.address ?? '', type: job.type })
+    setClientSearch(client?.name ?? '')
+    setShowClientDropdown(false)
+    setShowNewClientInEdit(false)
+    setShowJobEdit(true)
+  }, [job, client])
+
+  const saveJobEdit = useCallback(() => {
+    if (!jobDraft.clientId) return
+    dispatch({ type: ACTIONS.UPDATE_JOB, payload: { id: selectedJobId, clientId: jobDraft.clientId, address: jobDraft.address, type: jobDraft.type } })
+    setShowJobEdit(false)
+  }, [jobDraft, selectedJobId, dispatch])
+
+  const selectClientInEdit = useCallback((c) => {
+    setJobDraft(d => ({ ...d, clientId: c.id, address: c.address || d.address }))
+    setClientSearch(c.name)
+    setShowClientDropdown(false)
+  }, [])
+
+  const createClientInEdit = useCallback(() => {
+    if (!newClientInEdit.name.trim()) return
+    const clientId = uid()
+    dispatch({ type: ACTIONS.ADD_CLIENT, payload: { id: clientId, name: newClientInEdit.name.trim(), phone: newClientInEdit.phone, email: newClientInEdit.email, address: '', type: 'Homeowner', communications: [], isVIP: false } })
+    setJobDraft(d => ({ ...d, clientId }))
+    setClientSearch(newClientInEdit.name.trim())
+    setNewClientInEdit({ name: '', phone: '', email: '' })
+    setShowNewClientInEdit(false)
+    setShowClientDropdown(false)
+  }, [newClientInEdit, dispatch])
 
   const addItem = useCallback((item) => {
     setLocal(e => ({ ...e, lineItems: [...(e.lineItems ?? []), item] }))
@@ -755,6 +793,17 @@ Write a clean, professional scope of work. Use 3-4 numbered sections with bullet
 
   const lineItems = local.lineItems ?? []
 
+  const editSelectedClient = state.clients.find(c => c.id === jobDraft.clientId)
+  const filteredClientsForEdit = state.clients
+    .filter(c => !clientSearch || c.name.toLowerCase().includes(clientSearch.toLowerCase()))
+    .slice(0, 8)
+  const pastJobAddresses = showJobEdit
+    ? state.jobs
+        .filter(j => j.clientId === jobDraft.clientId && j.id !== selectedJobId && j.address)
+        .reduce((acc, j) => acc.includes(j.address) ? acc : [...acc, j.address], [])
+        .slice(0, 4)
+    : []
+
   // ── Estimator ──────────────────────────────────────────────────────────
   return (
     <div className="h-full overflow-y-auto">
@@ -771,21 +820,9 @@ Write a clean, professional scope of work. Use 3-4 numbered sections with bullet
           {/* Main panel */}
           <div className="flex-1 min-w-0 space-y-4">
 
-            {/* Job header */}
-            <div className="flex items-center gap-3 flex-wrap">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <User size={14} className="text-gray-400 flex-shrink-0" />
-                <select
-                  value={job.clientId}
-                  onChange={e => dispatch({ type: ACTIONS.UPDATE_JOB, payload: { id: selectedJobId, clientId: e.target.value } })}
-                  className="text-sm font-semibold text-gray-900 bg-transparent border border-transparent hover:border-gray-300 focus:border-red-400 rounded-lg px-1.5 py-0.5 cursor-pointer focus:outline-none focus:ring-1 focus:ring-red-400 transition-colors"
-                  title="Change customer"
-                >
-                  {state.clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
-                <span className="text-xs text-gray-500">— {job.type}</span>
-                {job.address && <span className="text-xs text-gray-400 hidden md:inline">· {job.address}</span>}
-              </div>
+            {/* Toolbar */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <button onClick={() => setSelectedJobId(null)} className="text-xs text-gray-400 hover:text-gray-600 px-2 py-1.5 rounded-lg hover:bg-gray-100 flex-shrink-0">← Back</button>
               <select
                 value={local.status}
                 onChange={e => {
@@ -800,7 +837,6 @@ Write a clean, professional scope of work. Use 3-4 numbered sections with bullet
                 ))}
               </select>
               <div className="ml-auto flex gap-2 relative">
-                <button onClick={() => setSelectedJobId(null)} className="text-xs text-gray-400 hover:text-gray-600 px-2 py-1.5 rounded-lg hover:bg-gray-100">← Back</button>
                 <button
                   onClick={save}
                   className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${saved ? 'bg-green-100 text-green-700' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`}
@@ -816,31 +852,31 @@ Write a clean, professional scope of work. Use 3-4 numbered sections with bullet
                   </button>
                   {showTemplatePicker && (
                     <>
-                    <div className="fixed inset-0 z-40" onClick={() => setShowTemplatePicker(false)} />
-                    <div className="absolute right-0 top-full mt-1 w-64 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden">
-                      <div className="px-3 py-2 border-b border-gray-100 text-xs font-bold text-gray-500 uppercase tracking-wide">Proposal Templates</div>
-                      {(state.proposalTemplates ?? []).length === 0 ? (
-                        <div className="px-3 py-4 text-xs text-gray-400 text-center">No templates saved yet.<br/>Create them in the Proposals module.</div>
-                      ) : (
-                        <div className="max-h-64 overflow-y-auto">
-                          {(state.proposalTemplates ?? []).map(t => (
-                            <button
-                              key={t.id}
-                              onClick={() => {
-                                const hasContent = lineItems.length > 0 || local.scopeNotes || local.termsNotes
-                                if (hasContent && !window.confirm(`Apply "${t.name}"? This will replace your current line items and notes.`)) return
-                                update({ lineItems: t.lineItems ?? [], scopeNotes: t.scopeNotes ?? '', termsNotes: t.termsNotes ?? '' })
-                                setShowTemplatePicker(false)
-                              }}
-                              className="w-full text-left px-3 py-2.5 hover:bg-red-50 hover:text-red-700 transition-colors border-b border-gray-50 last:border-0"
-                            >
-                              <div className="text-sm font-semibold text-gray-900">{t.name}</div>
-                              <div className="text-xs text-gray-400 mt-0.5">{t.jobType} · {(t.lineItems ?? []).length} line items</div>
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                      <div className="fixed inset-0 z-40" onClick={() => setShowTemplatePicker(false)} />
+                      <div className="absolute right-0 top-full mt-1 w-64 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden">
+                        <div className="px-3 py-2 border-b border-gray-100 text-xs font-bold text-gray-500 uppercase tracking-wide">Proposal Templates</div>
+                        {(state.proposalTemplates ?? []).length === 0 ? (
+                          <div className="px-3 py-4 text-xs text-gray-400 text-center">No templates saved yet.<br/>Create them in the Proposals module.</div>
+                        ) : (
+                          <div className="max-h-64 overflow-y-auto">
+                            {(state.proposalTemplates ?? []).map(t => (
+                              <button
+                                key={t.id}
+                                onClick={() => {
+                                  const hasContent = lineItems.length > 0 || local.scopeNotes || local.termsNotes
+                                  if (hasContent && !window.confirm(`Apply "${t.name}"? This will replace your current line items and notes.`)) return
+                                  update({ lineItems: t.lineItems ?? [], scopeNotes: t.scopeNotes ?? '', termsNotes: t.termsNotes ?? '' })
+                                  setShowTemplatePicker(false)
+                                }}
+                                className="w-full text-left px-3 py-2.5 hover:bg-red-50 hover:text-red-700 transition-colors border-b border-gray-50 last:border-0"
+                              >
+                                <div className="text-sm font-semibold text-gray-900">{t.name}</div>
+                                <div className="text-xs text-gray-400 mt-0.5">{t.jobType} · {(t.lineItems ?? []).length} line items</div>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </>
                   )}
                 </div>
@@ -849,6 +885,224 @@ Write a clean, professional scope of work. Use 3-4 numbered sections with bullet
                 </button>
               </div>
             </div>
+
+            {/* Job Info Card */}
+            {!showJobEdit ? (
+              <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+                <div className="flex items-stretch divide-x divide-gray-100">
+                  <div className="flex-1 min-w-0 p-4">
+                    <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Customer</div>
+                    <div className="text-base font-bold text-gray-900 leading-snug truncate">
+                      {client?.name ?? <span className="text-gray-400 font-normal italic">No customer set</span>}
+                    </div>
+                    {client?.type && <div className="text-xs text-gray-400 mt-0.5">{client.type}</div>}
+                    {client?.phone && (
+                      <div className="flex items-center gap-1.5 text-sm text-gray-600 mt-2">
+                        <Phone size={12} className="text-gray-400 flex-shrink-0" />{client.phone}
+                      </div>
+                    )}
+                    {client?.email && (
+                      <div className="flex items-center gap-1.5 text-sm text-gray-600 mt-0.5">
+                        <Mail size={12} className="text-gray-400 flex-shrink-0" /><span className="truncate">{client.email}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0 p-4">
+                    <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Service Address</div>
+                    {job.address ? (
+                      <div className="flex items-start gap-1.5">
+                        <MapPin size={12} className="text-gray-400 mt-0.5 flex-shrink-0" />
+                        <span className="text-sm text-gray-700 leading-snug">{job.address}</span>
+                      </div>
+                    ) : (
+                      <span className="text-sm text-gray-400 italic">No address set</span>
+                    )}
+                    <div className="mt-3">
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${job.type === 'Mold' ? 'bg-green-100 text-green-800' : job.type === 'Water' ? 'bg-blue-100 text-blue-800' : 'bg-orange-100 text-orange-800'}`}>
+                        {job.type}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center px-4">
+                    <button
+                      onClick={openJobEdit}
+                      className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-red-600 px-3 py-2 rounded-xl hover:bg-red-50 transition-colors whitespace-nowrap"
+                    >
+                      <Edit2 size={12} /> Edit
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-white border border-red-200 rounded-2xl p-5 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-bold text-gray-900">Edit Job Details</h3>
+                  <button onClick={() => setShowJobEdit(false)} className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100">
+                    <X size={15} />
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                  {/* Left: Customer */}
+                  <div className="space-y-3">
+                    <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Customer</div>
+
+                    {/* Search box */}
+                    <div className="relative">
+                      <div className="flex items-center gap-2 border border-gray-200 rounded-xl px-3 py-2.5 focus-within:ring-2 focus-within:ring-red-500 focus-within:border-transparent">
+                        <Search size={13} className="text-gray-400 flex-shrink-0" />
+                        <input
+                          value={clientSearch}
+                          onChange={e => {
+                            setClientSearch(e.target.value)
+                            setShowClientDropdown(true)
+                            if (!e.target.value) setJobDraft(d => ({ ...d, clientId: '' }))
+                          }}
+                          onFocus={() => setShowClientDropdown(true)}
+                          placeholder="Search customers…"
+                          className="flex-1 text-sm focus:outline-none min-w-0"
+                        />
+                        {clientSearch && (
+                          <button onClick={() => { setClientSearch(''); setJobDraft(d => ({ ...d, clientId: '' })); setShowClientDropdown(true) }} className="text-gray-300 hover:text-gray-500 flex-shrink-0">
+                            <X size={12} />
+                          </button>
+                        )}
+                      </div>
+                      {showClientDropdown && (
+                        <>
+                          <div className="fixed inset-0 z-40" onClick={() => setShowClientDropdown(false)} />
+                          <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden max-h-52 overflow-y-auto">
+                            {filteredClientsForEdit.map(c => (
+                              <button key={c.id} onClick={() => selectClientInEdit(c)} className="w-full text-left px-3 py-2.5 hover:bg-red-50 border-b border-gray-50 last:border-0 transition-colors">
+                                <div className="text-sm font-semibold text-gray-900">{c.name}</div>
+                                {(c.type || c.phone) && <div className="text-xs text-gray-400 mt-0.5">{[c.type, c.phone].filter(Boolean).join(' · ')}</div>}
+                              </button>
+                            ))}
+                            {filteredClientsForEdit.length === 0 && (
+                              <div className="px-3 py-3 text-sm text-gray-400 text-center">No customers found</div>
+                            )}
+                            <button
+                              onClick={() => { setShowNewClientInEdit(true); setShowClientDropdown(false) }}
+                              className="w-full text-left px-3 py-2.5 border-t border-gray-100 flex items-center gap-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors"
+                            >
+                              <Plus size={11} /> Create new customer
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Selected customer preview */}
+                    {editSelectedClient && (
+                      <div className="bg-gray-50 rounded-xl p-3 border border-gray-100 space-y-0.5">
+                        <div className="text-sm font-bold text-gray-900">{editSelectedClient.name}</div>
+                        {editSelectedClient.type && <div className="text-xs text-gray-400">{editSelectedClient.type}</div>}
+                        {editSelectedClient.phone && <div className="flex items-center gap-1.5 text-xs text-gray-600 mt-1"><Phone size={10} className="flex-shrink-0" />{editSelectedClient.phone}</div>}
+                        {editSelectedClient.email && <div className="flex items-center gap-1.5 text-xs text-gray-600"><Mail size={10} className="flex-shrink-0" /><span className="truncate">{editSelectedClient.email}</span></div>}
+                      </div>
+                    )}
+
+                    {/* Create new customer inline */}
+                    {showNewClientInEdit && (
+                      <div className="border border-gray-200 rounded-xl p-3 space-y-2 bg-gray-50">
+                        <div className="flex items-center justify-between">
+                          <div className="text-xs font-bold text-gray-700">New Customer</div>
+                          <button onClick={() => setShowNewClientInEdit(false)} className="text-gray-400 hover:text-gray-600"><X size={12} /></button>
+                        </div>
+                        <input
+                          autoFocus
+                          placeholder="Full name *"
+                          value={newClientInEdit.name}
+                          onChange={e => setNewClientInEdit(d => ({ ...d, name: e.target.value }))}
+                          className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-red-400"
+                        />
+                        <div className="grid grid-cols-2 gap-2">
+                          <input
+                            placeholder="Phone"
+                            value={newClientInEdit.phone}
+                            onChange={e => setNewClientInEdit(d => ({ ...d, phone: e.target.value }))}
+                            className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-red-400"
+                          />
+                          <input
+                            placeholder="Email"
+                            value={newClientInEdit.email}
+                            onChange={e => setNewClientInEdit(d => ({ ...d, email: e.target.value }))}
+                            className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-red-400"
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={createClientInEdit}
+                            disabled={!newClientInEdit.name.trim()}
+                            className="flex-1 bg-red-600 hover:bg-red-700 disabled:opacity-40 text-white text-xs font-semibold py-1.5 rounded-lg transition-colors"
+                          >
+                            Add Customer
+                          </button>
+                          <button onClick={() => setShowNewClientInEdit(false)} className="px-3 py-1.5 bg-gray-200 text-gray-600 text-xs font-semibold rounded-lg hover:bg-gray-300 transition-colors">
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Right: Job details */}
+                  <div className="space-y-3">
+                    <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Job Details</div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1.5">Service Address</label>
+                      <textarea
+                        value={jobDraft.address}
+                        onChange={e => setJobDraft(d => ({ ...d, address: e.target.value }))}
+                        rows={2}
+                        placeholder="123 Main St, Denver CO 80203"
+                        className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
+                      />
+                      {pastJobAddresses.length > 0 && (
+                        <div className="mt-2 space-y-1">
+                          <div className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">Past addresses for this customer</div>
+                          {pastJobAddresses.map((addr, i) => (
+                            <button
+                              key={i}
+                              onClick={() => setJobDraft(d => ({ ...d, address: addr }))}
+                              className="w-full text-left flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-gray-600 hover:bg-red-50 hover:text-red-700 rounded-lg border border-gray-100 transition-colors"
+                            >
+                              <MapPin size={10} className="flex-shrink-0 text-gray-400" />
+                              <span className="truncate">{addr}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1.5">Job Type</label>
+                      <div className="flex gap-2">
+                        {['Mold', 'Water', 'Fire'].map(t => (
+                          <button
+                            key={t}
+                            onClick={() => setJobDraft(d => ({ ...d, type: t }))}
+                            className={`flex-1 py-2 rounded-xl text-sm font-semibold border transition-colors ${jobDraft.type === t ? 'bg-red-600 border-red-600 text-white' : 'bg-white border-gray-200 text-gray-600 hover:border-red-300'}`}
+                          >{t}</button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-2 mt-5 pt-4 border-t border-gray-100">
+                  <button
+                    onClick={saveJobEdit}
+                    disabled={!jobDraft.clientId}
+                    className="bg-red-600 hover:bg-red-700 disabled:opacity-40 text-white text-sm font-semibold px-5 py-2 rounded-xl transition-colors"
+                  >
+                    Save Changes
+                  </button>
+                  <button onClick={() => setShowJobEdit(false)} className="px-4 py-2 text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors">
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Status bar */}
             {local.status === 'Draft' && (
