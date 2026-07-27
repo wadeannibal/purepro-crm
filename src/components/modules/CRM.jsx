@@ -113,6 +113,9 @@ function ClientDetail({ client, jobs, onClose, onEdit, onDelete, navigateTo }) {
                   <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${jobTypeColor(job.type)}`}>{job.type}</span>
                   <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${stageColor(job.stage)}`}>{job.stage}</span>
                 </div>
+                {job.jobName?.trim() && (
+                  <div className="text-xs font-semibold text-gray-900 truncate mb-0.5">{job.jobName}</div>
+                )}
                 <div className="text-xs text-gray-600 truncate">{job.address}</div>
                 <div className="text-xs text-green-700 font-semibold mt-0.5">{formatCurrency(job.revenue)}</div>
               </button>

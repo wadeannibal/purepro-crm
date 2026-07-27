@@ -20,9 +20,14 @@ function JobCard({ job, client, onDragStart, onClick, onArchive }) {
         </span>
         <GripVertical size={14} className="text-gray-300 group-hover:text-gray-400 flex-shrink-0 mt-0.5" />
       </div>
-      <div className="text-sm font-semibold text-gray-900 leading-tight mb-0.5 truncate">
-        {client?.name ?? 'Unknown Client'}
-      </div>
+      {job.jobName?.trim() ? (
+        <>
+          <div className="text-sm font-semibold text-gray-900 leading-tight truncate">{job.jobName}</div>
+          <div className="text-xs text-gray-500 truncate mb-0.5">{client?.name ?? 'Unknown Client'}</div>
+        </>
+      ) : (
+        <div className="text-sm font-semibold text-gray-900 leading-tight mb-0.5 truncate">{client?.name ?? 'Unknown Client'}</div>
+      )}
       <div className="text-xs text-gray-500 truncate mb-2">{job.address}</div>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1 text-green-700 font-semibold text-sm">

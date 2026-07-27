@@ -122,6 +122,9 @@ export default function JobRecords({ selectedJobId, setSelectedJobId, navigateTo
                   <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${stageColor(j.stage)}`}>{j.stage}</span>
                 </div>
                 <div className="text-xs font-semibold text-gray-900 truncate">{c?.name ?? 'Unknown'}</div>
+                {j.jobName?.trim() && (
+                  <div className="text-[11px] font-semibold text-red-700 truncate">{j.jobName}</div>
+                )}
                 <div className="text-[11px] text-gray-500 truncate">{j.address}</div>
                 <div className="text-[11px] text-green-700 font-semibold mt-0.5">{formatCurrency(j.estimate?.grandTotal ?? j.revenue ?? 0)}</div>
               </button>
