@@ -59,12 +59,12 @@ export default function QuoteGenerator({ selectedJobId, setSelectedJobId, naviga
   })
 
   const pdfOpts = {
-    margin: [0.5, 0.75],
+    margin: [0.65, 0.75],
     filename: `Estimate${client?.name ? ' - ' + client.name : ''}.pdf`,
     image: { type: 'jpeg', quality: 0.98 },
     html2canvas: { scale: 2, useCORS: true, logging: false },
     jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
-    pagebreak: { mode: 'css', avoid: 'tr' },
+    pagebreak: { mode: ['css', 'legacy'], avoid: 'tr' },
   }
 
   const handleSavePDF = async () => {
