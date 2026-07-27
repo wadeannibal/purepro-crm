@@ -61,7 +61,8 @@ export default function DocumentStorage({ selectedJobId, setSelectedJobId, navig
             <option value="">Choose a job…</option>
             {state.jobs.map(j => {
               const c = state.clients.find(x => x.id === j.clientId)
-              return <option key={j.id} value={j.id}>{j.type} — {c?.name} — {j.stage}</option>
+              const label = j.jobName?.trim() ? `${j.jobName} — ${c?.name ?? ''}` : `${j.type} — ${c?.name ?? ''}`
+              return <option key={j.id} value={j.id}>{label}</option>
             })}
           </select>
         </div>
@@ -85,7 +86,8 @@ export default function DocumentStorage({ selectedJobId, setSelectedJobId, navig
         >
           {state.jobs.map(j => {
             const c = state.clients.find(x => x.id === j.clientId)
-            return <option key={j.id} value={j.id}>{j.type} — {c?.name}</option>
+            const label = j.jobName?.trim() ? `${j.jobName} — ${c?.name ?? ''}` : `${j.type} — ${c?.name ?? ''}`
+            return <option key={j.id} value={j.id}>{label}</option>
           })}
         </select>
 

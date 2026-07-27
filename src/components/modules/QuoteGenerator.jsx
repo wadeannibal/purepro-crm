@@ -99,7 +99,8 @@ export default function QuoteGenerator({ selectedJobId, setSelectedJobId, naviga
           <option value="">Choose a job…</option>
           {state.jobs.filter(j => j.estimate).map(j => {
             const c = state.clients.find(x => x.id === j.clientId)
-            return <option key={j.id} value={j.id}>{j.type} — {c?.name} ({j.estimate.status})</option>
+            const label = j.jobName?.trim() ? `${j.jobName} — ${c?.name ?? ''}` : `${j.type} — ${c?.name ?? ''}`
+            return <option key={j.id} value={j.id}>{label} ({j.estimate.status})</option>
           })}
         </select>
       </div>
@@ -131,7 +132,8 @@ export default function QuoteGenerator({ selectedJobId, setSelectedJobId, naviga
         <select value={selectedJobId} onChange={e => setSelectedJobId(e.target.value)} className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500">
           {state.jobs.filter(j => j.estimate).map(j => {
             const c = state.clients.find(x => x.id === j.clientId)
-            return <option key={j.id} value={j.id}>{j.type} — {c?.name}</option>
+            const label = j.jobName?.trim() ? `${j.jobName} — ${c?.name ?? ''}` : `${j.type} — ${c?.name ?? ''}`
+            return <option key={j.id} value={j.id}>{label}</option>
           })}
         </select>
         <div className="flex flex-wrap items-center gap-2">
@@ -191,6 +193,7 @@ export default function QuoteGenerator({ selectedJobId, setSelectedJobId, naviga
             <div>
               <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Project Details</div>
               <div className="text-sm text-gray-700 space-y-1">
+                {job.jobName?.trim() && <div><span className="font-semibold">Job:</span> {job.jobName}</div>}
                 <div><span className="font-semibold">Type:</span> {job.type} Remediation</div>
                 {job.address && <div><span className="font-semibold">Address:</span> {job.address}</div>}
                 {job.source && <div><span className="font-semibold">Source:</span> {job.source}</div>}

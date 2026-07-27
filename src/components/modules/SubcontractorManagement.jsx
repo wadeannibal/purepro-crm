@@ -79,7 +79,8 @@ export default function SubcontractorManagement({ selectedJobId, setSelectedJobI
             <option value="">Choose a job…</option>
             {state.jobs.map(j => {
               const c = state.clients.find(x => x.id === j.clientId)
-              return <option key={j.id} value={j.id}>{j.type} — {c?.name} — {j.stage}</option>
+              const label = j.jobName?.trim() ? `${j.jobName} — ${c?.name ?? ''}` : `${j.type} — ${c?.name ?? ''}`
+              return <option key={j.id} value={j.id}>{label}</option>
             })}
           </select>
         </div>
@@ -100,7 +101,8 @@ export default function SubcontractorManagement({ selectedJobId, setSelectedJobI
           <select value={selectedJobId} onChange={e => { setSelectedJobId(e.target.value); setEditId(null); setEditRow(null); setAdding(false) }} className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500">
             {state.jobs.map(j => {
               const c = state.clients.find(x => x.id === j.clientId)
-              return <option key={j.id} value={j.id}>{j.type} — {c?.name}</option>
+              const label = j.jobName?.trim() ? `${j.jobName} — ${c?.name ?? ''}` : `${j.type} — ${c?.name ?? ''}`
+              return <option key={j.id} value={j.id}>{label}</option>
             })}
           </select>
           <button onClick={() => setAdding(true)} className="ml-auto flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold px-3 py-1.5 rounded-lg transition-colors">

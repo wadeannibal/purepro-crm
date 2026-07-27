@@ -781,7 +781,8 @@ export default function ESignature({ selectedJobId, setSelectedJobId, navigateTo
               className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500">
               {state.jobs.map(j => {
                 const c = state.clients.find(cl => cl.id === j.clientId)
-                return <option key={j.id} value={j.id}>{j.type} — {c?.name ?? 'Unknown'} ({j.stage})</option>
+                const label = j.jobName?.trim() ? `${j.jobName} — ${c?.name ?? ''}` : `${j.type} — ${c?.name ?? ''}`
+                return <option key={j.id} value={j.id}>{label}</option>
               })}
             </select>
           )}

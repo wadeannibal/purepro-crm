@@ -142,6 +142,7 @@ export async function loadFromSupabase() {
       id: j.id,
       clientId: j.client_id,
       type: j.type,
+      jobName: j.job_name ?? '',
       stage: j.stage,
       revenue: j.revenue,
       archived: j.archived ?? false,
@@ -469,6 +470,7 @@ export async function syncAction(action, preState) {
       case ACTIONS.ADD_JOB:
         await supabase.from('jobs').insert({
           id: payload.id, client_id: payload.clientId || null, type: payload.type,
+          job_name: payload.jobName || null,
           stage: payload.stage, revenue: payload.revenue || 0,
           address: payload.address || null, description: payload.description || null,
           checklist: {}, osha_checklist: {},
@@ -483,6 +485,7 @@ export async function syncAction(action, preState) {
       case ACTIONS.UPDATE_JOB:
         await supabase.from('jobs').update({
           ...(payload.type !== undefined && { type: payload.type }),
+          ...(payload.jobName !== undefined && { job_name: payload.jobName || null }),
           ...(payload.stage !== undefined && { stage: payload.stage }),
           ...(payload.revenue !== undefined && { revenue: payload.revenue }),
           ...(payload.address !== undefined && { address: payload.address }),

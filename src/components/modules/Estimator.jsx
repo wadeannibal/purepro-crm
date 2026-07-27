@@ -131,8 +131,8 @@ const BLANK_ESTIMATE = {
   discountPct: 0,
 }
 
-const BLANK_NEW = { name: '', phone: '', email: '', address: '', type: 'Mold' }
-const BLANK_EXISTING = { clientId: '', address: '', type: 'Mold' }
+const BLANK_NEW = { name: '', phone: '', email: '', address: '', type: 'Mold', jobName: '' }
+const BLANK_EXISTING = { clientId: '', address: '', type: 'Mold', jobName: '' }
 
 // ── Totals sidebar ───────────────────────────────────────────────────────────
 function TotalsPanel({ estimate, onMarginChange, onTaxChange, onDiscountChange }) {
@@ -494,7 +494,7 @@ export default function Estimator({ selectedJobId, setSelectedJobId, navigateTo 
   const [scopeAI, setScopeAI] = useState({ open: false, context: '', loading: false })
   const [showTemplatePicker, setShowTemplatePicker] = useState(false)
   const [showJobEdit, setShowJobEdit] = useState(false)
-  const [jobDraft, setJobDraft] = useState({ clientId: '', address: '', type: '' })
+  const [jobDraft, setJobDraft] = useState({ clientId: '', address: '', type: '', jobName: '' })
   const [clientSearch, setClientSearch] = useState('')
   const [showClientDropdown, setShowClientDropdown] = useState(false)
   const [showNewClientInEdit, setShowNewClientInEdit] = useState(false)
@@ -556,7 +556,7 @@ export default function Estimator({ selectedJobId, setSelectedJobId, navigateTo 
   }, [local, selectedJobId, dispatch])
 
   const openJobEdit = useCallback(() => {
-    setJobDraft({ clientId: job.clientId, address: job.address ?? '', type: job.type })
+    setJobDraft({ clientId: job.clientId, address: job.address ?? '', type: job.type, jobName: job.jobName ?? '' })
     setClientSearch(client?.name ?? '')
     setShowClientDropdown(false)
     setShowNewClientInEdit(false)
@@ -565,7 +565,7 @@ export default function Estimator({ selectedJobId, setSelectedJobId, navigateTo 
 
   const saveJobEdit = useCallback(() => {
     if (!jobDraft.clientId) return
-    dispatch({ type: ACTIONS.UPDATE_JOB, payload: { id: selectedJobId, clientId: jobDraft.clientId, address: jobDraft.address, type: jobDraft.type } })
+    dispatch({ type: ACTIONS.UPDATE_JOB, payload: { id: selectedJobId, clientId: jobDraft.clientId, address: jobDraft.address, type: jobDraft.type, jobName: jobDraft.jobName } })
     setShowJobEdit(false)
   }, [jobDraft, selectedJobId, dispatch])
 
@@ -735,7 +735,7 @@ Write a clean, professional scope of work. Use 3-4 numbered sections with bullet
   const startExisting = () => {
     if (!existingForm.clientId) return
     const jobId = uid()
-    dispatch({ type: ACTIONS.ADD_JOB, payload: { id: jobId, clientId: existingForm.clientId, type: existingForm.type, address: existingForm.address, stage: 'Lead', revenue: 0, notes: [], photos: [], documents: [], waivers: [], timeLogs: [], checklist: {}, oshaChecklist: {}, estimate: null, invoice: null, insurance: null, subcontractors: [], expenses: [] } })
+    dispatch({ type: ACTIONS.ADD_JOB, payload: { id: jobId, clientId: existingForm.clientId, type: existingForm.type, jobName: existingForm.jobName, address: existingForm.address, stage: 'Lead', revenue: 0, notes: [], photos: [], documents: [], waivers: [], timeLogs: [], checklist: {}, oshaChecklist: {}, estimate: null, invoice: null, insurance: null, subcontractors: [], expenses: [] } })
     setSelectedJobId(jobId)
     setExistingForm(BLANK_EXISTING)
   }
@@ -745,7 +745,7 @@ Write a clean, professional scope of work. Use 3-4 numbered sections with bullet
     const clientId = uid()
     const jobId = uid()
     dispatch({ type: ACTIONS.ADD_CLIENT, payload: { id: clientId, name: newForm.name.trim(), phone: newForm.phone, email: newForm.email, type: 'Homeowner', communications: [], isVIP: false } })
-    dispatch({ type: ACTIONS.ADD_JOB, payload: { id: jobId, clientId, type: newForm.type, address: newForm.address, stage: 'Lead', revenue: 0, notes: [], photos: [], documents: [], waivers: [], timeLogs: [], checklist: {}, oshaChecklist: {}, estimate: null, invoice: null, insurance: null, subcontractors: [], expenses: [] } })
+    dispatch({ type: ACTIONS.ADD_JOB, payload: { id: jobId, clientId, type: newForm.type, jobName: newForm.jobName, address: newForm.address, stage: 'Lead', revenue: 0, notes: [], photos: [], documents: [], waivers: [], timeLogs: [], checklist: {}, oshaChecklist: {}, estimate: null, invoice: null, insurance: null, subcontractors: [], expenses: [] } })
     setSelectedJobId(jobId)
     setShowNewForm(false)
     setNewForm(BLANK_NEW)
@@ -779,6 +779,10 @@ Write a clean, professional scope of work. Use 3-4 numbered sections with bullet
                   <div>
                     <label className="block text-xs font-semibold text-gray-600 mb-1">Customer Name *</label>
                     <input autoFocus value={newForm.name} onChange={e => setNewForm(f => ({ ...f, name: e.target.value }))} placeholder="John & Jane Smith" className={InputCls} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">Job Name <span className="text-gray-400 font-normal">(optional — e.g. "Kitchen Mold")</span></label>
+                    <input value={newForm.jobName} onChange={e => setNewForm(f => ({ ...f, jobName: e.target.value }))} placeholder="e.g. Master Bath, Basement Water" className={InputCls} />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
@@ -824,6 +828,10 @@ Write a clean, professional scope of work. Use 3-4 numbered sections with bullet
                   </select>
                 </div>
                 <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">Job Name <span className="text-gray-400 font-normal">(optional — e.g. "Kitchen Mold")</span></label>
+                  <input value={existingForm.jobName} onChange={e => setExistingForm(f => ({ ...f, jobName: e.target.value }))} placeholder="e.g. Master Bath, Basement Water" className={InputCls} />
+                </div>
+                <div>
                   <label className="block text-xs font-semibold text-gray-600 mb-1">Property Address</label>
                   <input value={existingForm.address} onChange={e => setExistingForm(f => ({ ...f, address: e.target.value }))} placeholder="123 Main St, Denver CO" className={InputCls} />
                 </div>
@@ -849,8 +857,9 @@ Write a clean, professional scope of work. Use 3-4 numbered sections with bullet
                 <option value="">Select a job…</option>
                 {state.jobs.map(j => {
                   const c = state.clients.find(x => x.id === j.clientId)
+                  const label = j.jobName?.trim() ? `${j.jobName} — ${c?.name ?? ''}` : `${j.type} — ${c?.name ?? ''}`
                   const hasEst = j.estimate ? ` (${j.estimate.status})` : ' (no estimate)'
-                  return <option key={j.id} value={j.id}>{j.type} — {c?.name}{hasEst}</option>
+                  return <option key={j.id} value={j.id}>{label}{hasEst}</option>
                 })}
               </select>
             </div>
@@ -977,7 +986,10 @@ Write a clean, professional scope of work. Use 3-4 numbered sections with bullet
                     )}
                   </div>
                   <div className="flex-1 min-w-0 p-4">
-                    <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Service Address</div>
+                    <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Job</div>
+                    {job.jobName?.trim() && (
+                      <div className="text-base font-bold text-gray-900 leading-snug truncate mb-1">{job.jobName}</div>
+                    )}
                     {job.address ? (
                       <div className="flex items-start gap-1.5">
                         <MapPin size={12} className="text-gray-400 mt-0.5 flex-shrink-0" />
@@ -1118,6 +1130,15 @@ Write a clean, professional scope of work. Use 3-4 numbered sections with bullet
                   {/* Right: Job details */}
                   <div className="space-y-3">
                     <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Job Details</div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1.5">Job Name <span className="text-gray-400 font-normal">(optional)</span></label>
+                      <input
+                        value={jobDraft.jobName}
+                        onChange={e => setJobDraft(d => ({ ...d, jobName: e.target.value }))}
+                        placeholder="e.g. Kitchen Mold, Upstairs Bath"
+                        className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                      />
+                    </div>
                     <div>
                       <label className="block text-xs font-semibold text-gray-600 mb-1.5">Service Address</label>
                       <textarea

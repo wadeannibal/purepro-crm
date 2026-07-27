@@ -78,7 +78,7 @@ function KanbanColumn({ stage, jobs, clients, onDrop, onDragOver, onDragLeave, i
   )
 }
 
-const BLANK_JOB = { clientId: '', type: 'Mold', stage: 'Lead', revenue: '', address: '', description: '', leadSource: '', leadSourcePartnerId: '' }
+const BLANK_JOB = { clientId: '', jobName: '', type: 'Mold', stage: 'Lead', revenue: '', address: '', description: '', leadSource: '', leadSourcePartnerId: '' }
 const BLANK_LOSS = { lostReason: 'Price too high', lostCompetitor: '' }
 
 export default function JobPipeline({ navigateTo }) {
@@ -255,6 +255,7 @@ export default function JobPipeline({ navigateTo }) {
                 {state.clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </div>
+            {field('Job Name', 'jobName')}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {field('Job Type', 'type', 'text', JOB_TYPES)}
               {field('Stage', 'stage', 'text', JOB_STAGES.filter(s => s !== 'Lost'))}

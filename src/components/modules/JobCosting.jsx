@@ -38,7 +38,8 @@ export default function JobCosting({ selectedJobId, setSelectedJobId, navigateTo
             <option value="">Choose a job…</option>
             {state.jobs.map(j => {
               const c = state.clients.find(x => x.id === j.clientId)
-              return <option key={j.id} value={j.id}>{j.type} — {c?.name} — {j.stage}</option>
+              const label = j.jobName?.trim() ? `${j.jobName} — ${c?.name ?? ''}` : `${j.type} — ${c?.name ?? ''}`
+              return <option key={j.id} value={j.id}>{label}</option>
             })}
           </select>
         </div>
@@ -71,7 +72,8 @@ export default function JobCosting({ selectedJobId, setSelectedJobId, navigateTo
           <select value={selectedJobId} onChange={e => setSelectedJobId(e.target.value)} className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500">
             {state.jobs.map(j => {
               const c = state.clients.find(x => x.id === j.clientId)
-              return <option key={j.id} value={j.id}>{j.type} — {c?.name}</option>
+              const label = j.jobName?.trim() ? `${j.jobName} — ${c?.name ?? ''}` : `${j.type} — ${c?.name ?? ''}`
+              return <option key={j.id} value={j.id}>{label}</option>
             })}
           </select>
           <span className="text-sm text-gray-500">{job.type} — {job.stage}</span>

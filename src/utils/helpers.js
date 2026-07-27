@@ -190,6 +190,12 @@ export const isInvoiceOverdue = (invoice) => {
 export const formatCurrencyExact = (n) =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n ?? 0)
 
+export const jobDisplayName = (job, clients) => {
+  const clientName = clients?.find(c => c.id === job?.clientId)?.name ?? ''
+  const tag = job?.jobName?.trim() ? job.jobName.trim() : (job?.type ?? '')
+  return clientName ? `${tag} — ${clientName}` : tag
+}
+
 export const invoiceStatusColor = (status) => {
   const map = {
     Draft: 'bg-gray-100 text-gray-700',
