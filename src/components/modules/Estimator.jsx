@@ -503,10 +503,15 @@ export default function Estimator({ selectedJobId, setSelectedJobId, navigateTo 
 
   const job = selectedJobId ? state.jobs.find(j => j.id === selectedJobId) : null
   const client = job ? state.clients.find(c => c.id === job.clientId) : null
+  const jobRef = useRef(job)
+  useEffect(() => { jobRef.current = job }, [job])
 
   useEffect(() => {
     if (job) {
-      const base = { ...BLANK_ESTIMATE, ...(job.estimate ?? {}) }
+      const estimatePhotos = (job.photos ?? [])
+        .filter(p => p.photoType === 'estimate')
+        .map(p => ({ id: p.id, name: p.name, label: p.label ?? '', data: p.data }))
+      const base = { ...BLANK_ESTIMATE, ...(job.estimate ?? {}), photos: estimatePhotos }
       if (!base.id) base.id = uid()
       setLocal(base)
     } else {
@@ -523,7 +528,19 @@ export default function Estimator({ selectedJobId, setSelectedJobId, navigateTo 
     if (!local || !selectedJobId || savingRef.current) return
     savingRef.current = true
     const totals = computeEstimateTotals(local)
+    const currentJob = jobRef.current
+    const savedEstimatePhotos = (currentJob?.photos ?? []).filter(p => p.photoType === 'estimate')
+    const savedIds = new Set(savedEstimatePhotos.map(p => p.id))
+    const localIds = new Set((local.photos ?? []).map(p => p.id))
+    const photosToAdd = (local.photos ?? []).filter(p => !savedIds.has(p.id))
+    const photosToDelete = savedEstimatePhotos.filter(p => !localIds.has(p.id))
     dispatch({ type: ACTIONS.SAVE_ESTIMATE, payload: { jobId: selectedJobId, estimate: { ...local, grandTotal: totals.grandTotal, updatedAt: new Date().toISOString() } } })
+    photosToAdd.forEach(photo => {
+      dispatch({ type: ACTIONS.ADD_PHOTO, payload: { jobId: selectedJobId, photo: { id: photo.id, name: photo.name, data: photo.data, room: '', photoType: 'estimate', label: photo.label || '' } } })
+    })
+    photosToDelete.forEach(photo => {
+      dispatch({ type: ACTIONS.DELETE_PHOTO, payload: { jobId: selectedJobId, photoId: photo.id } })
+    })
     setSaved(true)
     setTimeout(() => { setSaved(false); savingRef.current = false }, 2000)
   }, [local, selectedJobId, dispatch])
@@ -601,40 +618,43 @@ export default function Estimator({ selectedJobId, setSelectedJobId, navigateTo 
     setSaved(false)
   }, [])
 
-  const compressImage = useCallback((file) => new Promise((resolve) => {
-    const MAX = 1000
-    const QUALITY = 0.70
-    const img = new Image()
-    const url = URL.createObjectURL(file)
-    img.onload = () => {
-      URL.revokeObjectURL(url)
-      let { width, height } = img
-      if (width > MAX || height > MAX) {
-        if (width >= height) { height = Math.round(height * MAX / width); width = MAX }
-        else { width = Math.round(width * MAX / height); height = MAX }
-      }
-      const canvas = document.createElement('canvas')
-      canvas.width = width
-      canvas.height = height
-      canvas.getContext('2d').drawImage(img, 0, 0, width, height)
-      resolve(canvas.toDataURL('image/jpeg', QUALITY))
-    }
-    img.onerror = () => { URL.revokeObjectURL(url); resolve(null) }
-    img.src = url
-  }), [])
-
   const handleAddPhotos = useCallback((e) => {
     const files = Array.from(e.target.files ?? [])
     if (!files.length) return
     files.forEach(file => {
-      compressImage(file).then(data => {
-        if (!data) return
-        setLocal(est => ({ ...est, photos: [...(est.photos ?? []), { id: uid(), name: file.name, label: '', data }] }))
-        setSaved(false)
-      })
+      const reader = new FileReader()
+      reader.onload = (ev) => {
+        const raw = ev.target.result
+        const img = new Image()
+        img.onload = () => {
+          try {
+            const MAX = 1000
+            let { width, height } = img
+            if (width > MAX || height > MAX) {
+              if (width >= height) { height = Math.round(height * MAX / width); width = MAX }
+              else { width = Math.round(width * MAX / height); height = MAX }
+            }
+            const canvas = document.createElement('canvas')
+            canvas.width = width || 1
+            canvas.height = height || 1
+            canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height)
+            const compressed = canvas.toDataURL('image/jpeg', 0.70)
+            setLocal(est => ({ ...est, photos: [...(est.photos ?? []), { id: uid(), name: file.name, label: '', data: compressed }] }))
+          } catch {
+            setLocal(est => ({ ...est, photos: [...(est.photos ?? []), { id: uid(), name: file.name, label: '', data: raw }] }))
+          }
+          setSaved(false)
+        }
+        img.onerror = () => {
+          setLocal(est => ({ ...est, photos: [...(est.photos ?? []), { id: uid(), name: file.name, label: '', data: raw }] }))
+          setSaved(false)
+        }
+        img.src = raw
+      }
+      reader.readAsDataURL(file)
     })
     e.target.value = ''
-  }, [compressImage])
+  }, [])
 
   const removePhoto = useCallback((id) => {
     setLocal(e => ({ ...e, photos: (e.photos ?? []).filter(p => p.id !== id) }))

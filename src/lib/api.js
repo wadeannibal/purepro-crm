@@ -95,7 +95,6 @@ export async function loadFromSupabase() {
     grandTotal: e.grand_total ?? 0,
     followUpCount: e.follow_up_count ?? 0,
     lastFollowUpAt: e.last_follow_up_at ?? null,
-    photos: e.photos ?? [],
     createdAt: e.created_at,
     updatedAt: e.updated_at,
   }) : null
@@ -155,7 +154,7 @@ export async function loadFromSupabase() {
       notes: (notes ?? []).filter(n => n.job_id === j.id)
         .map(n => ({ id: n.id, text: n.text, createdAt: n.created_at })),
       photos: (photos ?? []).filter(p => p.job_id === j.id)
-        .map(p => ({ id: p.id, name: p.name, data: p.storage_path, room: p.room ?? '', photoType: p.photo_type ?? '', createdAt: p.created_at, isShowcase: p.is_showcase ?? false })),
+        .map(p => ({ id: p.id, name: p.name, data: p.storage_path, room: p.room ?? '', photoType: p.photo_type ?? '', label: p.label ?? '', createdAt: p.created_at, isShowcase: p.is_showcase ?? false })),
       documents: (docs ?? []).filter(d => d.job_id === j.id)
         .map(d => ({ id: d.id, name: d.name, docType: d.doc_type ?? '', fileType: d.file_type ?? '', data: d.storage_path, createdAt: d.created_at })),
       waivers: (waivers ?? []).filter(w => w.job_id === j.id)
@@ -538,7 +537,7 @@ export async function syncAction(action, preState) {
       }
 
       case ACTIONS.ADD_PHOTO:
-        await supabase.from('job_photos').insert({ id: payload.photo.id, job_id: payload.jobId, name: payload.photo.name, storage_path: payload.photo.data, room: payload.photo.room || null, photo_type: payload.photo.photoType || null, created_at: payload.photo.createdAt })
+        await supabase.from('job_photos').insert({ id: payload.photo.id, job_id: payload.jobId, name: payload.photo.name, storage_path: payload.photo.data, room: payload.photo.room || null, photo_type: payload.photo.photoType || null, label: payload.photo.label || null, created_at: payload.photo.createdAt })
         break
       case ACTIONS.DELETE_PHOTO:
         await supabase.from('job_photos').delete().eq('id', payload.photoId)
@@ -593,7 +592,6 @@ export async function syncAction(action, preState) {
           overhead_margin_pct: est.overheadMarginPct ?? 25, tax_pct: est.taxPct ?? 0,
           grand_total: est.grandTotal ?? 0,
           follow_up_count: est.followUpCount ?? 0, last_follow_up_at: est.lastFollowUpAt || null,
-          photos: est.photos ?? [],
           created_at: est.createdAt || ts(), updated_at: ts(),
         })
         if (estErr) throw estErr
