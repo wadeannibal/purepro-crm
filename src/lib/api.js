@@ -539,6 +539,9 @@ export async function syncAction(action, preState) {
       case ACTIONS.ADD_PHOTO:
         await supabase.from('job_photos').insert({ id: payload.photo.id, job_id: payload.jobId, name: payload.photo.name, storage_path: payload.photo.data, room: payload.photo.room || null, photo_type: payload.photo.photoType || null, label: payload.photo.label || null, created_at: payload.photo.createdAt })
         break
+      case ACTIONS.UPDATE_PHOTO:
+        await supabase.from('job_photos').update({ label: payload.patch.label ?? null }).eq('id', payload.photoId)
+        break
       case ACTIONS.DELETE_PHOTO:
         await supabase.from('job_photos').delete().eq('id', payload.photoId)
         break

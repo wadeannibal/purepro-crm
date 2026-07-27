@@ -14,6 +14,7 @@ export const ACTIONS = {
   UPDATE_CHECKLIST_ITEM: 'UPDATE_CHECKLIST_ITEM',
   UPDATE_OSHA_ITEM: 'UPDATE_OSHA_ITEM',
   ADD_PHOTO: 'ADD_PHOTO',
+  UPDATE_PHOTO: 'UPDATE_PHOTO',
   DELETE_PHOTO: 'DELETE_PHOTO',
   ADD_DOCUMENT: 'ADD_DOCUMENT',
   DELETE_DOCUMENT: 'DELETE_DOCUMENT',
@@ -287,6 +288,15 @@ export function reducer(state, action) {
         jobs: updateJob(state.jobs, payload.jobId, j => ({
           ...j,
           photos: [...j.photos, { id: uid(), createdAt: now(), ...payload.photo }],
+        })),
+      }
+
+    case ACTIONS.UPDATE_PHOTO:
+      return {
+        ...state,
+        jobs: updateJob(state.jobs, payload.jobId, j => ({
+          ...j,
+          photos: j.photos.map(p => p.id === payload.photoId ? { ...p, ...payload.patch } : p),
         })),
       }
 

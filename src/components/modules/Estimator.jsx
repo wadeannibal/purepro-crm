@@ -532,11 +532,16 @@ export default function Estimator({ selectedJobId, setSelectedJobId, navigateTo 
     const savedEstimatePhotos = (currentJob?.photos ?? []).filter(p => p.photoType === 'estimate')
     const savedIds = new Set(savedEstimatePhotos.map(p => p.id))
     const localIds = new Set((local.photos ?? []).map(p => p.id))
+    const savedById = Object.fromEntries(savedEstimatePhotos.map(p => [p.id, p]))
     const photosToAdd = (local.photos ?? []).filter(p => !savedIds.has(p.id))
+    const photosToUpdate = (local.photos ?? []).filter(p => savedIds.has(p.id) && (p.label ?? '') !== (savedById[p.id]?.label ?? ''))
     const photosToDelete = savedEstimatePhotos.filter(p => !localIds.has(p.id))
     dispatch({ type: ACTIONS.SAVE_ESTIMATE, payload: { jobId: selectedJobId, estimate: { ...local, grandTotal: totals.grandTotal, updatedAt: new Date().toISOString() } } })
     photosToAdd.forEach(photo => {
       dispatch({ type: ACTIONS.ADD_PHOTO, payload: { jobId: selectedJobId, photo: { id: photo.id, name: photo.name, data: photo.data, room: '', photoType: 'estimate', label: photo.label || '' } } })
+    })
+    photosToUpdate.forEach(photo => {
+      dispatch({ type: ACTIONS.UPDATE_PHOTO, payload: { jobId: selectedJobId, photoId: photo.id, patch: { label: photo.label || '' } } })
     })
     photosToDelete.forEach(photo => {
       dispatch({ type: ACTIONS.DELETE_PHOTO, payload: { jobId: selectedJobId, photoId: photo.id } })
