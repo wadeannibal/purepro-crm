@@ -206,29 +206,6 @@ export default function QuoteGenerator({ selectedJobId, setSelectedJobId, naviga
             </div>
           )}
 
-          {/* Site Photos */}
-          {estimatePhotos.length > 0 && (
-            <div className="mb-8">
-              <h2 className="text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 pb-1 mb-4">Site Photos</h2>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
-                {estimatePhotos.map(photo => (
-                  <div key={photo.id} style={{ breakInside: 'avoid', pageBreakInside: 'avoid' }}>
-                    <img
-                      src={photo.data}
-                      alt={photo.label || photo.name}
-                      style={{ width: '100%', height: '150px', objectFit: 'cover', borderRadius: '4px', display: 'block' }}
-                    />
-                    {photo.label && (
-                      <div style={{ fontSize: '10px', color: '#6b7280', marginTop: '3px', textAlign: 'center', lineHeight: '1.3' }}>
-                        {photo.label}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
           {/* Line items */}
           <div className="mb-8">
             <h2 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Itemized Estimate</h2>
@@ -349,6 +326,29 @@ export default function QuoteGenerator({ selectedJobId, setSelectedJobId, naviga
               </div>
             </div>
           </div>
+
+          {/* Site Photos */}
+          {estimatePhotos.length > 0 && (
+            <div className="mb-8">
+              <h2 className="text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 pb-1 mb-4">Site Photos</h2>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+                {estimatePhotos.map(photo => (
+                  <div key={photo.id} style={{ breakInside: 'avoid', pageBreakInside: 'avoid' }}>
+                    <img
+                      src={photo.data}
+                      alt={photo.label || photo.name}
+                      style={{ width: '100%', height: '150px', objectFit: 'cover', borderRadius: '4px', display: 'block' }}
+                    />
+                    {photo.label && (
+                      <div style={{ fontSize: '10px', color: '#6b7280', marginTop: '3px', textAlign: 'center', lineHeight: '1.3' }}>
+                        {photo.label}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Terms */}
           {estimate.termsNotes && (
