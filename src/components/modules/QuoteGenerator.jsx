@@ -107,6 +107,9 @@ export default function QuoteGenerator({ selectedJobId, setSelectedJobId, naviga
   }
 
   const totals = computeEstimateTotals(estimate)
+  const estimatePhotos = (job.photos ?? [])
+    .filter(p => p.photoType === 'estimate')
+    .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
 
   // Support both new unified lineItems format and legacy per-category arrays
   const isNewFormat = Array.isArray(estimate.lineItems)
@@ -200,6 +203,29 @@ export default function QuoteGenerator({ selectedJobId, setSelectedJobId, naviga
             <div className="mb-8">
               <h2 className="text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 pb-1 mb-3">Scope of Work</h2>
               <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{estimate.scopeNotes}</div>
+            </div>
+          )}
+
+          {/* Site Photos */}
+          {estimatePhotos.length > 0 && (
+            <div className="mb-8">
+              <h2 className="text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 pb-1 mb-4">Site Photos</h2>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+                {estimatePhotos.map(photo => (
+                  <div key={photo.id} style={{ breakInside: 'avoid', pageBreakInside: 'avoid' }}>
+                    <img
+                      src={photo.data}
+                      alt={photo.label || photo.name}
+                      style={{ width: '100%', height: '150px', objectFit: 'cover', borderRadius: '4px', display: 'block' }}
+                    />
+                    {photo.label && (
+                      <div style={{ fontSize: '10px', color: '#6b7280', marginTop: '3px', textAlign: 'center', lineHeight: '1.3' }}>
+                        {photo.label}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
