@@ -95,6 +95,7 @@ export async function loadFromSupabase() {
     grandTotal: e.grand_total ?? 0,
     followUpCount: e.follow_up_count ?? 0,
     lastFollowUpAt: e.last_follow_up_at ?? null,
+    photos: e.photos ?? [],
     createdAt: e.created_at,
     updatedAt: e.updated_at,
   }) : null
@@ -592,6 +593,7 @@ export async function syncAction(action, preState) {
           overhead_margin_pct: est.overheadMarginPct ?? 25, tax_pct: est.taxPct ?? 0,
           grand_total: est.grandTotal ?? 0,
           follow_up_count: est.followUpCount ?? 0, last_follow_up_at: est.lastFollowUpAt || null,
+          photos: est.photos ?? [],
           created_at: est.createdAt || ts(), updated_at: ts(),
         })
         if (estErr) throw estErr

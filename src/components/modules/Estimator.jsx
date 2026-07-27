@@ -587,6 +587,8 @@ export default function Estimator({ selectedJobId, setSelectedJobId, navigateTo 
 
   const dragIndex = useRef(null)
   const savingRef = useRef(false)
+  const photoDragIndex = useRef(null)
+  const [photoDragOverIdx, setPhotoDragOverIdx] = useState(null)
 
   const reorderItems = useCallback((fromIndex, toIndex) => {
     if (fromIndex === null || fromIndex === toIndex) return
@@ -605,7 +607,7 @@ export default function Estimator({ selectedJobId, setSelectedJobId, navigateTo 
     files.forEach(file => {
       const reader = new FileReader()
       reader.onload = (ev) => {
-        setLocal(est => ({ ...est, photos: [...(est.photos ?? []), { name: file.name, data: ev.target.result }] }))
+        setLocal(est => ({ ...est, photos: [...(est.photos ?? []), { id: uid(), name: file.name, label: '', data: ev.target.result }] }))
         setSaved(false)
       }
       reader.readAsDataURL(file)
@@ -613,8 +615,24 @@ export default function Estimator({ selectedJobId, setSelectedJobId, navigateTo 
     e.target.value = ''
   }, [])
 
-  const removePhoto = useCallback((index) => {
-    setLocal(e => ({ ...e, photos: (e.photos ?? []).filter((_, i) => i !== index) }))
+  const removePhoto = useCallback((id) => {
+    setLocal(e => ({ ...e, photos: (e.photos ?? []).filter(p => p.id !== id) }))
+    setSaved(false)
+  }, [])
+
+  const updatePhotoLabel = useCallback((id, label) => {
+    setLocal(e => ({ ...e, photos: (e.photos ?? []).map(p => p.id === id ? { ...p, label } : p) }))
+    setSaved(false)
+  }, [])
+
+  const reorderPhotos = useCallback((from, to) => {
+    if (from === null || from === to) return
+    setLocal(e => {
+      const photos = [...(e.photos ?? [])]
+      const [moved] = photos.splice(from, 1)
+      photos.splice(to, 0, moved)
+      return { ...e, photos }
+    })
     setSaved(false)
   }, [])
 
@@ -1266,16 +1284,39 @@ Write a clean, professional scope of work. Use 3-4 numbered sections with bullet
               {(local.photos ?? []).length === 0 ? (
                 <p className="text-xs text-gray-400 text-center py-3">No photos attached — optional</p>
               ) : (
-                <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   {(local.photos ?? []).map((photo, i) => (
-                    <div key={i} className="relative group/photo aspect-square">
-                      <img src={photo.data} alt={photo.name} className="w-full h-full object-cover rounded-lg border border-gray-200" />
-                      <button
-                        onClick={() => removePhoto(i)}
-                        className="absolute top-1 right-1 bg-black/60 hover:bg-red-600 text-white rounded-full p-0.5 opacity-0 group-hover/photo:opacity-100 transition-opacity"
-                      >
-                        <X size={10} />
-                      </button>
+                    <div
+                      key={photo.id || i}
+                      draggable
+                      onDragStart={e => { e.dataTransfer.effectAllowed = 'move'; photoDragIndex.current = i }}
+                      onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; setPhotoDragOverIdx(i) }}
+                      onDragLeave={() => setPhotoDragOverIdx(null)}
+                      onDrop={e => { e.preventDefault(); setPhotoDragOverIdx(null); reorderPhotos(photoDragIndex.current, i); photoDragIndex.current = null }}
+                      className={`rounded-xl border overflow-hidden transition-all ${photoDragOverIdx === i ? 'ring-2 ring-red-400 border-red-300' : 'border-gray-200'}`}
+                    >
+                      <div className="relative group/photo">
+                        <img src={photo.data} alt={photo.label || photo.name} className="w-full aspect-square object-cover" />
+                        <div className="absolute top-1.5 left-1.5 bg-black/50 rounded-lg p-1 opacity-0 group-hover/photo:opacity-100 transition-opacity cursor-grab active:cursor-grabbing">
+                          <GripVertical size={12} className="text-white" />
+                        </div>
+                        <button
+                          onClick={() => removePhoto(photo.id)}
+                          className="absolute top-1.5 right-1.5 bg-black/60 hover:bg-red-600 text-white rounded-full p-0.5 opacity-0 group-hover/photo:opacity-100 transition-opacity"
+                        >
+                          <X size={10} />
+                        </button>
+                      </div>
+                      <div className="px-2 py-1.5 bg-white border-t border-gray-100">
+                        <input
+                          value={photo.label || ''}
+                          onChange={e => updatePhotoLabel(photo.id, e.target.value)}
+                          placeholder="Add label…"
+                          onClick={e => e.stopPropagation()}
+                          onDragStart={e => e.preventDefault()}
+                          className="w-full text-xs text-gray-700 placeholder-gray-300 focus:outline-none bg-transparent"
+                        />
+                      </div>
                     </div>
                   ))}
                 </div>
