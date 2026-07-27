@@ -510,7 +510,8 @@ export default function Estimator({ selectedJobId, setSelectedJobId, navigateTo 
     if (job) {
       const estimatePhotos = (job.photos ?? [])
         .filter(p => p.photoType === 'estimate')
-        .map(p => ({ id: p.id, name: p.name, label: p.label ?? '', data: p.data }))
+        .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
+        .map(p => ({ id: p.id, name: p.name, label: p.label ?? '', data: p.data, sortOrder: p.sortOrder ?? 0 }))
       const base = { ...BLANK_ESTIMATE, ...(job.estimate ?? {}), photos: estimatePhotos }
       if (!base.id) base.id = uid()
       setLocal(base)
@@ -533,15 +534,19 @@ export default function Estimator({ selectedJobId, setSelectedJobId, navigateTo 
     const savedIds = new Set(savedEstimatePhotos.map(p => p.id))
     const localIds = new Set((local.photos ?? []).map(p => p.id))
     const savedById = Object.fromEntries(savedEstimatePhotos.map(p => [p.id, p]))
-    const photosToAdd = (local.photos ?? []).filter(p => !savedIds.has(p.id))
-    const photosToUpdate = (local.photos ?? []).filter(p => savedIds.has(p.id) && (p.label ?? '') !== (savedById[p.id]?.label ?? ''))
     const photosToDelete = savedEstimatePhotos.filter(p => !localIds.has(p.id))
     dispatch({ type: ACTIONS.SAVE_ESTIMATE, payload: { jobId: selectedJobId, estimate: { ...local, grandTotal: totals.grandTotal, updatedAt: new Date().toISOString() } } })
-    photosToAdd.forEach(photo => {
-      dispatch({ type: ACTIONS.ADD_PHOTO, payload: { jobId: selectedJobId, photo: { id: photo.id, name: photo.name, data: photo.data, room: '', photoType: 'estimate', label: photo.label || '' } } })
-    })
-    photosToUpdate.forEach(photo => {
-      dispatch({ type: ACTIONS.UPDATE_PHOTO, payload: { jobId: selectedJobId, photoId: photo.id, patch: { label: photo.label || '' } } })
+    ;(local.photos ?? []).forEach((photo, idx) => {
+      if (!savedIds.has(photo.id)) {
+        dispatch({ type: ACTIONS.ADD_PHOTO, payload: { jobId: selectedJobId, photo: { id: photo.id, name: photo.name, data: photo.data, room: '', photoType: 'estimate', label: photo.label || '', sortOrder: idx } } })
+      } else {
+        const saved = savedById[photo.id]
+        const labelChanged = (photo.label ?? '') !== (saved?.label ?? '')
+        const orderChanged = idx !== (saved?.sortOrder ?? 0)
+        if (labelChanged || orderChanged) {
+          dispatch({ type: ACTIONS.UPDATE_PHOTO, payload: { jobId: selectedJobId, photoId: photo.id, patch: { label: photo.label || '', sortOrder: idx } } })
+        }
+      }
     })
     photosToDelete.forEach(photo => {
       dispatch({ type: ACTIONS.DELETE_PHOTO, payload: { jobId: selectedJobId, photoId: photo.id } })
