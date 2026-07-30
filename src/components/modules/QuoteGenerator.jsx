@@ -64,7 +64,7 @@ export default function QuoteGenerator({ selectedJobId, setSelectedJobId, naviga
     image: { type: 'jpeg', quality: 0.98 },
     html2canvas: { scale: 2, useCORS: true, logging: false },
     jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
-    pagebreak: { mode: ['css', 'legacy'], avoid: 'tr' },
+    pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', '.photo-card'] },
   }
 
   const handleSavePDF = async () => {
@@ -336,7 +336,7 @@ export default function QuoteGenerator({ selectedJobId, setSelectedJobId, naviga
               <h2 className="text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 pb-1 mb-4">Site Photos</h2>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
                 {estimatePhotos.map(photo => (
-                  <div key={photo.id} style={{ breakInside: 'avoid', pageBreakInside: 'avoid' }}>
+                  <div key={photo.id} className="photo-card" style={{ breakInside: 'avoid', pageBreakInside: 'avoid' }}>
                     <img
                       src={photo.data}
                       alt={photo.label || photo.name}
