@@ -481,7 +481,11 @@ export default function ReferralPartners({ navigateTo }) {
       if (phone.length >= 7 && phone === (p.phone ?? '').replace(/\D/g, '')) reasons.push('phone')
       if (email.length >= 5 && email === (p.email ?? '').toLowerCase().trim()) reasons.push('email')
       if (website.length >= 5 && website === pSite) reasons.push('website')
-      if (address.length >= 5 && (pAddr === address || pAddr.includes(address) || address.includes(pAddr))) reasons.push('address')
+      // Extract street number+name only (before first comma) to avoid false positives from shared city/state
+      const streetPart = s => s.split(/\s*,/)[0].trim()
+      const addrStreet = streetPart(address)
+      const pAddrStreet = streetPart(pAddr)
+      if (addrStreet.length >= 5 && pAddrStreet.length >= 5 && addrStreet === pAddrStreet) reasons.push('address')
       if (reasons.length) results.push({ record: p, reasons })
     }
     return results
@@ -587,7 +591,7 @@ export default function ReferralPartners({ navigateTo }) {
 
       {showModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl p-6">
+          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl p-6 overflow-y-auto max-h-[90vh]">
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-bold text-gray-900">{editingId ? 'Edit Partner' : 'New Referral Partner'}</h2>
               <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-700"><X size={18} /></button>
