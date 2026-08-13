@@ -482,9 +482,10 @@ function LibraryPanel({ onAdd, onClose }) {
 
 // ── Main component ───────────────────────────────────────────────────────────
 export default function Estimator({ selectedJobId, setSelectedJobId, navigateTo }) {
-  const { state, dispatch } = useApp()
+  const { state, dispatch, syncToast } = useApp()
   const [local, setLocal] = useState(null)
   const [saved, setSaved] = useState(false)
+  const [saveError, setSaveError] = useState(false)
   const [showLibrary, setShowLibrary] = useState(false)
   const [toastMsg, setToastMsg] = useState(null)
   const [newForm, setNewForm] = useState(BLANK_NEW)
@@ -520,6 +521,14 @@ export default function Estimator({ selectedJobId, setSelectedJobId, navigateTo 
     }
   }, [selectedJobId, job?.estimate?.updatedAt])
 
+  // If a sync failure toast fires while this estimator is active, surface it on the Save button
+  useEffect(() => {
+    if (syncToast && local) {
+      setSaveError(true)
+      setSaved(false)
+    }
+  }, [syncToast])
+
   const update = useCallback((patch) => {
     setLocal(e => ({ ...e, ...patch }))
     setSaved(false)
@@ -528,31 +537,36 @@ export default function Estimator({ selectedJobId, setSelectedJobId, navigateTo 
   const save = useCallback(() => {
     if (!local || !selectedJobId || savingRef.current) return
     savingRef.current = true
-    const totals = computeEstimateTotals(local)
-    const currentJob = jobRef.current
-    const savedEstimatePhotos = (currentJob?.photos ?? []).filter(p => p.photoType === 'estimate')
-    const savedIds = new Set(savedEstimatePhotos.map(p => p.id))
-    const localIds = new Set((local.photos ?? []).map(p => p.id))
-    const savedById = Object.fromEntries(savedEstimatePhotos.map(p => [p.id, p]))
-    const photosToDelete = savedEstimatePhotos.filter(p => !localIds.has(p.id))
-    dispatch({ type: ACTIONS.SAVE_ESTIMATE, payload: { jobId: selectedJobId, estimate: { ...local, grandTotal: totals.grandTotal, updatedAt: new Date().toISOString() } } })
-    ;(local.photos ?? []).forEach((photo, idx) => {
-      if (!savedIds.has(photo.id)) {
-        dispatch({ type: ACTIONS.ADD_PHOTO, payload: { jobId: selectedJobId, photo: { id: photo.id, name: photo.name, data: photo.data, room: '', photoType: 'estimate', label: photo.label || '', sortOrder: idx } } })
-      } else {
-        const saved = savedById[photo.id]
-        const labelChanged = (photo.label ?? '') !== (saved?.label ?? '')
-        const orderChanged = idx !== (saved?.sortOrder ?? 0)
-        if (labelChanged || orderChanged) {
-          dispatch({ type: ACTIONS.UPDATE_PHOTO, payload: { jobId: selectedJobId, photoId: photo.id, patch: { label: photo.label || '', sortOrder: idx } } })
+    setSaveError(false)
+    try {
+      const totals = computeEstimateTotals(local)
+      const currentJob = jobRef.current
+      const savedEstimatePhotos = (currentJob?.photos ?? []).filter(p => p.photoType === 'estimate')
+      const savedIds = new Set(savedEstimatePhotos.map(p => p.id))
+      const localIds = new Set((local.photos ?? []).map(p => p.id))
+      const savedById = Object.fromEntries(savedEstimatePhotos.map(p => [p.id, p]))
+      const photosToDelete = savedEstimatePhotos.filter(p => !localIds.has(p.id))
+      dispatch({ type: ACTIONS.SAVE_ESTIMATE, payload: { jobId: selectedJobId, estimate: { ...local, grandTotal: totals.grandTotal, updatedAt: new Date().toISOString() } } })
+      ;(local.photos ?? []).forEach((photo, idx) => {
+        if (!savedIds.has(photo.id)) {
+          dispatch({ type: ACTIONS.ADD_PHOTO, payload: { jobId: selectedJobId, photo: { id: photo.id, name: photo.name, data: photo.data, room: '', photoType: 'estimate', label: photo.label || '', sortOrder: idx } } })
+        } else {
+          const saved = savedById[photo.id]
+          const labelChanged = (photo.label ?? '') !== (saved?.label ?? '')
+          const orderChanged = idx !== (saved?.sortOrder ?? 0)
+          if (labelChanged || orderChanged) {
+            dispatch({ type: ACTIONS.UPDATE_PHOTO, payload: { jobId: selectedJobId, photoId: photo.id, patch: { label: photo.label || '', sortOrder: idx } } })
+          }
         }
-      }
-    })
-    photosToDelete.forEach(photo => {
-      dispatch({ type: ACTIONS.DELETE_PHOTO, payload: { jobId: selectedJobId, photoId: photo.id } })
-    })
-    setSaved(true)
-    setTimeout(() => { setSaved(false); savingRef.current = false }, 2000)
+      })
+      photosToDelete.forEach(photo => {
+        dispatch({ type: ACTIONS.DELETE_PHOTO, payload: { jobId: selectedJobId, photoId: photo.id } })
+      })
+      setSaved(true)
+      setTimeout(() => { setSaved(false) }, 2000)
+    } finally {
+      savingRef.current = false
+    }
   }, [local, selectedJobId, dispatch])
 
   const openJobEdit = useCallback(() => {
@@ -917,9 +931,9 @@ Write a clean, professional scope of work. Use 3-4 numbered sections with bullet
               <div className="ml-auto flex gap-2 relative">
                 <button
                   onClick={save}
-                  className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${saved ? 'bg-green-100 text-green-700' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`}
+                  className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${saveError ? 'bg-red-100 text-red-700 ring-1 ring-red-400' : saved ? 'bg-green-100 text-green-700' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`}
                 >
-                  {saved ? '✓ Saved' : 'Save Draft'}
+                  {saveError ? '⚠ Save Failed — Retry' : saved ? '✓ Saved' : 'Save Draft'}
                 </button>
                 <div className="relative">
                   <button
@@ -1397,8 +1411,8 @@ Write a clean, professional scope of work. Use 3-4 numbered sections with bullet
 
             {/* Bottom actions */}
             <div className="flex gap-3 flex-wrap pb-8">
-              <button onClick={save} className={`font-semibold text-sm px-6 py-2.5 rounded-xl transition-colors ${saved ? 'bg-green-600 text-white' : 'bg-red-600 hover:bg-red-700 text-white'}`}>
-                {saved ? '✓ Saved' : 'Save Estimate'}
+              <button onClick={save} className={`font-semibold text-sm px-6 py-2.5 rounded-xl transition-colors ${saveError ? 'bg-red-200 text-red-900 ring-2 ring-red-500' : saved ? 'bg-green-600 text-white' : 'bg-red-600 hover:bg-red-700 text-white'}`}>
+                {saveError ? '⚠ Save Failed — Click to Retry' : saved ? '✓ Saved' : 'Save Estimate'}
               </button>
               <button onClick={() => { save(); navigateTo?.('quote') }} className="flex items-center gap-2 border border-gray-300 hover:border-gray-400 text-gray-700 font-semibold text-sm px-4 py-2.5 rounded-xl">
                 <FileText size={14} /> Generate Quote PDF
