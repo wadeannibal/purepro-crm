@@ -64,7 +64,7 @@ export default function QuoteGenerator({ selectedJobId, setSelectedJobId, naviga
     image: { type: 'jpeg', quality: 0.98 },
     html2canvas: { scale: 2, useCORS: true, logging: false },
     jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
-    pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', '.photo-card'] },
+    pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', '.photo-card', '.print-section'] },
   }
 
   const handleSavePDF = async () => {
