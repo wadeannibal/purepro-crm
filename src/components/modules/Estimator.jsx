@@ -131,8 +131,8 @@ const BLANK_ESTIMATE = {
   discountPct: 0,
 }
 
-const BLANK_NEW = { name: '', phone: '', email: '', address: '', type: 'Mold', jobName: '' }
-const BLANK_EXISTING = { clientId: '', address: '', type: 'Mold', jobName: '' }
+const BLANK_NEW = { name: '', phone: '', email: '', address: '', type: 'Mold', jobName: '', leadSourcePartnerId: '' }
+const BLANK_EXISTING = { clientId: '', address: '', type: 'Mold', jobName: '', leadSourcePartnerId: '' }
 
 // ── Totals sidebar ───────────────────────────────────────────────────────────
 function TotalsPanel({ estimate, onMarginChange, onTaxChange, onDiscountChange }) {
@@ -495,7 +495,7 @@ export default function Estimator({ selectedJobId, setSelectedJobId, navigateTo 
   const [scopeAI, setScopeAI] = useState({ open: false, context: '', loading: false })
   const [showTemplatePicker, setShowTemplatePicker] = useState(false)
   const [showJobEdit, setShowJobEdit] = useState(false)
-  const [jobDraft, setJobDraft] = useState({ clientId: '', address: '', type: '', jobName: '' })
+  const [jobDraft, setJobDraft] = useState({ clientId: '', address: '', type: '', jobName: '', leadSourcePartnerId: '' })
   const [clientSearch, setClientSearch] = useState('')
   const [showClientDropdown, setShowClientDropdown] = useState(false)
   const [showNewClientInEdit, setShowNewClientInEdit] = useState(false)
@@ -570,7 +570,7 @@ export default function Estimator({ selectedJobId, setSelectedJobId, navigateTo 
   }, [local, selectedJobId, dispatch])
 
   const openJobEdit = useCallback(() => {
-    setJobDraft({ clientId: job.clientId, address: job.address ?? '', type: job.type, jobName: job.jobName ?? '' })
+    setJobDraft({ clientId: job.clientId, address: job.address ?? '', type: job.type, jobName: job.jobName ?? '', leadSourcePartnerId: job.leadSourcePartnerId ?? '' })
     setClientSearch(client?.name ?? '')
     setShowClientDropdown(false)
     setShowNewClientInEdit(false)
@@ -579,7 +579,7 @@ export default function Estimator({ selectedJobId, setSelectedJobId, navigateTo 
 
   const saveJobEdit = useCallback(() => {
     if (!jobDraft.clientId) return
-    dispatch({ type: ACTIONS.UPDATE_JOB, payload: { id: selectedJobId, clientId: jobDraft.clientId, address: jobDraft.address, type: jobDraft.type, jobName: jobDraft.jobName } })
+    dispatch({ type: ACTIONS.UPDATE_JOB, payload: { id: selectedJobId, clientId: jobDraft.clientId, address: jobDraft.address, type: jobDraft.type, jobName: jobDraft.jobName, leadSourcePartnerId: jobDraft.leadSourcePartnerId || null, ...(jobDraft.leadSourcePartnerId ? { leadSource: 'Referral' } : {}) } })
     setShowJobEdit(false)
   }, [jobDraft, selectedJobId, dispatch])
 
@@ -749,7 +749,7 @@ Write a clean, professional scope of work. Use 3-4 numbered sections with bullet
   const startExisting = () => {
     if (!existingForm.clientId) return
     const jobId = uid()
-    dispatch({ type: ACTIONS.ADD_JOB, payload: { id: jobId, clientId: existingForm.clientId, type: existingForm.type, jobName: existingForm.jobName, address: existingForm.address, stage: 'Lead', revenue: 0, notes: [], photos: [], documents: [], waivers: [], timeLogs: [], checklist: {}, oshaChecklist: {}, estimate: null, invoice: null, insurance: null, subcontractors: [], expenses: [] } })
+    dispatch({ type: ACTIONS.ADD_JOB, payload: { id: jobId, clientId: existingForm.clientId, type: existingForm.type, jobName: existingForm.jobName, address: existingForm.address, stage: 'Lead', revenue: 0, notes: [], photos: [], documents: [], waivers: [], timeLogs: [], checklist: {}, oshaChecklist: {}, estimate: null, invoice: null, insurance: null, subcontractors: [], expenses: [], leadSourcePartnerId: existingForm.leadSourcePartnerId || null, leadSource: existingForm.leadSourcePartnerId ? 'Referral' : null } })
     setSelectedJobId(jobId)
     setExistingForm(BLANK_EXISTING)
   }
@@ -759,7 +759,7 @@ Write a clean, professional scope of work. Use 3-4 numbered sections with bullet
     const clientId = uid()
     const jobId = uid()
     dispatch({ type: ACTIONS.ADD_CLIENT, payload: { id: clientId, name: newForm.name.trim(), phone: newForm.phone, email: newForm.email, type: 'Homeowner', communications: [], isVIP: false } })
-    dispatch({ type: ACTIONS.ADD_JOB, payload: { id: jobId, clientId, type: newForm.type, jobName: newForm.jobName, address: newForm.address, stage: 'Lead', revenue: 0, notes: [], photos: [], documents: [], waivers: [], timeLogs: [], checklist: {}, oshaChecklist: {}, estimate: null, invoice: null, insurance: null, subcontractors: [], expenses: [] } })
+    dispatch({ type: ACTIONS.ADD_JOB, payload: { id: jobId, clientId, type: newForm.type, jobName: newForm.jobName, address: newForm.address, stage: 'Lead', revenue: 0, notes: [], photos: [], documents: [], waivers: [], timeLogs: [], checklist: {}, oshaChecklist: {}, estimate: null, invoice: null, insurance: null, subcontractors: [], expenses: [], leadSourcePartnerId: newForm.leadSourcePartnerId || null, leadSource: newForm.leadSourcePartnerId ? 'Referral' : null } })
     setSelectedJobId(jobId)
     setShowNewForm(false)
     setNewForm(BLANK_NEW)
@@ -820,6 +820,15 @@ Write a clean, professional scope of work. Use 3-4 numbered sections with bullet
                       ))}
                     </div>
                   </div>
+                  {(state.partners ?? []).length > 0 && (
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1">Referred By <span className="text-gray-400 font-normal">(internal only — not shown on estimate)</span></label>
+                      <select value={newForm.leadSourcePartnerId} onChange={e => setNewForm(f => ({ ...f, leadSourcePartnerId: e.target.value }))} className={InputCls}>
+                        <option value="">— No referral partner —</option>
+                        {(state.partners ?? []).map(p => <option key={p.id} value={p.id}>{p.name}{p.company ? ` · ${p.company}` : ''}</option>)}
+                      </select>
+                    </div>
+                  )}
                   <div className="flex gap-2 pt-1">
                     <button onClick={startNew} disabled={!newForm.name.trim()} className="flex-1 bg-red-600 hover:bg-red-700 disabled:opacity-40 text-white font-bold text-sm py-2.5 rounded-xl transition-colors">Start Estimating</button>
                     <button onClick={() => { setShowNewForm(false); setNewForm(BLANK_NEW) }} className="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold text-sm rounded-xl">Cancel</button>
@@ -857,6 +866,15 @@ Write a clean, professional scope of work. Use 3-4 numbered sections with bullet
                     ))}
                   </div>
                 </div>
+                {(state.partners ?? []).length > 0 && (
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">Referred By <span className="text-gray-400 font-normal">(internal only — not shown on estimate)</span></label>
+                    <select value={existingForm.leadSourcePartnerId} onChange={e => setExistingForm(f => ({ ...f, leadSourcePartnerId: e.target.value }))} className={InputCls}>
+                      <option value="">— No referral partner —</option>
+                      {(state.partners ?? []).map(p => <option key={p.id} value={p.id}>{p.name}{p.company ? ` · ${p.company}` : ''}</option>)}
+                    </select>
+                  </div>
+                )}
                 <button onClick={startExisting} disabled={!existingForm.clientId} className="w-full bg-red-600 hover:bg-red-700 disabled:opacity-40 text-white font-bold text-sm py-2.5 rounded-xl transition-colors">
                   Start Estimating
                 </button>
@@ -1193,6 +1211,15 @@ Write a clean, professional scope of work. Use 3-4 numbered sections with bullet
                   </div>
                 </div>
 
+                {(state.partners ?? []).length > 0 && (
+                  <div className="mt-4 px-5">
+                    <label className="block text-xs font-semibold text-gray-600 mb-1.5">Referred By <span className="text-gray-400 font-normal">(internal — not shown on estimate)</span></label>
+                    <select value={jobDraft.leadSourcePartnerId} onChange={e => setJobDraft(d => ({ ...d, leadSourcePartnerId: e.target.value }))} className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500">
+                      <option value="">— No referral partner —</option>
+                      {(state.partners ?? []).map(p => <option key={p.id} value={p.id}>{p.name}{p.company ? ` · ${p.company}` : ''}</option>)}
+                    </select>
+                  </div>
+                )}
                 <div className="flex gap-2 mt-5 pt-4 border-t border-gray-100">
                   <button
                     onClick={saveJobEdit}
