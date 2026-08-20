@@ -134,6 +134,56 @@ const BLANK_ESTIMATE = {
 const BLANK_NEW = { name: '', phone: '', email: '', address: '', type: 'Mold', jobName: '', leadSourcePartnerId: '' }
 const BLANK_EXISTING = { clientId: '', address: '', type: 'Mold', jobName: '', leadSourcePartnerId: '' }
 
+function PartnerSearchSelect({ partners, value, onChange, inputCls }) {
+  const [query, setQuery] = useState('')
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+  const selected = partners.find(p => p.id === value)
+
+  useEffect(() => {
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  const filtered = partners.filter(p => {
+    const q = query.toLowerCase()
+    return !q || p.name.toLowerCase().includes(q) || (p.company ?? '').toLowerCase().includes(q)
+  })
+
+  const select = (p) => { onChange(p ? p.id : ''); setQuery(''); setOpen(false) }
+
+  return (
+    <div ref={ref} className="relative">
+      <div className="flex gap-1">
+        <input
+          className={inputCls}
+          placeholder={selected ? selected.name + (selected.company ? ` · ${selected.company}` : '') : 'Search partners…'}
+          value={query}
+          onChange={e => { setQuery(e.target.value); setOpen(true) }}
+          onFocus={() => setOpen(true)}
+        />
+        {value && (
+          <button type="button" onClick={() => select(null)} className="px-2 text-gray-400 hover:text-gray-700 text-lg leading-none flex-shrink-0">×</button>
+        )}
+      </div>
+      {open && (
+        <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg max-h-48 overflow-y-auto">
+          {filtered.length === 0
+            ? <div className="px-3 py-2 text-xs text-gray-400">No partners found</div>
+            : filtered.map(p => (
+              <button key={p.id} type="button" onMouseDown={() => select(p)}
+                className={`w-full text-left px-3 py-2 text-sm hover:bg-red-50 hover:text-red-700 transition-colors ${p.id === value ? 'bg-red-50 text-red-700 font-semibold' : 'text-gray-700'}`}>
+                {p.name}{p.company ? <span className="text-gray-400 text-xs ml-1">· {p.company}</span> : ''}
+              </button>
+            ))
+          }
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Totals sidebar ───────────────────────────────────────────────────────────
 function TotalsPanel({ estimate, onMarginChange, onTaxChange, onDiscountChange }) {
   const t = computeEstimateTotals(estimate)
@@ -823,10 +873,7 @@ Write a clean, professional scope of work. Use 3-4 numbered sections with bullet
                   {(state.partners ?? []).length > 0 && (
                     <div>
                       <label className="block text-xs font-semibold text-gray-600 mb-1">Referred By <span className="text-gray-400 font-normal">(internal only — not shown on estimate)</span></label>
-                      <select value={newForm.leadSourcePartnerId} onChange={e => setNewForm(f => ({ ...f, leadSourcePartnerId: e.target.value }))} className={InputCls}>
-                        <option value="">— No referral partner —</option>
-                        {(state.partners ?? []).map(p => <option key={p.id} value={p.id}>{p.name}{p.company ? ` · ${p.company}` : ''}</option>)}
-                      </select>
+                      <PartnerSearchSelect partners={state.partners ?? []} value={newForm.leadSourcePartnerId} onChange={id => setNewForm(f => ({ ...f, leadSourcePartnerId: id }))} inputCls={InputCls} />
                     </div>
                   )}
                   <div className="flex gap-2 pt-1">
@@ -869,10 +916,7 @@ Write a clean, professional scope of work. Use 3-4 numbered sections with bullet
                 {(state.partners ?? []).length > 0 && (
                   <div>
                     <label className="block text-xs font-semibold text-gray-600 mb-1">Referred By <span className="text-gray-400 font-normal">(internal only — not shown on estimate)</span></label>
-                    <select value={existingForm.leadSourcePartnerId} onChange={e => setExistingForm(f => ({ ...f, leadSourcePartnerId: e.target.value }))} className={InputCls}>
-                      <option value="">— No referral partner —</option>
-                      {(state.partners ?? []).map(p => <option key={p.id} value={p.id}>{p.name}{p.company ? ` · ${p.company}` : ''}</option>)}
-                    </select>
+                    <PartnerSearchSelect partners={state.partners ?? []} value={existingForm.leadSourcePartnerId} onChange={id => setExistingForm(f => ({ ...f, leadSourcePartnerId: id }))} inputCls={InputCls} />
                   </div>
                 )}
                 <button onClick={startExisting} disabled={!existingForm.clientId} className="w-full bg-red-600 hover:bg-red-700 disabled:opacity-40 text-white font-bold text-sm py-2.5 rounded-xl transition-colors">
@@ -1214,10 +1258,7 @@ Write a clean, professional scope of work. Use 3-4 numbered sections with bullet
                 {(state.partners ?? []).length > 0 && (
                   <div className="mt-4 px-5">
                     <label className="block text-xs font-semibold text-gray-600 mb-1.5">Referred By <span className="text-gray-400 font-normal">(internal — not shown on estimate)</span></label>
-                    <select value={jobDraft.leadSourcePartnerId} onChange={e => setJobDraft(d => ({ ...d, leadSourcePartnerId: e.target.value }))} className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500">
-                      <option value="">— No referral partner —</option>
-                      {(state.partners ?? []).map(p => <option key={p.id} value={p.id}>{p.name}{p.company ? ` · ${p.company}` : ''}</option>)}
-                    </select>
+                    <PartnerSearchSelect partners={state.partners ?? []} value={jobDraft.leadSourcePartnerId} onChange={id => setJobDraft(d => ({ ...d, leadSourcePartnerId: id }))} inputCls="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500" />
                   </div>
                 )}
                 <div className="flex gap-2 mt-5 pt-4 border-t border-gray-100">
