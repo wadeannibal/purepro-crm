@@ -64,7 +64,7 @@ export default function QuoteGenerator({ selectedJobId, setSelectedJobId, naviga
     image: { type: 'jpeg', quality: 0.98 },
     html2canvas: { scale: 2, useCORS: true, logging: false },
     jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
-    pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', '.photo-card', '.print-section'] },
+    pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', '.photo-card', '.print-section', '.totals-block'] },
   }
 
   const handleSavePDF = async () => {
@@ -297,7 +297,7 @@ export default function QuoteGenerator({ selectedJobId, setSelectedJobId, naviga
           </div>
 
           {/* Totals */}
-          <div className="flex justify-end mb-8 print-section">
+          <div className="flex justify-end mb-8 print-section totals-block" style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
             <div className="w-64">
               <div className="space-y-2">
                 <div className="flex justify-between text-sm text-gray-600">
