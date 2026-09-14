@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { useApp } from '../../context/AppContext'
 import { computeEstimateTotals, formatCurrencyExact, formatDate } from '../../utils/helpers'
 import { Printer, FileText, Loader2 } from 'lucide-react'
-import html2pdf from 'html2pdf.js'
+import html2canvas from 'html2canvas'
+import { jsPDF } from 'jspdf'
 import { useCompanySettings } from '../../hooks/useCompanySettings'
 
 function LineSection({ title, rows, columns }) {
@@ -58,50 +59,76 @@ export default function QuoteGenerator({ selectedJobId, setSelectedJobId, naviga
     return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`
   })
 
-  const pdfOpts = {
-    margin: [0.65, 0.75],
-    filename: `Estimate${client?.name ? ' - ' + client.name : ''}.pdf`,
-    image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true, logging: false },
-    jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
-    pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', '.photo-card', '.print-section', '.totals-block'] },
+  const MARGIN_IN = { top: 0.65, side: 0.75 }
+  const PAGE_W = 8.5
+  const PAGE_H = 11
+  const CONTENT_W = PAGE_W - 2 * MARGIN_IN.side   // 7.0 in
+  const CONTENT_H = PAGE_H - 2 * MARGIN_IN.top    // 9.7 in
+
+  const buildPDF = async (el) => {
+    const scale = 2
+    const canvas = await html2canvas(el, { scale, useCORS: true, logging: false })
+
+    // Points per canvas pixel
+    const pxPerPt = (CONTENT_W * 72) / canvas.width  // pt / canvas-px
+    const pageHpx = (CONTENT_H * 72) / pxPerPt       // canvas-px per page
+
+    // Find totals position in canvas pixels
+    const elRect = el.getBoundingClientRect()
+    const wrapper = el.querySelector('.totals-wrapper')
+    let totalsTopPx = null, totalsBottomPx = null
+    if (wrapper) {
+      const r = wrapper.getBoundingClientRect()
+      totalsTopPx = (r.top - elRect.top) * scale
+      totalsBottomPx = (r.bottom - elRect.top) * scale
+    }
+
+    // Build page cut points, adjusting to avoid slicing through totals
+    const cuts = [0]
+    let pos = 0
+    while (pos < canvas.height) {
+      let end = Math.min(pos + pageHpx, canvas.height)
+      if (totalsTopPx !== null && pos < totalsTopPx && end > totalsTopPx) {
+        // This cut would slice into the totals block — cut just before it instead
+        end = totalsTopPx
+      }
+      cuts.push(end)
+      pos = end
+    }
+
+    // Assemble PDF
+    const pdf = new jsPDF({ unit: 'pt', format: 'letter', orientation: 'portrait' })
+    const marginPtX = MARGIN_IN.side * 72
+    const marginPtY = MARGIN_IN.top * 72
+
+    for (let i = 0; i < cuts.length - 1; i++) {
+      const sliceTop = cuts[i]
+      const sliceH = cuts[i + 1] - sliceTop
+      if (sliceH <= 0) continue
+
+      const slice = document.createElement('canvas')
+      slice.width = canvas.width
+      slice.height = Math.ceil(sliceH)
+      slice.getContext('2d').drawImage(canvas, 0, sliceTop, canvas.width, sliceH, 0, 0, canvas.width, sliceH)
+
+      if (i > 0) pdf.addPage()
+      const imgH = sliceH * pxPerPt
+      pdf.addImage(slice.toDataURL('image/jpeg', 0.98), 'JPEG', marginPtX, marginPtY, CONTENT_W * 72, imgH)
+    }
+
+    return pdf
   }
 
-  const fixTotalsBreak = async (el) => {
-    const wrapper = el.querySelector('.totals-wrapper')
-    if (!wrapper) return null
-    const pageH = (11 - 2 * 0.65) / (8.5 - 2 * 0.75) * el.offsetWidth
-    if (!pageH) return null
-    const elRect = el.getBoundingClientRect()
-    const wTop = wrapper.getBoundingClientRect().top - elRect.top
-    const wBottom = wTop + wrapper.offsetHeight
-    const pageNum = Math.floor(wTop / pageH)
-    const pageBottom = (pageNum + 1) * pageH
-    if (wBottom > pageBottom) {
-      // Set CSS forced break — html2pdf CSS mode reads getComputedStyle and respects this
-      wrapper.style.pageBreakBefore = 'always'
-      wrapper.style.breakBefore = 'page'
-      // Let browser apply the style before html2canvas reads layout
-      await new Promise(r => requestAnimationFrame(r))
-      return () => {
-        wrapper.style.pageBreakBefore = ''
-        wrapper.style.breakBefore = ''
-      }
-    }
-    return null
-  }
+  const filename = `Estimate${client?.name ? ' - ' + client.name : ''}.pdf`
 
   const handleSavePDF = async () => {
     const el = document.getElementById('quote-print-root')
     if (!el) return
     setSaving('pdf')
-    // Let React finish re-rendering before we measure DOM positions
-    await new Promise(r => setTimeout(r, 0))
-    const restore = await fixTotalsBreak(el)
     try {
-      await html2pdf().set(pdfOpts).from(el).save()
+      const pdf = await buildPDF(el)
+      pdf.save(filename)
     } finally {
-      restore?.()
       setSaving(false)
     }
   }
@@ -110,13 +137,11 @@ export default function QuoteGenerator({ selectedJobId, setSelectedJobId, naviga
     const el = document.getElementById('quote-print-root')
     if (!el) return
     setSaving('print')
-    await new Promise(r => setTimeout(r, 0))
-    const restore = await fixTotalsBreak(el)
     try {
-      const blobUrl = await html2pdf().set(pdfOpts).from(el).output('bloburl')
+      const pdf = await buildPDF(el)
+      const blobUrl = pdf.output('bloburl')
       window.open(blobUrl, '_blank')
     } finally {
-      restore?.()
       setSaving(false)
     }
   }
