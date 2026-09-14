@@ -67,13 +67,33 @@ export default function QuoteGenerator({ selectedJobId, setSelectedJobId, naviga
     pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', '.photo-card', '.print-section', '.totals-block'] },
   }
 
+  const pushTotalsIfCut = (el) => {
+    const wrapper = el.querySelector('.totals-wrapper')
+    if (!wrapper) return null
+    // Page content dimensions (letter minus margins)
+    const pageH = (11 - 2 * 0.65) / (8.5 - 2 * 0.75) * el.offsetWidth
+    const elRect = el.getBoundingClientRect()
+    const wRect = wrapper.getBoundingClientRect()
+    const wTop = wRect.top - elRect.top
+    const wBottom = wRect.bottom - elRect.top
+    const nextBreak = Math.ceil(wTop / pageH) * pageH
+    if (nextBreak < wBottom) {
+      const orig = wrapper.style.marginTop
+      wrapper.style.marginTop = `${nextBreak - wTop + 6}px`
+      return () => { wrapper.style.marginTop = orig }
+    }
+    return null
+  }
+
   const handleSavePDF = async () => {
     const el = document.getElementById('quote-print-root')
     if (!el) return
     setSaving('pdf')
+    const restore = pushTotalsIfCut(el)
     try {
       await html2pdf().set(pdfOpts).from(el).save()
     } finally {
+      restore?.()
       setSaving(false)
     }
   }
@@ -82,10 +102,12 @@ export default function QuoteGenerator({ selectedJobId, setSelectedJobId, naviga
     const el = document.getElementById('quote-print-root')
     if (!el) return
     setSaving('print')
+    const restore = pushTotalsIfCut(el)
     try {
       const blobUrl = await html2pdf().set(pdfOpts).from(el).output('bloburl')
       window.open(blobUrl, '_blank')
     } finally {
+      restore?.()
       setSaving(false)
     }
   }
@@ -297,8 +319,8 @@ export default function QuoteGenerator({ selectedJobId, setSelectedJobId, naviga
           </div>
 
           {/* Totals */}
-          <div className="flex justify-end mb-8">
-            <div className="w-64 print-section totals-block" style={{ pageBreakInside: 'avoid', breakInside: 'avoid', display: 'inline-block' }}>
+          <div className="totals-wrapper flex justify-end mb-8">
+            <div className="w-64 print-section totals-block" style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
               <div className="space-y-2">
                 <div className="flex justify-between text-sm text-gray-600">
                   <span>Subtotal</span>
