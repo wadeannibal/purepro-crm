@@ -67,20 +67,26 @@ export default function QuoteGenerator({ selectedJobId, setSelectedJobId, naviga
     pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', '.photo-card', '.print-section', '.totals-block'] },
   }
 
-  const pushTotalsIfCut = (el) => {
+  const fixTotalsBreak = async (el) => {
     const wrapper = el.querySelector('.totals-wrapper')
     if (!wrapper) return null
-    // Page content dimensions (letter minus margins)
     const pageH = (11 - 2 * 0.65) / (8.5 - 2 * 0.75) * el.offsetWidth
+    if (!pageH) return null
     const elRect = el.getBoundingClientRect()
-    const wRect = wrapper.getBoundingClientRect()
-    const wTop = wRect.top - elRect.top
-    const wBottom = wRect.bottom - elRect.top
-    const nextBreak = Math.ceil(wTop / pageH) * pageH
-    if (nextBreak < wBottom) {
-      const orig = wrapper.style.marginTop
-      wrapper.style.marginTop = `${nextBreak - wTop + 6}px`
-      return () => { wrapper.style.marginTop = orig }
+    const wTop = wrapper.getBoundingClientRect().top - elRect.top
+    const wBottom = wTop + wrapper.offsetHeight
+    const pageNum = Math.floor(wTop / pageH)
+    const pageBottom = (pageNum + 1) * pageH
+    if (wBottom > pageBottom) {
+      // Set CSS forced break — html2pdf CSS mode reads getComputedStyle and respects this
+      wrapper.style.pageBreakBefore = 'always'
+      wrapper.style.breakBefore = 'page'
+      // Let browser apply the style before html2canvas reads layout
+      await new Promise(r => requestAnimationFrame(r))
+      return () => {
+        wrapper.style.pageBreakBefore = ''
+        wrapper.style.breakBefore = ''
+      }
     }
     return null
   }
@@ -89,7 +95,9 @@ export default function QuoteGenerator({ selectedJobId, setSelectedJobId, naviga
     const el = document.getElementById('quote-print-root')
     if (!el) return
     setSaving('pdf')
-    const restore = pushTotalsIfCut(el)
+    // Let React finish re-rendering before we measure DOM positions
+    await new Promise(r => setTimeout(r, 0))
+    const restore = await fixTotalsBreak(el)
     try {
       await html2pdf().set(pdfOpts).from(el).save()
     } finally {
@@ -102,7 +110,8 @@ export default function QuoteGenerator({ selectedJobId, setSelectedJobId, naviga
     const el = document.getElementById('quote-print-root')
     if (!el) return
     setSaving('print')
-    const restore = pushTotalsIfCut(el)
+    await new Promise(r => setTimeout(r, 0))
+    const restore = await fixTotalsBreak(el)
     try {
       const blobUrl = await html2pdf().set(pdfOpts).from(el).output('bloburl')
       window.open(blobUrl, '_blank')
