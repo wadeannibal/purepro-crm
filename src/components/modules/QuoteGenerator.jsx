@@ -297,8 +297,8 @@ export default function QuoteGenerator({ selectedJobId, setSelectedJobId, naviga
           </div>
 
           {/* Totals */}
-          <div className="flex justify-end mb-8 print-section totals-block" style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
-            <div className="w-64">
+          <div className="flex justify-end mb-8">
+            <div className="w-64 print-section totals-block" style={{ pageBreakInside: 'avoid', breakInside: 'avoid', display: 'inline-block' }}>
               <div className="space-y-2">
                 <div className="flex justify-between text-sm text-gray-600">
                   <span>Subtotal</span>
